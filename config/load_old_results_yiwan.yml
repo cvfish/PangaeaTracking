@@ -1,0 +1,15 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+#ImageSourceType: 'ImagesBuffer'
+TrackingType: 'ShapeSequence'
+#TrackingType: 'ShapesBuffer'
+ImageSourceSettings:
+  dataPath: '/cs/research/vision/humanis3/Rui/data/newsequence_3_19/photo_metric/yiwan/fr300_to_799/'
+  numFrames: 500
+  width: 1920
+  height: 1080
+ShapeLoadingSettings:
+  resultsPath: '/cs/research/vision/humanis3/Rui/data/newsequence_3_19/photo_metric/yiwan/fr300_to_799/result_oldmask/photometric_tv_huber/PM500_TV0.5_Deform0_Huber0.1_1_TVRef_Alter_CG_UseXYZ_Iter30_30_30_5_5_Do2Levels_LLTImage_Out2_TVs0.03125_0.125_0.5_0.5_0.5/pangaea/'
+  loadShapeMask: 1
+  shapeColMajor: 1
+  shapeSamplingScale: 0.25

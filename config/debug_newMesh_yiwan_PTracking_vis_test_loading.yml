@@ -1,0 +1,42 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'MeshSequence'
+ImageSourceSettings:
+  dataPath: '/cvfish/home/Work/data/yiwan/fr300_to_799/'
+  numFrames: 500
+  width: 1920
+  height: 1080
+MeshLoadingSettings:
+  meshPath: "/cvfish/home/Work/data/yiwan/"
+  meshFormat: "mesh%04d.obj"
+  visibilityMask: 1
+TrackerSettings:
+  savePath: '/cvfish/home/Work/data/yiwan/fr300_to_799/tracker/tv_0.1/'
+  photometric_weight: 500
+  tv_weight: 0.1
+  photometric_huber_width: 0.1
+  tv_huber_width: 1
+  use_ortho_camera: 0
+  use_xyz: 1
+  linear_solver: SNC
+  arap_weight: 0
+  deform_weight: 0
+  inextent_weight: 0
+  trans_weight: 0
+  load_mesh: 1
+  use_visibility_mask: 1
+  #mesh_file: '/cvfish/home/Work/data/yiwan/yiwan_median_colors_mesh.obj'
+  mesh_file: '/cvfish/home/Work/data/yiwan/mesh_vertex_cols_with_normals.obj'
+  depth2mesh_scale: 0.125
+  save_results: 1
+  save_mesh: 1
+  blurFilterSize (at each level): [0, 0, 0, 0, 0]
+  imageGradientsScalingFactor (at each level): [0.0625, 0.0625, 0.0625, 0.0625, 0.0625]
+  max_num_iterations (at each level): [1,5,30,30,30]
+  function_tolerance (at each level): [1e-4, 1e-4, 1e-4, 1e-4, 1e-4]
+  gradient_tolerance (at each level): [1e-3, 1e-3, 1e-3, 1e-3, 1e-3]
+  parameter_tolerance (at each level): [1e-6, 1e-6, 1e-6, 1e-6, 1e-6]
+  initial_trust_region_radius (at each level): [1e4, 1e4, 1e4, 1e4, 1e4]
+  max_trust_region_radius (at each level): [1e8, 1e8, 1e8, 1e8, 1e8]
+  min_trust_region_radius (at each level): [1e-32,1e-32,1e-32,1e-32,1e-32]
+  min_relative_decrease (at each level): [1e-3,1e-3,1e-3,1e-3,1e-3]

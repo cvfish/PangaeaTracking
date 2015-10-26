@@ -1,0 +1,39 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'DeformNRSFMTracker'
+#TrackingType: 'ShapeSequence'
+ImageSourceSettings:
+  dataPath: '/cs/research/vision/humanis3/Rui/data/newsequence_4_27/photo_metric/chris_hand/fr1730_to_2929/'
+  numFrames: 1200
+  width: 1280
+  height: 720
+ShapeLoadingSettings:
+  resultsPath: '/cs/research/vision/humanis3/Rui/data/newsequence_4_27/photo_metric/chris_hand/fr1730_to_2929/result/photometric_tv_huber/hand_expr6/PM500_TV0.5_Deform0_Huber1_5_TVRef_Alter_UseXYZ_Iter30_30_30_5_5_Do3Levels_LLTImage_Out2_TVs0.25_0.5_1_1_1/pangaea/'
+  #resultsPath: '/cs/research/vision/humanis2/Ravi/test_CVPR2013_variations_rui/real_face_seq/gt_deform_nonorm_new_test/photometric_test/result/PM500_TV5_Deform0_TVRef_Alter_CG/pangaea'
+TrackerSettings:
+  savePath: '/cs/research/vision/humanis3/Rui/data/newsequence_4_27/photo_metric/chris_hand/fr1730_to_2929/tracker/'
+  #savePath: '/cs/research/vision/humanis2/Ravi/test_CVPR2013_variations_rui/real_face_seq/gt_deform_nonorm_new_test/photometric_test/tracker/'
+  photometric_weight: 500
+  tv_weight: 1
+  photometric_huber_width: 1
+  tv_huber_width: 5
+  use_ortho_camera: 0
+  use_xyz: 1
+  linear_solver: CG
+  arap_weight: 0
+  deform_weight: 0
+  inextent_weight: 0
+  trans_weight: 0
+  depth2mesh_scale: 0.25
+  save_results: 1
+  show_energy: 1
+  blurFilterSize (at each level): [0, 0, 0, 0, 0]
+  imageGradientsScalingFactor (at each level): [0.0625, 0.0625, 0.0625, 0.0625, 0.0625]
+  max_num_iterations (at each level): [30,30,30,30,30]
+  function_tolerance (at each level): [1e-4, 1e-4, 1e-4, 1e-4, 1e-4]
+  gradient_tolerance (at each level): [1e-3, 1e-3, 1e-3, 1e-3, 1e-3]
+  parameter_tolerance (at each level): [1e-6, 1e-6, 1e-6, 1e-6, 1e-6]
+  initial_trust_region_radius (at each level): [1e4, 1e4, 1e4, 1e4, 1e4]
+  max_trust_region_radius (at each level): [1e8, 1e8, 1e8, 1e8, 1e8]
+  min_trust_region_radius (at each level): [1e-32,1e-32,1e-32,1e-32,1e-32]
+  min_relative_decrease (at each level): [1e-3,1e-3,1e-3,1e-3,1e-3]
