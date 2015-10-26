@@ -171,6 +171,8 @@ TrackerSettings::TrackerSettings()
     // default value for tracking
     errorType = "gray";
     baType = "motstr";
+    optimizationType = "Siggraph14";
+    
     isRigid = false;
     doAlternation = true;
     updateColor = false;
@@ -185,6 +187,7 @@ TrackerSettings::TrackerSettings()
 
     weightPhotometric = 500;
     weightTV = 0.5;
+    weightRotTV = 0;
     weightDeform = 0;
     weightGradient = 0;
     weightARAP = 0;
@@ -192,7 +195,7 @@ TrackerSettings::TrackerSettings()
     weightTransPrior = 0;
     photometricHuberWidth = 0.1;
     tvHuberWidth = 0.2;
-
+    tvRotHuberWidth = 0.2;
     meshScaleUpFactor = 1.0;
 
     // ceres parameter
@@ -242,6 +245,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["mesh_file"].empty())
     node["mesh_file"] >> meshFile;
+    
+    if(!node["optimization_type"].empty())
+    node["optimization_type"] >> optimizationType;
 
     if(!node["rigid_sequence"].empty())
     node["rigid_sequence"] >> isRigid;
@@ -279,6 +285,9 @@ void TrackerSettings::read(const cv::FileNode& node)
     if(!node["tv_weight"].empty())
     node["tv_weight"] >> weightTV;
 
+    if(!node["rot_tv_weight"].empty())
+    node["rot_tv_weight"] >> weightRotTV;
+
     if(!node["deform_weight"].empty())
     node["deform_weight"] >> weightDeform;
 
@@ -299,6 +308,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["tv_huber_width"].empty())
     node["tv_huber_width"] >> tvHuberWidth;
+
+    if(!node["rot_tv_huber_width"].empty())
+    node["rot_tv_huber_width"] >> tvRotHuberWidth;
 
     if(!node["mesh_scale_up_factor"].empty())
     node["mesh_scale_up_factor"] >> meshScaleUpFactor;

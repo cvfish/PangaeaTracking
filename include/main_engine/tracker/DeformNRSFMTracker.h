@@ -45,6 +45,9 @@ public:
         ceres::LossFunction* loss_function, dataTermErrorType errorType);
     void AddTotalVariationCost(ceres::Problem& problem,
         ceres::LossFunction* loss_function);
+    void AddRotTotalVariationCost(ceres::Problem& problem,
+        ceres::LossFunction* loss_function);
+        
     void AddARAPCost(ceres::Problem& problem,
         ceres::LossFunction* loss_function);
     void AddInextentCost(ceres::Problem& problem,

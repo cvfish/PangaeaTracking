@@ -219,6 +219,31 @@ private:
 
 };
 
+// total variation on top of the local rotations
+class ResidualRotTV
+{
+public:
+
+ResidualRotTV(double weight):weight(weight){}
+
+    template<typename T>
+        bool operator()(const T* const pCurrentRot,
+            const T* const pCurrentNeighbor,
+            T* residuals) const
+    {
+        for(int i= 0; i < 3; ++i)
+        {
+            residuals[i] = T(weight) * ( pCurrentRot[i] - pCurrentNeighbor[i] );
+        }
+
+        return true;
+    }
+
+private:
+
+    double weight;
+};
+
 class ResidualINEXTENT
 {
 public:

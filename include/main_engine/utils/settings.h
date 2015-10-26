@@ -83,6 +83,8 @@ public:
     std::string errorType;
     std::string baType;
     std::string meshFile;
+    std::string optimizationType;
+    
     bool isRigid;
     bool doAlternation;
     bool updateColor;
@@ -97,6 +99,8 @@ public:
 
     double weightPhotometric;
     double weightTV;
+    double weightRotTV;
+    
     double weightDeform;
     double weightGradient;
     double weightARAP;
@@ -104,6 +108,7 @@ public:
     double weightTransPrior;
     double photometricHuberWidth;
     double tvHuberWidth;
+    double tvRotHuberWidth;
 
     double meshScaleUpFactor;
 

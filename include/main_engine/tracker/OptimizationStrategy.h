@@ -9,6 +9,7 @@
 enum OptimizationType{
     Siggraph14 = 0,
     DynamicFusion,
+    CoarseNode,
 };
 
 struct OptimizationLevel
@@ -30,10 +31,12 @@ struct OptimizationLevel
 };
 
 struct WeightPara
-{    
-    // weighting parameters of each energy term 
+{
+    // weighting parameters of each energy term
     double dataTermWeight; // photometric term
     double tvTermWeight;
+    double tvRotTermWeight;
+
     double arapTermWeight;
     double inextentTermWeight;
     double deformWeight;
@@ -45,6 +48,8 @@ struct WeightPara
     // Huber width
     double dataHuberWidth;
     double tvHuberWidth;
+    double tvRotHuberWidth;
+
 };
 
 struct WeightScale
@@ -64,13 +69,22 @@ struct WeightScale
 class OptimizationStrategy
 {
 public:
+
+    
     vector<OptimizationLevel> optimizationSettings;
     int numOptimizationLevels;
+    int numMeshLevels;
+
+    OptimizationStrategy(){};
+    OptimizationStrategy(int numMeshLevels);
+    ~OptimizationStrategy(){};
+    
+    virtual void Initialize(){};
 
     virtual void setWeightParameters(WeightPara& inputWeightPara);
     virtual void setWeightScale(IntegerContainerType& meshVertexNum);
     virtual void setWeightScale(WeightScale& inputWeightScale);
-    
+
     WeightPara weightPara;
     WeightScale weightScale;
 };
@@ -78,23 +92,36 @@ public:
 class Siggraph14Strategy:public OptimizationStrategy
 {
 public:
-    
+
     Siggraph14Strategy(int numMeshLevels);
     ~Siggraph14Strategy(){};
 
-    void setWeightScale(IntegerContainerType& meshVertexNum);
-    
-public: 
-       
+    void Initialize();
+
+public:
+
 };
 
-class DynamicDusionStrategy:public OptimizationStrategy
+class DynamicFusionStrategy:public OptimizationStrategy
 {
 public:
-    DynamicDusionStrategy(int numMeshLevels);
-    ~DynamicDusionStrategy(){};
+    DynamicFusionStrategy(int numMeshLevels);
+    ~DynamicFusionStrategy(){};
+
+    void Initialize();
 
     // never worry about scale weights
     // for the only level optimization,
     // we use the weights with no scale
+};
+
+class CoarseNodeStrategy:public OptimizationStrategy
+{
+public:
+
+    CoarseNodeStrategy(int numMeshLevels);
+    ~CoarseNodeStrategy(){};
+
+    void Initialize();
+    
 };
