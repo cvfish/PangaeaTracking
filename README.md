@@ -19,7 +19,7 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
    sudo apt-get install libgl1-mesa-dev
    sudo libglu1-mesa-dev
    sudo apt-get install libglew1.8 libglew-dev
-   apt-get install libx11-dev
+   sudo apt-get install libx11-dev
 ```
 
   - OPENCV (e.g. version 2.4.8 or 3.0)   
@@ -44,11 +44,11 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
 
 #2. Data
 
-One example sequence is available at  
+One example sequence is available at https://drive.google.com/drive/folders/0B8-9V4y1N7pxZExaMlE3bnc3Mzg
 
 #3. Examples
 
 After building PangaeaTracking and preparing the data, you are ready to run the scripts in examples folder.
-
+Check examples/Yiwan.sh for usage.
 
 ------

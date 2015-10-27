@@ -1,0 +1,18 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'MeshBuffer'
+ImageSourceSettings:
+  dataPath: '../data/Yiwan/images/'
+  numFrames: 500
+  width: 1920
+  height: 1080
+  startFrame: 1
+MeshLoadingSettings:
+  meshPath: "../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/mesh_pyramid/"
+  meshFormat: "mesh%04d.obj"
+  meshPyramidFormat: "mesh%04d_level%02d.obj"
+  propPyramidFormat: "prop_mesh%04d_level%02d.obj"
+  meshLevelList: [0,1,2]
+#  meshLevelList: [0]
+  visibilityMask: 0
+  loadProp: 0

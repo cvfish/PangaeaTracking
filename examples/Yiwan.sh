@@ -1,3 +1,11 @@
 #!/bin/bash
 
-../build_debug/PangaeaTracking/bin/PangaeaTracking ../config/newMesh_loading.yml
+# loading results
+../build_debug/PangaeaTracking/bin/PangaeaTracking ../config/Yiwan_loading.yml
+
+# loading results into a buffer first
+#../build_debug/PangaeaTracking/bin/PangaeaTracking ../config/Yiwan_loading_fast.yml
+
+# do real tracking
+#../build_debug/PangaeaTracking/bin/PangaeaTracking ../config/Yiwan_tracking.yml
+

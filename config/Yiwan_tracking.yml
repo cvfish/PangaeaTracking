@@ -1,0 +1,52 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'DeformNRSFMTracker'
+ImageSourceSettings:
+  dataPath: '../data/Yiwan/images/'
+  numFrames: 500
+  width: 1920
+  height: 1080
+  isOrthoCamera: 0
+TrackerSettings:
+#  savePath: '../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/'
+  savePath: '../results/'
+  error_type: 'gray'
+  ba_type: 'motstr'
+  photometric_huber_width: 0.1
+  tv_huber_width: 1
+  tv_tukey_width: 0
+  photometric_weight: 1000
+  grad_weight: 0
+  tv_weight: 0.05
+  deform_weight: 0.2
+  do_alternation: 1
+  arap_weight: 1
+  inextent_weight: 0
+  trans_weight: 100000
+  linear_solver: CG
+  save_results: 1
+  save_mesh: 1
+  save_mesh_pyramid: 1
+  save_prop_pyramid: 1
+  use_depth_pyramid: 0
+  use_prev_for_template_in_tv: 0
+  load_mesh: 1
+  use_visibility_mask: 1
+  use_opengl_mask: 0
+  mesh_file: '../data/Yiwan/mesh_pyramid_crop/mesh_vertex5000.obj'
+  mesh_pyramid_file: '../data/Yiwan/mesh_pyramid_crop/mesh_vertex%d.obj'
+  show_window: 1
+  blurFilterSize (at each level): [5,7,9,11,13]
+  imageGradientsScalingFactor (at each level): [0.03125,0.03125,0.03125,0.03125,0.03125]
+  max_num_iterations (at each level): [5,5,30,30,30]
+  function_tolerance (at each level): [1e-4, 1e-4, 1e-4, 1e-4, 1e-4]
+  gradient_tolerance (at each level): [1e-3, 1e-3, 1e-3, 1e-3, 1e-3]
+  parameter_tolerance (at each level): [1e-6, 1e-6, 1e-6, 1e-6, 1e-6]
+  initial_trust_region_radius (at each level): [1e4, 1e4, 1e4, 1e4, 1e4]
+  max_trust_region_radius (at each level): [1e8, 1e8, 1e8, 1e8, 1e8]
+  min_trust_region_radius (at each level): [1e-32,1e-32,1e-32,1e-32,1e-32]
+  min_relative_decrease (at each level): [1e-3,1e-3,1e-3,1e-3,1e-3]
+  mesh_pyramid_vertex_num:  [25000,10000,5000]
+  imagePyramidSamplingFactors (at each level):  [2,4,8]
+  mesh_pyramid_neighbor_num: [5, 5, 5]
+  mesh_pyramid_neighbor_radius: [500, 200, 100]
