@@ -25,11 +25,11 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
   - OPENCV (e.g. version 2.4.8 or 3.0)   
     available at http://opencv.org/
 
-  - Ceres Solver
-    available at http://ceres-solver.org/   
+  - Ceres Solver   
+    available at http://ceres-solver.org/ 
 
-  - wxWidgets
-    available at https://www.wxwidgets.org/   
+  - wxWidgets   
+    available at https://www.wxwidgets.org/ 
 
   - Boost   
     available at http://www.boost.org/
