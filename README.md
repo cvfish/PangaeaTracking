@@ -15,7 +15,6 @@ Contact me if you have any questions.
 PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party libraries are needed for compiling PangaeaTracking.
 
   - OpenGL / GLU / GLEW / X11   
-    REQUIRED for the visualisation and occlusion rendering
 ```
    sudo apt-get install libgl1-mesa-dev
    sudo libglu1-mesa-dev
@@ -23,16 +22,16 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
    apt-get install libx11-dev
 ```
 
-  - OPENCV (e.g. version 2.4.8 or 3.0)
+  - OPENCV (e.g. version 2.4.8 or 3.0)   
     available at http://opencv.org/
 
   - Ceres Solver
-    available at http://ceres-solver.org/
+    available at http://ceres-solver.org/   
 
   - wxWidgets
-    available at https://www.wxwidgets.org/
+    available at https://www.wxwidgets.org/   
 
-  - Boost
+  - Boost   
     available at http://www.boost.org/
 
 ###1.2 Build Process
