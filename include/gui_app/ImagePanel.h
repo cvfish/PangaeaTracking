@@ -4,6 +4,8 @@
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
+#include <vector>
+
 class MainFrame;
 
 class wxImagePanel : public wxPanel
