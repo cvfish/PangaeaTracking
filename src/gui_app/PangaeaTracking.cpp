@@ -19,8 +19,9 @@ bool PangaeaTracking::OnInit()
             1023 );
     }
 
-    cout << "we are here" << endl;
     new MainFrame("PangaeaTracking Render", argc, argv_char);
+
+    return true;
 }
 
 int PangaeaTracking::OnExit()

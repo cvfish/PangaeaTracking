@@ -1,11 +1,13 @@
 # enable pretty build (comment to see full commands)
 Q ?= @
 
-# Uncomment for debugging
-DEBUG := 1
+# Set DEBUG to 1 for debugging
+DEBUG := 0
 
-# if only want to load results
-# VIS_ONLY := 0
+# if only want to visualize saving results and don't do tracking,
+# you could set VIS_ONLY to 1 and compile without ceres solver,
+# but eigen3 is still needed.
+# VIS_ONLY := 1
 
 ifeq ($(DEBUG), 1)
 	BUILD_DIR := build_debug
@@ -65,7 +67,7 @@ CXXFLAGS += -std=c++11 -fopenmp $(FLAGS_INCLUDE)
 ifeq ($(DEBUG), 1)
 	CXXFLAGS += -DDEBUG -g -O0
 else
-	CXXFLAGS += -DNDEBUG -O2 -ffast-math
+	CXXFLAGS += -DNDEBUG -O2 -ffast-math -Wno-unused-result
 endif
 
 # Automatic dependency generation
@@ -99,12 +101,18 @@ GUI_OBJS := $(addprefix $(BUILD_DIR)/, ${GUI_SRCS:.cpp=.o})
 # Output files for automatic dependency generation
 DEPS := $(MAIN_OBJS:.o=.d) $(GUI_OBJS:.o=.d)
 
+ifeq ($(VIS_ONLY), 1)
+	APP := $(GUI_BIN)
+else
+	APP := $(CONSOLE_BIN) $(GUI_BIN)
+endif
+
 #ORIGIN := \$$ORIGIN
 #.PHONY:
 
 .PHONY: all
 
-all: $(CONSOLE_BIN) $(GUI_BIN)
+all: $(APP)
 
 $(CONSOLE_BIN): $(MAIN_LIB) | $(BIN_BUILD_DIR)
 	@ echo CXX/LD -o $@
