@@ -7,7 +7,7 @@ Rui Yu, Chris Russell, Neill D. F. Campbell, Lourdes Agapito
 
 For more information about this work, please visit the [project website](http://www0.cs.ucl.ac.uk/staff/R.Yu/direct_nrsfm/direct_nrsfm.html).   
 
-This github repository is maintained by Rui Yu (R.Yu@cs.ucl.ac.uk)  
+This github repository is maintained by Rui Yu (R.Yu@cs.ucl.ac.uk).  
 Contact me if you have any questions.
 
 #1. Building the System
@@ -19,7 +19,7 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
   - OpenGL / GLU / GLEW / X11   
 ```
    sudo apt-get install libgl1-mesa-dev
-   sudo libglu1-mesa-dev
+   sudo apt-get install libglu1-mesa-dev
    sudo apt-get install libglew1.8 libglew-dev
    sudo apt-get install libx11-dev
 ```
