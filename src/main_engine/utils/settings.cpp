@@ -1,5 +1,69 @@
 #include "main_engine/utils/settings.h"
 
+void read(const cv::FileNode& node, std::string& value, const char* default_value)
+{
+    if(!node[default_value].empty())
+    node[default_value] >> value;
+}
+
+void read(const cv::FileNode& node, vector<vector< pair<int, int> > >& termPair)
+{
+
+    cv::FileNodeIterator it = node.begin(), it_end = node.end();
+    for( ; it != it_end; ++it)
+    {
+        vector<int> first_part;
+        vector<int> second_part;
+        (*it)["first"] >> first_part;
+        (*it)["second"] >> second_part;
+        vector<pair<int, int> > first_second;
+        first_second.resize(first_part.size());
+        for(int j = 0; j < first_part.size(); ++j)
+        {
+            first_second[j].first =  first_part[j];
+            first_second[j].second = second_part[j];
+        }
+        termPair.push_back(first_second);
+    }
+    
+}
+
+void read(const cv::FileNode& node, ImageSourceSettings& settings,
+    const ImageSourceSettings& default_settings)
+{
+    if(node.empty())
+    settings = default_settings;
+    else
+    settings.read(node);
+}
+
+void read(const cv::FileNode& node, ShapeLoadingSettings& settings,
+    const ShapeLoadingSettings& default_settings)
+{
+    if(node.empty())
+    settings = default_settings;
+    else
+    settings.read(node);
+}
+
+void read(const cv::FileNode& node, MeshLoadingSettings& settings,
+    const MeshLoadingSettings& default_settings)
+{
+    if(node.empty())
+    settings = default_settings;
+    else
+    settings.read(node);
+}
+
+void read(const cv::FileNode& node, TrackerSettings& settings,
+    const TrackerSettings& default_settings)
+{
+    if(node.empty())
+    settings = default_settings;
+    else
+    settings.read(node);
+}
+
 ImageSourceSettings::ImageSourceSettings()
 {
     dataPath = "/home/cvfish/Work/data/pangaea_tracking_data/test/input/";
@@ -428,75 +492,12 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     // arbitary neighbor mesh for all the related terms
     if(!node["data_term_pair"].empty())
-    node["data_term_pair"] >> dataTermVec;
+    ::read(node["data_term_pair"], dataTermPair);
+    // node["data_term_pair"] >> dataTermPair;
 
     if(!node["reg_term_pair"].empty())
-    node["data_term_pair"] >> regTermVec;
-
-    // transfrom data from VecVecVecType to VecVecPairType
-    dataTermPair.resize( dataTermVec.size() );
-    for(int i = 0; i < dataTermVec.size(); ++i)
-    {
-        dataTermPair[i].resize( dataTermVec[i].size() );
-        for(int j = 0; j < dataTermVec[i].size(); ++j)
-        {
-            dataTermPair[i][j].first = dataTermVec[i][j][0];
-            dataTermPair[i][j].second = dataTermVec[i][j][1];
-        }
-    }
-
-    regTermPair.resize( regTermVec.size() );
-    for(int i = 0; i < regTermVec.size(); ++i)
-    {
-        regTermPair[i].resize( regTermVec[i].size() );
-        for(int j = 0; j < regTermVec[i].size(); ++j)
-        {
-            regTermPair[i][j].first  = regTermVec[i][j][0];
-            regTermPair[i][j].second = regTermVec[i][j][1];
-        }
-    }
-}
-
-void read(const cv::FileNode& node, std::string& value, const char* default_value)
-{
-    if(!node[default_value].empty())
-    node[default_value] >> value;
-}
-
-void read(const cv::FileNode& node, ImageSourceSettings& settings,
-    const ImageSourceSettings& default_settings)
-{
-    if(node.empty())
-    settings = default_settings;
-    else
-    settings.read(node);
-}
-
-void read(const cv::FileNode& node, ShapeLoadingSettings& settings,
-    const ShapeLoadingSettings& default_settings)
-{
-    if(node.empty())
-    settings = default_settings;
-    else
-    settings.read(node);
-}
-
-void read(const cv::FileNode& node, MeshLoadingSettings& settings,
-    const MeshLoadingSettings& default_settings)
-{
-    if(node.empty())
-    settings = default_settings;
-    else
-    settings.read(node);
-}
-
-void read(const cv::FileNode& node, TrackerSettings& settings,
-    const TrackerSettings& default_settings)
-{
-    if(node.empty())
-    settings = default_settings;
-    else
-    settings.read(node);
+    ::read(node["reg_term_pair"], regTermPair);
+    // node["reg_term_pair"] >> regTermPair;
 }
 
 ImageSourceType imageSourceType = IMAGESEQUENCE;

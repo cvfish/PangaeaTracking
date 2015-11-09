@@ -2,7 +2,7 @@
 Q ?= @
 
 # Set DEBUG to 1 for debugging
-DEBUG := 0
+DEBUG := 1
 
 # if only want to visualize saving results and don't do tracking,
 # you could set VIS_ONLY to 1 and compile without ceres solver,

@@ -310,6 +310,23 @@ void AddMeshToMeshPropagation(MeshPyramid<FloatType>& meshPyramid, int meshLevel
 
 }
 
+template<class FloatType>
+void AddMeshToMeshPropagation(MeshPyramid<FloatType>& meshPyramid, vector<pair<int, int> >& termPairs,
+    MeshPropagation& meshPropagation, vector<int> kNN, vector<double> radius, bool useRadius = false)
+{
+    for(int i = 0; i < termPairs.size(); ++i)
+    {
+        if( !meshPropagation.isAdded( termPairs[i] ) )
+        AddMeshToMeshPropagation(
+            meshPyramid,
+            termPairs[i].first,
+            termPairs[i].second,
+            meshPropagation,
+            kNN[i],
+            radius[i]);
+    }
+}
+
 // update output info, need to be updated
 void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
     CoordinateType camPose[6], PangaeaMeshData& currentMesh);

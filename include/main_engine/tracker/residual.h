@@ -25,21 +25,49 @@ static int PE_RESIDUAL_NUM_ARRAY[NUM_DATA_TERM_ERROR] = {1,3,3,1};
 
 //
 template<typename T>
-void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
-    double* pValue, T* p, T* residuals, dataTermErrorType& PE_TYPE)
+void IntrinsicProjection(const CameraInfo* pCamera, T* p, T* u, T* v)
 {
-    T transformed_r, transformed_c;
-    
     if(pCamera->isOrthoCamera)
     {
-        transformed_c = p[0]; //transformed x (2D)
-        transformed_r = p[1]; //transformed y (2D)
+        u[0] = p[0]; //transformed x (2D)
+        v[0] = p[1]; //transformed y (2D)
     }
     else
     {
-        transformed_c = ( ( p[0] * T( pCamera->KK[0][0] ) ) / p[2] ) + T( pCamera->KK[0][2] ); //transformed x (2D)
-        transformed_r = ( ( p[1] * T( pCamera->KK[1][1] ) ) / p[2] ) + T( pCamera->KK[1][2] ); //transformed y (2D)
+        u[0] = ( ( p[0] * T( pCamera->KK[0][0] ) ) / p[2] ) + T( pCamera->KK[0][2] ); //transformed x (2D)
+        v[0] = ( ( p[1] * T( pCamera->KK[1][1] ) ) / p[2] ) + T( pCamera->KK[1][2] ); //transformed y (2D)
     }
+}
+
+// backprojection
+template<typename T>
+void BackProjection(const CameraInfo* pCamera, const ImageLevel* pFrame, T* u, T* v, T* backProj)
+{
+    T currentValue;
+
+    currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->depthImage,
+        pFrame->depthGradXImage, pFrame->depthGradYImage, u[0], v[0]);
+    
+    backProj[2] = currentValue;
+
+    if(pCamera->isOrthoCamera)
+    {
+        backProj[0] = u[0]; backProj[1] = v[0];
+    }else
+    {            
+        backProj[0] = backProj[2] * (pCamera->invKK[0][0]*u[0] + pCamera->invKK[0][2]);
+        backProj[1] = backProj[2] * (pCamera->invKK[1][1]*v[0] + pCamera->invKK[1][2]);
+    }
+
+}
+
+template<typename T>
+void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
+    double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
+{
+    T transformed_r, transformed_c;
+    
+    IntrinsicProjection(pCamera, p, &transformed_c, &transformed_r);
     
     T templateValue, currentValue;
 
@@ -70,34 +98,20 @@ void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
             case PE_DEPTH:   // point-to-point error
             {
                 // depth value of the point
-                templateValue = T(xyz[2]);
-                // the depth value read from depth image at projected position
-                currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->depthImage,
-                    pFrame->depthGradXImage, pFrame->depthGradYImage, transformed_c, transformed_r );
+                T back_projection[3];
+                BackProjection(pCamera, pFrame, &transformed_c, &transformed_r, back_projection);
+                    
+                residuals[0] = T(weight) * (p[0] - back_projection[0]);
+                residuals[1] = T(weight) * (p[1] - back_projection[1]);
+                residuals[2] = T(weight) * (p[2] - back_projection[2]);
 
-                if(pCamera->isOrthoCamera) // if this is really a orthographic camera
-                {
-                    residuals[0] = T(weight) * (currentValue - templateValue);
-                    residuals[1] = T(0.0); residuals[2] = T(0.0);
-                }else
-                {
-                    residuals[2] = T(currentValue - templateValue);
-                    residuals[0] = residuals[2] *
-                        (pCamera->invKK[0][0]*transformed_c + pCamera->invKK[0][2]);
-                    residuals[1] = residuals[2] *
-                        (pCamera->invKK[1][1]*transformed_r + pCamera->invKK[1][2]);
-                }
                 break;
             }
             case PE_DEPTH_PLANE: // point-to-plane error
             {
                 //
                 T back_projection[3];
-                currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->depthImage,
-                    pFrame->depthGradXImage, pFrame->depthGradYImage, transformed_c, transformed_r );
-                back_projection[2] = currentValue;
-                back_projection[0] = back_projection[2] * (pCamera->invKK[0][0]*transformed_c + pCamera->invKK[0][2]);
-                back_projection[1] = back_projection[2] * (pCamera->invKK[1][1]*transformed_r + pCamera->invKK[1][2]);
+                BackProjection(pCamera, pFrame, &transformed_c, &transformed_r, back_projection);
 
                 // normals at back projection point
                 T normals_at_bp[3];
@@ -112,9 +126,10 @@ void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
                 // interpolation
 
                 // get the point-to-plane error
-                residuals[0] = normals_at_bp[0]*(xyz[0] - back_projection[0]) +
-                    normals_at_bp[1]*(xyz[1] - back_projection[1]) +
-                    normals_at_bp[2]*(xyz[2] - back_projection[2]);
+                residuals[0] = T(weight)*(
+                    normals_at_bp[0]*(p[0] - back_projection[0]) +
+                    normals_at_bp[1]*(p[1] - back_projection[1]) +
+                    normals_at_bp[2]*(p[2] - back_projection[2]) );
             }
         }
     }
@@ -236,6 +251,7 @@ private:
 // ResidualImageProjection from coarse level deformation,
 class ResidualImageProjectionDeform
 {
+public:
     ResidualImageProjectionDeform(double weight, double* pValue, double* pVertex,
         const CameraInfo* pCamera, const ImageLevel* pFrame, int numNeighbors,
         vector<double> neighborWeights, vector<double*> neighborVertices,
@@ -247,6 +263,7 @@ class ResidualImageProjectionDeform
         pFrame(pFrame),
         numNeighbors(numNeighbors),
         neighborWeights(neighborWeights),
+        neighborVertices(neighborVertices),
         PE_TYPE(PE_TYPE)
     {
         // check the consistency between camera and images
@@ -273,9 +290,9 @@ class ResidualImageProjectionDeform
         {
             // get template difference
             for(int index = 0; index < 3; ++index)
-            diff_vertex[index] = pVertex[index] - neighborVertices[ i ][ index ];
+            diff_vertex[index] = T(pVertex[index]) - neighborVertices[ i ][ index ];
 
-            ceres::AngleAxisRotatePoint( &(rotataions[ i ][ 0 ]), diff_vertex, rot_diff_vertex );
+            ceres::AngleAxisRotatePoint( &(rotations[ i ][ 0 ]), diff_vertex, rot_diff_vertex );
 
             for(int index = 0; index < 3; ++index)
             p[index] += neighborWeights[i] * (rot_diff_vertex[ index ]
@@ -298,7 +315,8 @@ private:
     dataTermErrorType PE_TYPE;
     
     int numNeighbors;  
-    double* neighborWeights;
+    vector<double> neighborWeights;
+    vector<double*> neighborVertices;
     
 };
 

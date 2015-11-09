@@ -87,6 +87,7 @@ void FreeNeighborStrategy::Initialize()
     if(trackerSettings.dataTermPair.size() > 0)
     {
         numOptimizationLevels = trackerSettings.dataTermPair.size();
+        optimizationSettings.resize( numOptimizationLevels );
         for(int i = 0; i < numOptimizationLevels; ++i)
         optimizationSettings[i].dataTermPairs = trackerSettings.dataTermPair[i];
     }
@@ -120,6 +121,7 @@ void FreeNeighborStrategy::Initialize()
         // // have been updated, while second not. In other words,
 
         vector<int> updatedLevels;
+        vector<int> nextOptimizationLevels;
 
         vector<std::pair<int, int> >& dataTermPairs = optimizationSettings[i].dataTermPairs;
         vector<std::pair<int, int> >& regTermPairs = optimizationSettings[i].regTermPairs;
@@ -134,31 +136,60 @@ void FreeNeighborStrategy::Initialize()
         }
 
         // remove duplicate items
-        sort( updatedLevels.begin(), updatedLevels.end() );
+        sort( updatedLevels.begin(), updatedLevels.end() );  // from small to large
         updatedLevels.erase( unique( updatedLevels.begin(), updatedLevels.end() ), updatedLevels.end() );
 
         //
         optimizationSettings[ i ].deformTermLevelIDVec = updatedLevels;
 
-        // int nextLevel = i ? i - 1 : numOptimizationLevels - 1;
+        int nextLevel = i ? i - 1 : numOptimizationLevels - 1;
 
-        // vector<std::pair<int, int> >& nextDataTermPairs = optimizationSettings[ nextLevel ].dataTermPairs;
-        // vector<std::pair<int, int> >& nextRegTermPairs  = optimizationSettings[ nextLevel ].regTermPairs;
+        vector<std::pair<int, int> >& nextDataTermPairs = optimizationSettings[ nextLevel ].dataTermPairs;
+        vector<std::pair<int, int> >& nextRegTermPairs  = optimizationSettings[ nextLevel ].regTermPairs;
 
-        // AddPropPairs( optimizationSettings[ i ].propPairs, nextDataTermPairs, updatedLevels);
-        // AddPropPairs( optimizationSettings[ i ].propPairs, nextRegTermPairs, updatedLevels);
+        for(int j = 0; j < dataTermPairs.size(); ++j)
+        nextOptimizationLevels.push_back( nextDataTermPairs[j].second );
 
-        // also propagate the results to next data term
-        if(i > 0)
-        optimizationSettings[ i ].propPairs.push_back( pair<int,int>(i, i-1) );
+        for(int j = 0; j < regTermPairs.size(); ++j)
+        {
+            nextOptimizationLevels.push_back( nextRegTermPairs[j].first );
+            nextOptimizationLevels.push_back( nextRegTermPairs[j].second );
+        }
+        
+        // remove duplicate items
+        sort( nextOptimizationLevels.begin(), nextOptimizationLevels.end() );
+        nextOptimizationLevels.erase( unique( nextOptimizationLevels.begin(), nextOptimizationLevels.end() ),
+            nextOptimizationLevels.end() );
+
+        // AddPropPairs( optimizationSettings[ i ].propPairs, nextDataTermPairs, updatedLevels );
+        // AddPropPairs( optimizationSettings[ i ].propPairs, nextRegTermPairs, updatedLevels );
+
+        // add up all the nextOptimizationLevels which is not in updatedLevels and also below updatedLevels
+        for(int j = 0; j < nextOptimizationLevels.size(); ++j)
+        {
+            std::vector<int>::iterator first_position = std::find( updatedLevels.begin(), updatedLevels.end(), nextOptimizationLevels[j] );
+            if( first_position == updatedLevels.end() )
+            {
+                std::vector<int>::iterator up;
+                up = std::upper_bound( updatedLevels.begin(), updatedLevels.end(), nextOptimizationLevels[j] );
+                if(up == updatedLevels.end())  // all elements are bigger
+                up = updatedLevels.begin();
+
+                for(int k = *up; k > nextOptimizationLevels[j]; --k)
+                optimizationSettings[ i ].propPairs.push_back( pair<int, int>(k, k-1) );
+                
+            }
+        }
+        
+        // if(i > 0)
+        // optimizationSettings[ i ].propPairs.push_back( pair<int,int>(i, i-1) );
         
     }
     
 }
 
 void FreeNeighborStrategy::AddPropPairs(vector<std::pair<int, int> >& propPairs,
-    vector<std::pair<int, int> >& nextPairs,
-    vector<int>& updatedLevels)
+    vector<std::pair<int, int> >& nextPairs, vector<int>& updatedLevels)
 {
     for(int j = 0; j < nextPairs.size();  ++j)
     {
@@ -171,11 +202,10 @@ void FreeNeighborStrategy::AddPropPairs(vector<std::pair<int, int> >& propPairs,
         vector<pair<int, int> >::iterator position = std::find(
             propPairs.begin(), propPairs.end(), nextPairs[ j ]);
 
-        if(first_position == updatedLevels.end() &&
+        if( nextPairs[ j ].first != nextPairs[ j ].second &&
+            first_position == updatedLevels.end() &&
             second_position != updatedLevels.end() &&
             position == propPairs.end() )
-
         propPairs.push_back( nextPairs[j] );
-
     }
 }

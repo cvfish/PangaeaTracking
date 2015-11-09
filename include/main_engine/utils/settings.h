@@ -173,9 +173,6 @@ public:
     // if reg terms are not defined, we use the same as data term
     VecVecPairType dataTermPair;
     VecVecPairType regTermPair;
-
-    VecVecVecType dataTermVec;
-    VecVecVecType regTermVec;
 };
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value);

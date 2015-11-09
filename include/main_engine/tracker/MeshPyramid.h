@@ -27,21 +27,37 @@ public:
         return weightsVec[ neighborMap[ meshPair ] ];
     }
 
+    bool isAdded(pair<int,int> meshPair)
+    {
+        map<pair<int, int>,int>::iterator it  = neighborMap.find( meshPair );
+        if( it == neighborMap.end() )
+        return false;
+        else
+        return true;
+    }
+    
     void addNeighborsAndWeights(pair<int,int> meshPair, MeshNeighbors& meshNeighbors, MeshWeights& meshWeights)
     {
-        std::pair<NeighborsMap::iterator, bool> ret;
-        ret = neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
+        // std::pair<NeighborsMap::iterator, bool> ret;
+        // ret = neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
         
-        if(ret.second == false){
-            cout << "already inserted:" << endl;
-        }
-        else{
+        // if(ret.second == false){
+        //     cout << "already inserted:" << endl;
+        // }
+        // else{
+            // neighborsVec.push_back( move( meshNeighbors ) );
+            // weightsVec.push_back( move( meshWeights ) );
+        // }
+        if(!isAdded( meshPair ))
+        {
             neighborsVec.push_back( move( meshNeighbors ) );
             weightsVec.push_back( move( meshWeights ) );
-        }
+            neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
+        }        
     }
 
-private:
+// private:
+public:
     
     // support propagation between arbitary two different levels,
     // every time we need to get the weights and neighbors, we give

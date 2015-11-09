@@ -133,6 +133,34 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
         trackerSettings.meshNeighborRadius,
         trackerSettings.meshPyramidUseRadius);
 
+    // now we need to add those different pairs necessarily
+    for(int i = 0; i < pStrategy->numOptimizationLevels; ++i)
+    {
+        vector<std::pair<int, int> >& dataTermPairs = pStrategy->optimizationSettings[i].dataTermPairs;
+        vector<std::pair<int, int> >& regTermPairs = pStrategy->optimizationSettings[i].regTermPairs;
+
+        AddMeshToMeshPropagation(
+            templateMeshPyramid,
+            dataTermPairs,
+            meshPropagation,
+            trackerSettings.meshNeighborNum,
+            trackerSettings.meshNeighborRadius);
+
+        AddMeshToMeshPropagation(
+            templateMeshPyramid,
+            regTermPairs,
+            meshPropagation,
+            trackerSettings.meshNeighborNum,
+            trackerSettings.meshNeighborRadius);
+    }
+
+    // print everything used in meshPropagation
+    for(std::map< pair<int, int>, int>::iterator it = meshPropagation.neighborMap.begin(); it != meshPropagation.neighborMap.end(); ++it)
+    {
+        std::cout << "(" << it->first.first << "," << it->first.second << ")"
+                  << " => " << it->second << '\n';
+    }
+
     // imagePyramid will be created during the processing of the first image
     imagePyramid.create(m_nWidth, m_nHeight);
     imagePyramid.setupCameraPyramid(m_nMeshLevels, camInfo);
@@ -508,7 +536,7 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
 
             // need to update the rotations of the fine mesh as well
             // compute the rigid transformation between two sets of
-            // neighboring points
+            // neighboring points(both are defined on the fine mesh)
             // notice that for siggraph14 optimization, the arap edges
             // are defined on the same level
             //
@@ -524,7 +552,6 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
                 arap_weights,
                 mesh_rot_fine[i],
                 true);
-
 
         }
 
@@ -662,18 +689,27 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                     for(int j = 0; j < numNeighbors; ++j )
                     parameter_blocks.push_back( &( neighborMeshRot[ neighbors[i][j] ][0] ) );
 
-                    DynamicAutoDiffCostFunction<ResidualImageProjectionDeform, 5>* cost_function =
-                        new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionDeform, 5 >(1, &templateMesh.grays[i], &templateMesh.vertices[i][0],
-                            pCamera, pFrame, numNeighbors, neighborWeights, neighborVertices, errorType);
+                    ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionDeform, 5>* cost_function =
+                        new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionDeform, 5 >(
+                            new ResidualImageProjectionDeform(
+                                1,
+                                &templateMesh.grays[i],
+                                &templateMesh.vertices[i][0],
+                                pCamera,
+                                pFrame,
+                                numNeighbors,
+                                neighborWeights,
+                                neighborVertices,
+                                errorType ) );
 
                     for(int j = 0; j < 2*numNeighbors; ++j)
-                    cost_function.AddParameterBlock(3);
+                    cost_function->AddParameterBlock(3);
                     
                     switch(errorType)
                     {
                         case PE_INTENSITY:
                             
-                            cost_function.SetNumResiduals(1);
+                            cost_function->SetNumResiduals(1);
                             problem.AddResidualBlock(
                                 cost_function,
                                 loss_function,
@@ -682,7 +718,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                         case PE_COLOR:
                             
-                            cost_function.SetNumResiduals(3);
+                            cost_function->SetNumResiduals(3);
                             problem.AddResidualBlock(
                                 cost_function,
                                 loss_function,
@@ -708,9 +744,6 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
     for(int k = 0; k < num_tv_pairs; ++k)
     {
         std::pair<int, int>& tv_pair = tv_pairs[k];
-
-        // check mesh level and its neighbor level
-        assert(tv_pair.first == tv_pair.second || tv_pair.first + 1 == tv_pair.second);
 
         bool same_level = tv_pair.first == tv_pair.second;
 
@@ -754,10 +787,7 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
     for(int k = 0; k < num_tv_pairs; ++k)
     {
         std::pair<int, int>& tv_pair = tv_pairs[k];
-
-        // check mesh level and its neighbor level
-        assert(tv_pair.first == tv_pair.second || tv_pair.first + 1 == tv_pair.second);
-
+        
         bool same_level = tv_pair.first == tv_pair.second;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[tv_pair.first];
@@ -798,9 +828,6 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
     for(int k = 0; k < num_arap_pairs; ++k)
     {
         std::pair<int, int>& arap_pair = arap_pairs[k];
-
-        // check mesh level and its neighbor level
-        assert(arap_pair.first == arap_pair.second || arap_pair.first + 1 == arap_pair.second);
 
         bool same_level = arap_pair.first == arap_pair.second;
 
@@ -847,9 +874,6 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
     for(int k = 0; k < num_inextent_pairs; ++k)
     {
         std::pair<int, int>& inextent_pair = inextent_pairs[k];
-
-        // check mesh level and its neighbor level
-        assert(inextent_pair.first == inextent_pair.second || inextent_pair.first + 1 == inextent_pair.second);
 
         cout << "inextent levels: " << inextent_pair.first << " " << inextent_pair.second << endl;
 

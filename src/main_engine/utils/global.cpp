@@ -113,7 +113,7 @@ TrackingType mapTrackingType(std::string const& inString)
 
 // points1, points2,
 void computeRot(vector<double>& template_vextex, vector<double>& vertex,
-    vector<vector<double> >& template_nbor_mesh, vector<vector<double > >& nbor_mesh,
+    vector<vector<double> >& template_nbor_vertices, vector<vector<double > >& nbor_vertices,
     vector<unsigned int>& neighbors, vector<double>& weights,
     vector<double>& output_rot, bool deform)
 {
@@ -124,10 +124,10 @@ void computeRot(vector<double>& template_vextex, vector<double>& vertex,
         for(int j = 0; j < 3; ++j)
         {
             Xt(j,i) = weights[i] * (
-                template_vextex[j] - template_nbor_mesh[ neighbors[i] ][j]);
+                template_vextex[j] - template_nbor_vertices[ neighbors[i] ][j]);
 
             X(j,i) = weights[i] * (
-                vertex[j] - nbor_mesh[ neighbors[i] ][j]);
+                vertex[j] - nbor_vertices[ neighbors[i] ][j]);
             
             if(deform)
             X(j,i) += Xt(j,i);
