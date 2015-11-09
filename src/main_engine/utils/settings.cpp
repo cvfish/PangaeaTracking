@@ -171,7 +171,6 @@ TrackerSettings::TrackerSettings()
     // default value for tracking
     errorType = "gray";
     baType = "motstr";
-    optimizationType = "Siggraph14";
     
     isRigid = false;
     doAlternation = true;
@@ -232,6 +231,8 @@ TrackerSettings::TrackerSettings()
     usePrevForTemplateInTV = false;
     
     tvTukeyWidth = 0;
+
+    // 
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -246,9 +247,6 @@ void TrackerSettings::read(const cv::FileNode& node)
     if(!node["mesh_file"].empty())
     node["mesh_file"] >> meshFile;
     
-    if(!node["optimization_type"].empty())
-    node["optimization_type"] >> optimizationType;
-
     if(!node["rigid_sequence"].empty())
     node["rigid_sequence"] >> isRigid;
 
@@ -427,7 +425,36 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["tv_tukey_width"].empty())
     node["tv_tukey_width"] >> tvTukeyWidth;
-    
+
+    // arbitary neighbor mesh for all the related terms
+    if(!node["data_term_pair"].empty())
+    node["data_term_pair"] >> dataTermVec;
+
+    if(!node["reg_term_pair"].empty())
+    node["data_term_pair"] >> regTermVec;
+
+    // transfrom data from VecVecVecType to VecVecPairType
+    dataTermPair.resize( dataTermVec.size() );
+    for(int i = 0; i < dataTermVec.size(); ++i)
+    {
+        dataTermPair[i].resize( dataTermVec[i].size() );
+        for(int j = 0; j < dataTermVec[i].size(); ++j)
+        {
+            dataTermPair[i][j].first = dataTermVec[i][j][0];
+            dataTermPair[i][j].second = dataTermVec[i][j][1];
+        }
+    }
+
+    regTermPair.resize( regTermVec.size() );
+    for(int i = 0; i < regTermVec.size(); ++i)
+    {
+        regTermPair[i].resize( regTermVec[i].size() );
+        for(int j = 0; j < regTermVec[i].size(); ++j)
+        {
+            regTermPair[i][j].first  = regTermVec[i][j][0];
+            regTermPair[i][j].second = regTermVec[i][j][1];
+        }
+    }
 }
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value)

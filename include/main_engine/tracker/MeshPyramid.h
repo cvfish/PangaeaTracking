@@ -5,25 +5,53 @@
 
 #include "third_party/KDTreeAdaptor.hpp"
 
-typedef vector<vector<size_t> > MeshNeighbors;
+typedef pair<int, int> MeshPair;
+typedef vector<vector<double> > MeshWeights;
+typedef vector<vector<unsigned int> > MeshNeighbors;
+typedef vector<vector<size_t> > MeshNeighborsNano;
 
-template<class FloatType>
-struct MeshPropagation
+class MeshPropagation
 {
-    typedef vector<vector<FloatType> > MeshWeights;
-    typedef vector<vector<FloatType> > MeshDistances;
-    typedef vector<FloatType> MeshSigmas;
-    typedef vector<vector<FloatType> > MeshDeform;
+    
+public:
 
-    bool useRadius;
-    IntegerContainerType KNN;
-    CoordinateContainerType radius;
-    vector<MeshNeighbors> neighborsPyramid;
-    vector<MeshWeights> weightsPyramid;
-    vector<MeshDistances> distancesPyramid;
-    vector<MeshSigmas> sigmasPyramid;
+    typedef map<pair<int,int>, int > NeighborsMap;
 
-    vector<vector<vector<unsigned int> > > neighborsPyramidUINT;
+    MeshNeighbors& getNeighbors(pair<int,int>& meshPair)
+    {
+        return neighborsVec[ neighborMap[ meshPair ] ];
+    }
+
+    MeshWeights& getWeights(pair<int,int>& meshPair)
+    {
+        return weightsVec[ neighborMap[ meshPair ] ];
+    }
+
+    void addNeighborsAndWeights(pair<int,int> meshPair, MeshNeighbors& meshNeighbors, MeshWeights& meshWeights)
+    {
+        std::pair<NeighborsMap::iterator, bool> ret;
+        ret = neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
+        
+        if(ret.second == false){
+            cout << "already inserted:" << endl;
+        }
+        else{
+            neighborsVec.push_back( move( meshNeighbors ) );
+            weightsVec.push_back( move( meshWeights ) );
+        }
+    }
+
+private:
+    
+    // support propagation between arbitary two different levels,
+    // every time we need to get the weights and neighbors, we give
+    // a pair of levels as input, and get the index/corresponding weights or
+    // neighbors back
+    map<pair<int,int>, int > neighborMap;
+
+    vector< MeshWeights > weightsVec;
+    vector< MeshNeighbors > neighborsVec;
+    
 };
 
 // mesh pyramid
@@ -172,4 +200,3 @@ void MeshPyramid<FloatType>::updatePyramid(string meshPath,
 }
 
 typedef MeshPyramid<CoordinateType> PangaeaMeshPyramid;
-typedef MeshPropagation<CoordinateType> PangaeaMeshPropagation;

@@ -22,7 +22,7 @@ void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
 
     Map< Matrix3d > rot(Rotation);
     rot = AngleAxisd(angle, axis).toRotationMatrix();
-    
+
     for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
     {
         for(int ind = 0; ind < 3; ++ind)
@@ -88,6 +88,53 @@ void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
 
 }
 
+void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
+    CoordinateType camPose[6], PangaeaMeshData& templateMesh, MeshDeformation& mesh_trans)
+{
+    // copy result to output, has to add rotation and translation to make proper visualization
+    CoordinateType Rotation[9]; // column major due to ceres implementation
+    CoordinateType uvd[3];
+    CoordinateType trans_uvd[3];
+
+    //ceres::AngleAxisToRotationMatrix(camPose,Rotation);
+    Vector3d axis;
+    double angle = Map<Vector3d>(camPose).norm();
+    if(angle != 0)
+    axis = Map<Vector3d>(camPose)/angle;
+    else
+    axis << 1, 0, 0;
+
+    Map< Matrix3d > rot(Rotation);
+    rot = AngleAxisd(angle, axis).toRotationMatrix();
+
+    for(int vertex = 0; vertex < templateMesh.numVertices; ++vertex)
+    {
+        for(int ind = 0; ind < 3; ++ind)
+        uvd[ind] = templateMesh.vertices[ vertex ][ind] + mesh_trans[ vertex ][ind];
+
+        trans_uvd[0] = uvd[0]*Rotation[0] + uvd[1]*Rotation[3] + uvd[2]*Rotation[6] + camPose[3];
+        trans_uvd[1] = uvd[0]*Rotation[1] + uvd[1]*Rotation[4] + uvd[2]*Rotation[7] + camPose[4];
+        trans_uvd[2] = uvd[0]*Rotation[2] + uvd[1]*Rotation[5] + uvd[2]*Rotation[8] + camPose[5];
+
+        // update 3d point cloud
+        outputInfo.meshData.vertices[ vertex ][ 0 ] = trans_uvd[0];
+        outputInfo.meshData.vertices[ vertex ][ 1 ] = trans_uvd[1];
+        outputInfo.meshData.vertices[ vertex ][ 2 ] = trans_uvd[2];
+
+        if(KK[0][2] == 0)  // orthographic projection
+        {
+            outputInfo.meshProj[vertex][0] = (KK[0][0]*trans_uvd[0] + KK[0][1]*trans_uvd[1] + KK[0][2]*trans_uvd[2]);
+            outputInfo.meshProj[vertex][1] = (KK[1][0]*trans_uvd[0] + KK[1][1]*trans_uvd[1] + KK[1][2]*trans_uvd[2]);
+        }
+        else
+        {
+            CoordinateType temp = (KK[2][0]*trans_uvd[0] + KK[2][1]*trans_uvd[1] + KK[2][2]*trans_uvd[2]);
+            outputInfo.meshProj[vertex][0] = (KK[0][0]*trans_uvd[0] + KK[0][1]*trans_uvd[1] + KK[0][2]*trans_uvd[2])/temp;
+            outputInfo.meshProj[vertex][1] = (KK[1][0]*trans_uvd[0] + KK[1][1]*trans_uvd[1] + KK[1][2]*trans_uvd[2])/temp;
+        }
+    }
+}
+
 void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
     PangaeaMeshData& currentMesh)
 {
@@ -104,7 +151,7 @@ void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
         normals[0] = currentMesh.normals[ vertex ][ 0 ];
         normals[1] = currentMesh.normals[ vertex ][ 1 ];
         normals[2] = currentMesh.normals[ vertex ][ 2 ];
-        
+
         outputInfo.meshData.vertices[ vertex ][ 0 ] = uvd[0];
         outputInfo.meshData.vertices[ vertex ][ 1 ] = uvd[1];
         outputInfo.meshData.vertices[ vertex ][ 2 ] = uvd[2];
@@ -430,4 +477,3 @@ void UpdateColorDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask
         }
     }
 }
-

@@ -32,7 +32,7 @@ void distToWeights(vector<vector<FloatType> >& distances,
 
 template<class FloatType>
 void setupPropagation(MeshPyramid<FloatType>& meshPyramid,
-    MeshPropagation<FloatType>& meshPropagation,
+    MeshPropagation& meshPropagation,
     IntegerContainerType& meshNeighborNum,
     CoordinateContainerType& meshNeighborRadius,
     bool meshPyramidUseRadius);
@@ -79,7 +79,7 @@ void scaleMeshUp(MeshData<FloatType>& meshData, double factor)
 template<class FloatType>
 void calcNeighborsAndWeights(vector<vector<FloatType> >&  fineMesh,
     vector<vector<FloatType> >& coarseMesh,
-    MeshNeighbors& neighbors,
+    MeshNeighborsNano& neighbors,
     vector<vector<FloatType> >& distances,
     int knn)
 {
@@ -104,7 +104,7 @@ void calcNeighborsAndWeights(vector<vector<FloatType> >&  fineMesh,
 template<class FloatType>
 void calcNeighborsAndWeights(vector<vector<FloatType> >&  fineMesh,
     vector<vector<FloatType> >& coarseMesh,
-    MeshNeighbors& neighbors,
+    MeshNeighborsNano& neighbors,
     vector<vector<FloatType> >& distances,
     FloatType radius)
 {
@@ -163,93 +163,159 @@ void distToWeights(vector<vector<FloatType> >& distances,
 
 template<class FloatType>
 void setupPropagation(MeshPyramid<FloatType>& meshPyramid,
-    MeshPropagation<FloatType>& meshPropagation,
+    MeshPropagation& meshPropagation,
     IntegerContainerType& meshNeighborNum,
     CoordinateContainerType& meshNeighborRadius,
     bool meshPyramidUseRadius)
-
 {
+    // // setup mesh propagation within a pyramid
+    // typedef vector<FloatType> MeshSigmas;
+    // typedef vector<vector<FloatType> > MeshDistances;
+    // typedef vector<vector<size_t> > MeshNeighborsNano;
 
-    typedef vector<vector<FloatType> > MeshWeights;
-    typedef vector<vector<FloatType> > MeshDistances;
-    typedef vector<FloatType> MeshSigmas;
+    // vector<MeshWeights>& weightsPyramid = meshPropagation.weightsVec;
+    // vector<MeshNeighbors>& neighborsPyramid = meshPropagation.neighborsVec;
 
-    meshPropagation.useRadius = meshPyramidUseRadius;
+    // bool useRadius = meshPyramidUseRadius;
 
-    bool useRadius = meshPropagation.useRadius;
-    IntegerContainerType& kNN = meshPropagation.KNN;
-    CoordinateContainerType& radius = meshPropagation.radius;
+    // vector<MeshSigmas> sigmasPyramid;
+    // vector<MeshDistances> distancesPyramid;
+    // vector<MeshNeighborsNano> neighborsPyramidNano;
 
-    vector<MeshNeighbors>& neighborsPyramid = meshPropagation.neighborsPyramid;
-    vector<MeshWeights>& weightsPyramid = meshPropagation.weightsPyramid;
-    vector<MeshDistances>& distancesPyramid = meshPropagation.distancesPyramid;
-    vector<MeshSigmas>& sigmasPyramid = meshPropagation.sigmasPyramid;
-    vector<vector<vector<unsigned int> > >& neighborsPyramidUINT =
-        meshPropagation.neighborsPyramidUINT;
+    // int numLevels = meshPyramid.levels.size();
+
+    // weightsPyramid.resize(numLevels);
+    // neighborsPyramid.resize(numLevels);
+
+    // sigmasPyramid.resize(numLevels);
+    // distancesPyramid.resize(numLevels);
+    // neighborsPyramidNano.resize(numLevels);
+
+    // for(int i = 1; i < numLevels; ++i)
+    // {
+
+    //     if(!useRadius)
+    //     calcNeighborsAndWeights(meshPyramid.levels[i-1].vertices,
+    //         meshPyramid.levels[i].vertices,
+    //         neighborsPyramidNano[i-1],
+    //         distancesPyramid[i-1],
+    //         meshNeighborNum[i-1]);
+    //     else
+    //     calcNeighborsAndWeights(meshPyramid.levels[i-1].vertices,
+    //         meshPyramid.levels[i].vertices,
+    //         neighborsPyramidNano[i-1],
+    //         distancesPyramid[i-1],
+    //         meshNeighborRadius[i-1]);
+
+    //     // determine the sigma(controling the coverage of weights) of each vertex,
+    //     // setting to the maximum distance of each point at the moment
+    //     int numVertices = meshPyramid.levels[i-1].vertices.size();
+    //     sigmasPyramid[i-1].resize(numVertices);
+    //     for(int j = 0; j < numVertices; ++j)
+    //         sigmasPyramid[i-1][j] = distancesPyramid[i-1][j].back();
+
+    //     distToWeights(distancesPyramid[i-1],
+    //         weightsPyramid[i-1],
+    //         sigmasPyramid[i-1]);
+
+    // }
+
+    // // copy over the neighbors from neighborsPyramid to neighborsPyramidUINT
+    // for(int i = 0; i < numLevels-1; ++i)
+    // {
+    //     neighborsPyramid[i].resize(neighborsPyramidNano[i].size());
+    //     for(int j = 0 ; j < neighborsPyramid[i].size(); ++j)
+    //     {
+    //         neighborsPyramid[i][j].resize(neighborsPyramidNano[i][j].size());
+    //         for(int k = 0; k < neighborsPyramid[i][j].size(); ++k)
+    //         neighborsPyramid[i][j][k] = neighborsPyramidNano[i][j][k];
+    //     }
+
+    //     // setup the neighborMap as well
+    //     MeshPair meshPair(i, i);
+    //     neighborMap.insert( pair<MeshPair, int >(meshPair, i) );
+    // }
 
     int numLevels = meshPyramid.levels.size();
-
-    neighborsPyramid.resize(numLevels);
-    distancesPyramid.resize(numLevels);
-    sigmasPyramid.resize(numLevels);
-    weightsPyramid.resize(numLevels);
-    kNN.resize(numLevels);
-    radius.resize(numLevels);
-
-    for(int i = 0; i < numLevels-1; ++i)
-    {
-        kNN[i] = meshNeighborNum[i];
-        radius[i] = meshNeighborRadius[i];
-    }
-
+    
     for(int i = 1; i < numLevels; ++i)
+    AddMeshToMeshPropagation(
+        meshPyramid,
+        i-1,    // current level
+        i,      // neighbor level
+        meshPropagation,
+        meshNeighborNum[ i-1 ],
+        meshNeighborRadius[ i-1 ],
+        meshPyramidUseRadius);
+
+    // using the same mesh for as neighbors
+    // take care, a point will be a neighbor of itself
+    for(int i = 0; i < numLevels; ++i)
+    AddMeshToMeshPropagation(
+        meshPyramid,
+        i,    // current level
+        i,      // neighbor level
+        meshPropagation,
+        meshNeighborNum[ i ],
+        meshNeighborRadius[ i ],
+        meshPyramidUseRadius);
+}
+
+// general setup propagation
+template<class FloatType>
+void AddMeshToMeshPropagation(MeshPyramid<FloatType>& meshPyramid, int meshLevel, int neighborLevel,
+    MeshPropagation& meshPropagation, int kNN, double radius, bool useRadius = false)
+{
+    typedef vector<FloatType> MeshSigmas;
+    typedef vector<vector<FloatType> > MeshDistances;
+
+    MeshWeights weights;
+    MeshNeighbors neighbors;
+
+    MeshSigmas sigmas;
+    MeshDistances distances;
+    MeshNeighborsNano neighborsNano;
+
+    MeshData<FloatType >& firstMesh = meshPyramid.levels[meshLevel];
+    MeshData<FloatType >& secondMesh = meshPyramid.levels[neighborLevel];
+
+    if(!useRadius)
+    calcNeighborsAndWeights(firstMesh.vertices, secondMesh.vertices,
+        neighborsNano, distances, kNN);
+    else
+    calcNeighborsAndWeights(firstMesh.vertices, secondMesh.vertices,
+        neighborsNano, distances, radius);
+
+
+    // determine the sigma(controling the coverage of weights) of each vertex,
+    // setting to the maximum distance of each point at the moment
+    int numVertices = firstMesh.vertices.size();
+    sigmas.resize(numVertices);
+    for(int j = 0; j < numVertices; ++j)
+    sigmas[j] = distances[j].back();
+
+    distToWeights(distances, weights, sigmas);
+
+    neighbors.resize( neighborsNano.size() );
+    for(int j = 0 ; j < neighborsNano.size(); ++j)
     {
-
-        if(!useRadius)
-        calcNeighborsAndWeights(meshPyramid.levels[i-1].vertices,
-            meshPyramid.levels[i].vertices,
-            neighborsPyramid[i-1],
-            distancesPyramid[i-1],
-            kNN[i-1]);
-        else
-        calcNeighborsAndWeights(meshPyramid.levels[i-1].vertices,
-            meshPyramid.levels[i].vertices,
-            neighborsPyramid[i-1],
-            distancesPyramid[i-1],
-            radius[i-1]);
-
-        // determine the sigma(controling the coverage of weights) of each vertex,
-        // setting to the maximum distance of each point at the moment
-        int numVertices = meshPyramid.levels[i-1].vertices.size();
-        sigmasPyramid[i-1].resize(numVertices);
-        for(int j = 0; j < numVertices; ++j)
-            sigmasPyramid[i-1][j] = distancesPyramid[i-1][j].back();
-
-        distToWeights(distancesPyramid[i-1],
-            weightsPyramid[i-1],
-            sigmasPyramid[i-1]);
-
+        neighbors[j].resize(neighborsNano[j].size());
+        for(int k = 0; k < neighborsNano[j].size(); ++k)
+        neighbors[j][k] = neighborsNano[j][k];
     }
 
-    // copy over the neighbors from neighborsPyramid to neighborsPyramidUINT
-    neighborsPyramidUINT.resize(numLevels);
-    for(int i = 0; i < numLevels-1; ++i)
-    {
-        neighborsPyramidUINT[i].resize(neighborsPyramid[i].size());
-        for(int j = 0 ; j < neighborsPyramidUINT[i].size(); ++j)
-        {
-            neighborsPyramidUINT[i][j].resize(neighborsPyramid[i][j].size());
-            for(int k = 0; k < neighborsPyramid[i][j].size(); ++k)
-            neighborsPyramidUINT[i][j][k] = neighborsPyramid[i][j][k];
-        }
-
-    }
+    meshPropagation.addNeighborsAndWeights(
+        pair<int,int>(meshLevel, neighborLevel),
+        neighbors, weights);
 
 }
 
 // update output info, need to be updated
 void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
     CoordinateType camPose[6], PangaeaMeshData& currentMesh);
+
+void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
+    CoordinateType camPose[6], PangaeaMeshData& templateMesh, MeshDeformation& meshTrans);
 
 void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
     PangaeaMeshData& currentMesh);

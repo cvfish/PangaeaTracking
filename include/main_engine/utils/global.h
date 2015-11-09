@@ -41,6 +41,9 @@ typedef double CoordinateType;
 typedef unsigned char PixelType;
 typedef std::vector< CoordinateType >             CoordinateContainerType;
 typedef std::vector< int >             IntegerContainerType;
+typedef std::vector<vector< pair<int, int> > > VecVecPairType;
+typedef std::vector<vector< vector<int> > > VecVecVecType;
+typedef vector<vector<double> > MeshDeformation;
 
 typedef cv::Vec<PixelType,3> Vec3b;
 typedef cv::Vec<CoordinateType,3> Vec3d;
@@ -103,7 +106,7 @@ bool visibilityTest(double* vertex, double* center, double* normal,
 void computeRot(vector<double>& template_vextex, vector<double>& vertex,
     vector<vector<double> >& template_nbor_mesh, vector<vector<double > >& nbor_mesh,
     vector<unsigned int>& neighbors, vector<double>& weights,
-    vector<double>& output_rot);
+    vector<double>& output_rot, bool deform = false);
 
 // template functions
 template<typename FloatType>

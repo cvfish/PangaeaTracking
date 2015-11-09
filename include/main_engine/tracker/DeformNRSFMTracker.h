@@ -31,7 +31,7 @@ public:
     bool setCurrentFrame(int curFrame);  // only useful when loading stuff
     void setIntrinsicMatrix(double K[3][3]); // set camera parameters
     void initializeCamera();
-    
+
     void setInitialMesh(PangaeaMeshData& mesh){};
     void setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyramid);
 
@@ -47,7 +47,7 @@ public:
         ceres::LossFunction* loss_function);
     void AddRotTotalVariationCost(ceres::Problem& problem,
         ceres::LossFunction* loss_function);
-        
+
     void AddARAPCost(ceres::Problem& problem,
         ceres::LossFunction* loss_function);
     void AddInextentCost(ceres::Problem& problem,
@@ -68,7 +68,7 @@ public:
     bool SaveData();
     bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
     bool SaveMeshPyramid();
-    
+
     void UpdateResults();
     void UpdateResultsLevel(int level);
     void PropagateMesh();
@@ -77,17 +77,16 @@ public:
 private:
 
     // Siggraph14 or DynamicFusion
-    OptimizationType optimizationType;
     OptimizationStrategy* pStrategy;
     int currLevel;  // current optimization level
-    
+
     int startFrameNo;
     int currentFrameNo;
 
     int m_nWidth;
     int m_nHeight;
     int m_nMeshLevels;
-    
+
     baType BAType;
     dataTermErrorType PEType;
 
@@ -98,14 +97,12 @@ private:
     //
     CameraInfo camInfo;
     bool trackerInitialized;
- 
-    PangaeaMeshPyramid templateMeshPyramid;
-    PangaeaMeshPyramid currentMeshPyramid;
-    PangaeaMeshPyramid prevMeshPyramid;
 
-    // shared by all meshPyramids
-    PangaeaMeshPropagation meshPropagation;
-    
+    PangaeaMeshPyramid templateMeshPyramid;
+
+    // containes the neighbor & weight information between pairs of meshes
+    MeshPropagation meshPropagation;
+
     // ImagePyramid
     ImagePyramid imagePyramid;
 
@@ -113,14 +110,17 @@ private:
     vector<vector<bool> > visibilityMaskPyramid;
 
     // tracker output Pyramid
-    vector<TrackerOutputInfo> outputInfoPyramid;
+    vector< TrackerOutputInfo > outputInfoPyramid;
     // keep the mesh just after propagation
     // should think a way to save memory
-    vector<TrackerOutputInfo> outputPropPyramid;
-    
+    vector< TrackerOutputInfo > outputPropPyramid;
+
     // transformation Pyramid
-    vector<vector<vector<double> > > meshTransPyramid;
-    vector<vector<vector<double> > > meshRotPyramid;
+    vector< MeshDeformation > meshTransPyramid;
+    vector< MeshDeformation > meshRotPyramid;
+    
+    vector< MeshDeformation > prevMeshTransPyramid;
+    vector< MeshDeformation > prevMeshRotPyramid;
 
     // what about if we use dual quarternion representation?
     // In that case, we will need a dual quarternion

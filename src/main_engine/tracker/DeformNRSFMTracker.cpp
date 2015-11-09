@@ -1,12 +1,5 @@
 #include "main_engine/tracker/DeformNRSFMTracker.h"
 
-OptimizationType mapOptimizationType(std::string const& inString)
-{
-    if(inString == "Siggraph14") return Siggraph14;
-    if(inString == "DynamicFusion") return DynamicFusion;
-    if(inString == "CoarseNode") return CoarseNode;
-}
-
 baType mapBA(std::string const& inString) {
     if (inString == "mot") return BA_MOT;
     if (inString == "str") return BA_STR;
@@ -37,7 +30,6 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 {
     BAType = mapBA(settings.baType);
     PEType = mapErrorType(settings.errorType);
-    optimizationType = mapOptimizationType(settings.optimizationType);
 
     m_nWidth = width;
     m_nHeight = height;
@@ -58,6 +50,7 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 
 DeformNRSFMTracker::~DeformNRSFMTracker()
 {
+    delete pStrategy;
 }
 
 bool DeformNRSFMTracker::setCurrentFrame(int curFrame)
@@ -95,46 +88,33 @@ void DeformNRSFMTracker::initializeCamera()
     memset(camPose, 0, 6*sizeof(double));
 }
 
-
 void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyramid)
 {
 
     templateMeshPyramid = std::move(initMeshPyramid);
-    currentMeshPyramid = templateMeshPyramid;
-    prevMeshPyramid = templateMeshPyramid;
 
     m_nMeshLevels = templateMeshPyramid.numLevels;
-    // create the optimization strategy and setting up corresponding parameters
-    switch(optimizationType)
-    {
-        case Siggraph14:
-            pStrategy = new Siggraph14Strategy(m_nMeshLevels);
-            break;
-        case DynamicFusion:
-            pStrategy = new DynamicFusionStrategy(m_nMeshLevels);
-            break;
-        case CoarseNode:
-            pStrategy = new CoarseNodeStrategy(m_nMeshLevels);
-            break;
-    }
 
+    // create the optimization strategy and setting up corresponding parameters
+    pStrategy = new FreeNeighborStrategy(m_nMeshLevels);
+    
     // set up the optimization strategy
     pStrategy->Initialize();
 
     // setting parameters
     WeightPara weightPara;
-    weightPara.dataTermWeight = trackerSettings.weightPhotometric;
-    weightPara.tvTermWeight = trackerSettings.weightTV;
-    weightPara.tvRotTermWeight = trackerSettings.weightRotTV;
-    weightPara.deformWeight = trackerSettings.weightDeform;
-    weightPara.arapTermWeight = trackerSettings.weightARAP;
+    weightPara.dataTermWeight     = trackerSettings.weightPhotometric;
+    weightPara.tvTermWeight       = trackerSettings.weightTV;
+    weightPara.tvRotTermWeight    = trackerSettings.weightRotTV;
+    weightPara.deformWeight       = trackerSettings.weightDeform;
+    weightPara.arapTermWeight     = trackerSettings.weightARAP;
     weightPara.inextentTermWeight = trackerSettings.weightINEXTENT;
-    weightPara.transWeight = trackerSettings.weightTransPrior;
+    weightPara.transWeight        = trackerSettings.weightTransPrior;
     weightPara.rotWeight = 0;
 
     //    weightPara.dataHuberWidth = trackerSettings.dataHuberWidth;
-    weightPara.dataHuberWidth = trackerSettings.photometricHuberWidth;
-    weightPara.tvHuberWidth = trackerSettings.tvHuberWidth;
+    weightPara.dataHuberWidth  = trackerSettings.photometricHuberWidth;
+    weightPara.tvHuberWidth    = trackerSettings.tvHuberWidth;
     weightPara.tvRotHuberWidth = trackerSettings.tvRotHuberWidth;
 
     // setting weights of the 0th level of the pyramid
@@ -146,7 +126,8 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 
     // setup propagation pyramid
     // check the way of converting distances to weights
-    setupPropagation(templateMeshPyramid,
+    setupPropagation(
+        templateMeshPyramid,
         meshPropagation,
         trackerSettings.meshNeighborNum,
         trackerSettings.meshNeighborRadius,
@@ -160,6 +141,10 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
     visibilityMaskPyramid.resize(m_nMeshLevels);
     meshTransPyramid.resize(m_nMeshLevels);
     meshRotPyramid.resize(m_nMeshLevels);
+
+    prevMeshTransPyramid.resize(m_nMeshLevels);
+    prevMeshRotPyramid.resize(m_nMeshLevels);
+
     outputInfoPyramid.resize(m_nMeshLevels);
     outputPropPyramid.resize(m_nMeshLevels);
 
@@ -175,12 +160,19 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 
         vector<CoordinateType> zeros3D;
         zeros3D.resize(3); zeros3D[0] = 0; zeros3D[1] = 0; zeros3D[2] = 0;
+
         meshTransPyramid[i].resize(numVertices, zeros3D);
         meshRotPyramid[i].resize(numVertices, zeros3D);
+
+        prevMeshTransPyramid[i].resize(numVertices, zeros3D);
+        prevMeshRotPyramid[i].resize(numVertices, zeros3D);
+
         for(int j = 0; j < numVertices; ++j)
         {
             meshTransPyramid[i][j].resize(3,0);
             meshRotPyramid[i][j].resize(3,0);
+            prevMeshTransPyramid[i][j].resize(3,0);
+            prevMeshRotPyramid[i][j].resize(3,0);
         }
 
         outputInfoPyramid[i].meshData = templateMeshPyramid.levels[i];
@@ -369,106 +361,29 @@ void DeformNRSFMTracker::AddConstantMask(ceres::Problem& problem, baType BA)
     }
 }
 
-void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
-    ceres::LossFunction* loss_function, dataTermErrorType errorType)
-{
-    // add photometric cost
-    // there are two different cases
-    vector<std::pair<int,int> >& data_pairs =
-        pStrategy->optimizationSettings[currLevel].dataTermPairs;
-    int num_data_pairs = data_pairs.size();
-    for(int k = 0; k < num_data_pairs; ++k)
-    {
-        std::pair<int, int>& data_pair = data_pairs[k];
-        switch(optimizationType)
-        {
-            case Siggraph14:
-            case CoarseNode:
-            {
-                //CameraInfo* pCamera = &camInfo;
-                CameraInfo* pCamera = &imagePyramid.camInfoLevels[data_pair.first];
-                ImageLevel* pFrame = &imagePyramid.levels[data_pair.first];
-
-                cout << "camera width and height " << pCamera->width << " "
-                     << pCamera->height << endl;
-
-                PangaeaMeshData& currentMesh = currentMeshPyramid.levels[data_pair.first];
-                vector<bool>& visibilityMask = visibilityMaskPyramid[data_pair.first];
-
-                for(int i = 0; i < currentMesh.numVertices; ++i)
-                {
-                    if(visibilityMask[i])
-                    {
-                        switch(errorType)
-                        {
-                            case PE_INTENSITY:
-                                problem.AddResidualBlock(
-                                    new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>(
-                                        new ResidualImageProjection(1, &currentMesh.grays[i],
-                                            pCamera, pFrame, errorType)),
-                                    loss_function, &camPose[0], &camPose[3],
-                                    &currentMesh.vertices[i][0]);
-                                // new ceres::NumericDiffCostFunction<ResidualImageProjection, ceres::CENTRAL, 1, 3, 3, 3>(
-                                // new ResidualImageProjection(1, &currentMesh.grays[i],
-                                //     pCamera, pFrame, errorType)),
-                                // loss_function, &camPose[0], &camPose[3],
-                                // &currentMesh.vertices[i][0]);
-                                break;
-                            case PE_COLOR:
-                                problem.AddResidualBlock(
-                                    new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>(
-                                        new ResidualImageProjection(1, &currentMesh.colors[i][0],
-                                            pCamera, pFrame, errorType)),
-                                    loss_function, &camPose[0], &camPose[3],
-                                    &currentMesh.vertices[i][0]);
-                                break;
-                        }
-                    }
-                }
-
-                break;
-            }
-            case DynamicFusion:
-            {
-                // not supported yet
-                cout << "interpolation for data term not supported yet" << endl;
-                break;
-            }
-        }
-    }
-}
-
 void DeformNRSFMTracker::UpdateResultsLevel(int level)
 {
     PangaeaMeshData& template_mesh = templateMeshPyramid.levels[level];
-    PangaeaMeshData& current_mesh = currentMeshPyramid.levels[level];
-    PangaeaMeshData& prev_mesh = prevMeshPyramid.levels[level];
 
-    vector<vector<double> >& mesh_trans = meshTransPyramid[level];
+    MeshDeformation& mesh_trans = meshTransPyramid[level];
+    MeshDeformation& prev_mesh_trans = prevMeshTransPyramid[level];
 
-    // update the transformation field
-    for(int k = 0; k < current_mesh.numVertices; ++k)
-    {
-        mesh_trans[k][0] =
-            current_mesh.vertices[k][0] - template_mesh.vertices[k][0];
-        mesh_trans[k][1] =
-            current_mesh.vertices[k][1] - template_mesh.vertices[k][1];
-        mesh_trans[k][2] =
-            current_mesh.vertices[k][2] - template_mesh.vertices[k][2];
-    }
-
-    // compute the normals based on the new vertices position
-    if(trackerSettings.loadMesh)
-    current_mesh.computeNormalsNeil();
-    else
-    current_mesh.computeNormals();
+    MeshDeformation& mesh_rot = meshRotPyramid[level];
+    MeshDeformation& prev_mesh_rot = prevMeshRotPyramid[level];
 
     // update output results
     TrackerOutputInfo& output_info = outputInfoPyramid[level];
 
     // output result for rendering
     btime::ptime updateTime1 = btime::microsec_clock::local_time();
-    UpdateRenderingData(output_info, KK, camPose, current_mesh);
+    
+    UpdateRenderingData(output_info, KK, camPose, template_mesh, mesh_trans);
+    // compute normals
+    if(trackerSettings.loadMesh)
+    output_info.meshData.computeNormalsNeil();
+    else
+    output_info.meshData.computeNormals();
+    
     btime::ptime updateTime2 = btime::microsec_clock::local_time();
     btime::time_duration updateDiff = updateTime2 - updateTime1;
     std::cout << "update level " << level << std::endl;
@@ -498,9 +413,17 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
         imagePyramid.levels[level].colorImageSplit;
     UpdateColorDiff(output_info, visibility_mask, color_image_split);
 
-    // update previous mesh
-    prev_mesh.updateVertices(current_mesh);
-    prev_mesh.updateNormals(current_mesh);
+    // update previous deformation
+    for(int i = 0; i < mesh_trans.size(); ++i)
+    {
+        prev_mesh_trans[i][0] = mesh_trans[i][0];
+        prev_mesh_trans[i][1] = mesh_trans[i][1];
+        prev_mesh_trans[i][2] = mesh_trans[i][2];
+
+        prev_mesh_rot[i][0] = mesh_rot[i][0];
+        prev_mesh_rot[i][1] = mesh_rot[i][1];
+        prev_mesh_rot[i][2] = mesh_rot[i][2];
+    }
 
 }
 
@@ -526,122 +449,105 @@ void DeformNRSFMTracker::UpdateResults()
 
 void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_level)
 {
+    MeshDeformation& mesh_rot = meshRotPyramid[coarse_level];
+    MeshDeformation& mesh_trans = meshTransPyramid[coarse_level];
 
-    typedef vector<vector<double> > MeshDeform;
+    MeshDeformation& mesh_rot_fine = meshRotPyramid[fine_level];
+    MeshDeformation& mesh_trans_fine = meshTransPyramid[fine_level];
 
-    MeshDeform& mesh_rot = meshRotPyramid[coarse_level];
-    MeshDeform& mesh_trans = meshTransPyramid[coarse_level];
+    pair<int, int> meshPair( fine_level, coarse_level );
+    MeshNeighbors&  neighbors = meshPropagation.getNeighbors( meshPair );
+    MeshWeights& weights = meshPropagation.getWeights( meshPair );
 
-    MeshDeform& mesh_rot_fine = meshRotPyramid[fine_level];
-    // how to do the propagation, we deal differently depending on which
-    // strategy we use, for DynamicFusion case we do not really do propagation,
-    // we just need to do interpolation to get the results of the finest level.
+    PangaeaMeshData& template_coarse_mesh = templateMeshPyramid.levels[coarse_level];
+    PangaeaMeshData& template_fine_mesh = templateMeshPyramid.levels[fine_level];
+    
     // For Siggraph14 case, we to do propagation from coarse level to next
-    // fine level, if rotations are among the optimization variables we use
+    // fine level, if rotations are among the optimization variables
+    // (arap coeffcient is not zero or rotation is used in data term) we use
     // rotaton to do propagation otherwise do interpolation
     // check if arap coeffcient is zero
-    switch(optimizationType)
+    // notice that for dynamicFusion case, this is not consistent with dual quarternion interpolation
+    // anyway just for an initialization
+    WeightPara& weight_para = pStrategy->weightPara;
+    WeightScale& weight_scale = pStrategy->weightScale;
+
+    WeightPara weight_para_level;
+
+    weight_para_level.arapTermWeight = weight_para.arapTermWeight * weight_scale.arapTermScale[currLevel];
+
+    // to be updated, check if rotation is used in data term as well
+    if(weight_para_level.arapTermWeight > 0)
     {
-        case Siggraph14:
-        case CoarseNode:
+        double temp_vertex[3];
+        double diff_vertex[3];
+        double rot_diff_vertex[3];
+        for(int i = 0; i < template_fine_mesh.numVertices; ++i)
         {
-            PangaeaMeshData& template_coarse_mesh = templateMeshPyramid.levels[coarse_level];
-            PangaeaMeshData& template_fine_mesh = templateMeshPyramid.levels[fine_level];
-            PangaeaMeshData& coarse_mesh = currentMeshPyramid.levels[coarse_level];
-            PangaeaMeshData& fine_mesh = currentMeshPyramid.levels[fine_level];
-            vector<vector<unsigned int> >&  neighbors = meshPropagation.neighborsPyramidUINT[fine_level];
-            vector<vector<double> >& weights = meshPropagation.weightsPyramid[fine_level];
-            WeightPara& weight_para = pStrategy->weightPara;
-            WeightScale& weight_scale = pStrategy->weightScale;
-            WeightPara weight_para_level;
-            weight_para_level.arapTermWeight = weight_para.arapTermWeight *
-                weight_scale.arapTermScale[currLevel];
-            if(weight_para_level.arapTermWeight > 0)
+            temp_vertex[0] = 0;
+            temp_vertex[1] = 0;
+            temp_vertex[2] = 0;
+            // find its neighbors in coarse_mesh
+            int num_neighbors = neighbors[i].size();
+            for(int j = 0; j < num_neighbors; ++j)
             {
-                double temp_vertex[3];
-                double diff_vertex[3];
-                double rot_diff_vertex[3];
-                for(int i = 0; i < fine_mesh.numVertices; ++i)
+                for(int index = 0; index < 3; ++index)
+                diff_vertex[index] = template_fine_mesh.vertices[i][index] - template_coarse_mesh.vertices[ neighbors[i][j] ][index];
+
+                ceres::AngleAxisRotatePoint(&mesh_rot[ neighbors[i][j] ][0], diff_vertex, rot_diff_vertex);
+
+                for(int index = 0; index < 3; ++index)
                 {
-                    temp_vertex[0] = 0;
-                    temp_vertex[1] = 0;
-                    temp_vertex[2] = 0;
-                    // find its neighbors in coarse_mesh
-                    int num_neighbors = neighbors[i].size();
-                    for(int j = 0; j < num_neighbors; ++j)
-                    {
-                        for(int index = 0; index < 3; ++index)
-                        diff_vertex[index] = template_fine_mesh.vertices[i][index] -
-                            template_coarse_mesh.vertices[ neighbors[i][j] ][index];
-                        ceres::AngleAxisRotatePoint(&mesh_rot[ neighbors[i][j] ][0],
-                            diff_vertex, rot_diff_vertex);
-                        for(int index = 0; index < 3; ++index)
-                        {
-                            // temp_vertex[index] += weights[ neighbors[i][j] ][index] *
-                            //     (rot_diff_vertex[index] +
-                            //         template_coarse_mesh.vertices[ neighbors[i][j] ][index] +
-                            //         mesh_trans[ neighbors[i][j] ][index]);
-                            temp_vertex[index] += weights[i][j] *
-                                (rot_diff_vertex[index] +
-                                    template_coarse_mesh.vertices[ neighbors[i][j] ][index] +
-                                    mesh_trans[ neighbors[i][j] ][index]);
-
-                        }
-                    }
-                    // the result of propagation is temp_vertex
-                    memcpy(&fine_mesh.vertices[i][0], temp_vertex, 3*sizeof(double));
-
-                    // need to update the rotations of the fine mesh as well
-                    // compute the rigid transformation between two sets of
-                    // neighboring points
-                    // notice that for siggraph14 optimization, the arap edges
-                    // are defined on the same level
-                    // computeRot(template_fine_mesh.vertices[i], fine_mesh.vertices[i],
-                    //     template_coarse_mesh.vertices, coarse_mesh.vertices,
-                    //     neighbors[i], weights[i], mesh_rot_fine[i]);
-
-                    //
-                    vector<double> arap_weights;
-                    arap_weights.resize(fine_mesh.adjVerticesInd[i].size(), 1);
-                    computeRot(template_fine_mesh.vertices[i], fine_mesh.vertices[i],
-                        template_fine_mesh.vertices, fine_mesh.vertices,
-                        fine_mesh.adjVerticesInd[i], arap_weights, mesh_rot_fine[i]);
+                    temp_vertex[index] += weights[i][j] *
+                        (rot_diff_vertex[index] + template_coarse_mesh.vertices[ neighbors[i][j] ][index] + mesh_trans[ neighbors[i][j] ][index]);
                 }
-
             }
-            else
-            {
-                // just do interpolation
-                double temp_vertex[3];
-                for(int i = 0; i < fine_mesh.numVertices; ++i)
-                {
-                    temp_vertex[0] = 0;
-                    temp_vertex[1] = 0;
-                    temp_vertex[2] = 0;
-                    // find its neighbors in coarse_mesh
-                    int num_neighbors = neighbors[i].size();
-                    for(int j = 0; j < num_neighbors; ++j)
-                    {
-                        for(int index = 0; index < 3; ++index)
-                        {
-                            // temp_vertex[index] += weights[ neighbors[i][j] ][index]
-                            //     * mesh_trans[ neighbors[i][j] ][index];
-                            temp_vertex[index] += weights[i][j]
-                                * coarse_mesh.vertices[ neighbors[i][j] ][index];
-                        }
-                    }
-                    // the result of propagation is temp_vertex
-                    memcpy(&fine_mesh.vertices[i][0], temp_vertex, 3*sizeof(double));
-                }
 
-            }
-            break;
+            for(int j = 0; j < 3; ++j)
+            mesh_trans_fine[i][j] = temp_vertex[j] - template_fine_mesh.vertices[i][j];
+
+            // need to update the rotations of the fine mesh as well
+            // compute the rigid transformation between two sets of
+            // neighboring points
+            // notice that for siggraph14 optimization, the arap edges
+            // are defined on the same level
+            //
+            vector<double> arap_weights;
+            arap_weights.resize( template_fine_mesh.adjVerticesInd[i].size(), 1 );
+
+            computeRot(
+                template_fine_mesh.vertices[i],
+                mesh_trans_fine[i],
+                template_fine_mesh.vertices,
+                mesh_trans_fine,
+                template_fine_mesh.adjVerticesInd[i],
+                arap_weights,
+                mesh_rot_fine[i],
+                true);
+
+
         }
-        case DynamicFusion:
+
+    }
+    else
+    {
+        // just do interpolation
+        for(int i = 0; i < template_fine_mesh.numVertices; ++i)
         {
-            cout << "not supported yet" << endl;
-            break;
+            mesh_trans_fine[i][0] = 0;
+            mesh_trans_fine[i][1] = 0;
+            mesh_trans_fine[i][2] = 0;
+            // find its neighbors in coarse_mesh
+            int num_neighbors = neighbors[i].size();
+            for(int j = 0; j < num_neighbors; ++j)
+            {
+                for(int index = 0; index < 3; ++index)
+                {
+                    mesh_trans_fine[i][index] += weights[i][j] * mesh_trans[ neighbors[i][j] ][index];
+                }
+            }
         }
+
     }
 }
 
@@ -671,12 +577,132 @@ void DeformNRSFMTracker::PropagateMesh()
 
 }
 
+void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
+    ceres::LossFunction* loss_function, dataTermErrorType errorType)
+{
+    // add photometric cost
+    // there are two different cases
+    vector<std::pair<int,int> >& data_pairs =
+        pStrategy->optimizationSettings[currLevel].dataTermPairs;
+    
+    int num_data_pairs = data_pairs.size();
+    
+    for(int k = 0; k < num_data_pairs; ++k)
+    {
+        std::pair<int, int>& data_pair = data_pairs[k];
+
+        CameraInfo* pCamera = &imagePyramid.camInfoLevels[data_pair.first];
+        ImageLevel* pFrame = &imagePyramid.levels[data_pair.first];
+
+        cout << "camera width and height " << pCamera->width << " " << pCamera->height << endl;
+
+        PangaeaMeshData& templateMesh = templateMeshPyramid.levels[ data_pair.first ];
+        MeshDeformation& meshTrans = meshTransPyramid[ data_pair.first ];
+
+        vector<bool>& visibilityMask = visibilityMaskPyramid[ data_pair.first ];
+        
+        if(data_pair.first == data_pair.second )
+        {
+            for(int i = 0; i < templateMesh.numVertices; ++i)
+            {
+                if(visibilityMask[i])
+                {
+                    switch(errorType)
+                    {
+                        case PE_INTENSITY:
+                            
+                            problem.AddResidualBlock(
+                                new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>(
+                                    new ResidualImageProjection(1, &templateMesh.grays[i], &templateMesh.vertices[i][0],
+                                        pCamera, pFrame, errorType)),
+                                loss_function, &camPose[0], &camPose[3], &meshTrans[i][0]);
+                            
+                            break;
+
+                        case PE_COLOR:
+
+                            problem.AddResidualBlock(
+                                new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>(
+                                    new ResidualImageProjection(1, &templateMesh.colors[i][0], &templateMesh.vertices[i][0],
+                                        pCamera, pFrame, errorType)),
+                                loss_function, &camPose[0], &camPose[3], &meshTrans[i][0]);
+
+                            break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // just try propagation strategy first
+            PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[ data_pair.second ];
+            MeshDeformation& neighborMeshTrans = meshTransPyramid[ data_pair.second ];
+            MeshDeformation& neighborMeshRot = meshRotPyramid[ data_pair.second ];
+
+            pair<int, int> meshPair( data_pair.first, data_pair.second );
+            MeshNeighbors&  neighbors = meshPropagation.getNeighbors( meshPair );
+            MeshWeights& weights = meshPropagation.getWeights( meshPair );
+            
+            for(int i = 0; i < templateMesh.numVertices; ++i)
+            {
+                if(visibilityMask[i])
+                {
+                    // collect neighbors info
+                    vector<double*> neighborVertices;
+                    vector<double> neighborWeights;
+                    vector<double*> parameter_blocks;
+                    
+                    int numNeighbors = neighbors[i].size();
+                    for(int j = 0; j < numNeighbors; ++j )
+                    {
+                        neighborWeights.push_back( weights[i][j] );
+                        neighborVertices.push_back( &( templateNeighborMesh.vertices[ neighbors[i][j] ][ 0 ] ) );
+                        parameter_blocks.push_back( &( neighborMeshTrans[ neighbors[i][j] ][0] ) );
+                    }
+                    for(int j = 0; j < numNeighbors; ++j )
+                    parameter_blocks.push_back( &( neighborMeshRot[ neighbors[i][j] ][0] ) );
+
+                    DynamicAutoDiffCostFunction<ResidualImageProjectionDeform, 5>* cost_function =
+                        new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionDeform, 5 >(1, &templateMesh.grays[i], &templateMesh.vertices[i][0],
+                            pCamera, pFrame, numNeighbors, neighborWeights, neighborVertices, errorType);
+
+                    for(int j = 0; j < 2*numNeighbors; ++j)
+                    cost_function.AddParameterBlock(3);
+                    
+                    switch(errorType)
+                    {
+                        case PE_INTENSITY:
+                            
+                            cost_function.SetNumResiduals(1);
+                            problem.AddResidualBlock(
+                                cost_function,
+                                loss_function,
+                                parameter_blocks);
+                            break;
+
+                        case PE_COLOR:
+                            
+                            cost_function.SetNumResiduals(3);
+                            problem.AddResidualBlock(
+                                cost_function,
+                                loss_function,
+                                parameter_blocks);
+                            break;
+                    }
+                }
+            }
+            
+        }
+    }
+}
+
 void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
     ceres::LossFunction* loss_function)
 {
 
     vector<std::pair<int,int> >& tv_pairs =
-        pStrategy->optimizationSettings[currLevel].tvTermPairs;
+        pStrategy->optimizationSettings[currLevel].regTermPairs;
+
     int num_tv_pairs = tv_pairs.size();
 
     for(int k = 0; k < num_tv_pairs; ++k)
@@ -688,19 +714,18 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
 
         bool same_level = tv_pair.first == tv_pair.second;
 
-        PangaeaMeshData& templateMesh = trackerSettings.usePrevForTemplateInTV ?
-            prevMeshPyramid.levels[tv_pair.first] : templateMeshPyramid.levels[tv_pair.first];
-        PangaeaMeshData& templateNeighborMesh = trackerSettings.usePrevForTemplateInTV ?
-            prevMeshPyramid.levels[tv_pair.second] : templateMeshPyramid.levels[tv_pair.second];
+        PangaeaMeshData& templateMesh = templateMeshPyramid.levels[tv_pair.first];
 
-        PangaeaMeshData& currentMesh = currentMeshPyramid.levels[tv_pair.first];
-        PangaeaMeshData& currentNeighborMesh = currentMeshPyramid.levels[tv_pair.second];
+        MeshDeformation& meshTrans = trackerSettings.usePrevForTemplateInTV ?
+            prevMeshTransPyramid[tv_pair.first] : meshTransPyramid[tv_pair.first];
+        MeshDeformation& neighborMeshTrans = trackerSettings.usePrevForTemplateInTV ?
+            prevMeshTransPyramid[tv_pair.second] : meshTransPyramid[tv_pair.second];
 
         vector<vector<unsigned int> >& meshNeighbors = same_level ?
-            currentMesh.adjVerticesInd : meshPropagation.neighborsPyramidUINT[tv_pair.first];
-        vector<vector<double> >& meshWeights = meshPropagation.weightsPyramid[tv_pair.first];
+            templateMesh.adjVerticesInd : meshPropagation.getNeighbors( tv_pair );
+        vector<vector<double> >& meshWeights = meshPropagation.getWeights( tv_pair );
 
-        for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
+        for(int vertex = 0; vertex < templateMesh.numVertices; ++vertex)
         {
             for(int neighbor = 0; neighbor < meshNeighbors[vertex].size(); ++neighbor)
             {
@@ -708,11 +733,11 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
                 if(!same_level || vertex < meshNeighbors[vertex][neighbor])
                 problem.AddResidualBlock(
                     new ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>(
-                        new ResidualTV( weight, &templateMesh.vertices[vertex][0],
-                            &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0]) ),
+                        new ResidualTV( weight ) ),
                     loss_function,
-                    &currentMesh.vertices[ vertex  ][0],
-                    &currentNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0]);
+                    &meshTrans[ vertex  ][0],
+                    &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]);
+
             }
         }
     }
@@ -723,7 +748,7 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
     ceres::LossFunction* loss_function)
 {
     vector<std::pair<int,int> >& tv_pairs =
-        pStrategy->optimizationSettings[currLevel].tvTermPairs;
+        pStrategy->optimizationSettings[currLevel].regTermPairs;
     int num_tv_pairs = tv_pairs.size();
 
     for(int k = 0; k < num_tv_pairs; ++k)
@@ -735,22 +760,18 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
 
         bool same_level = tv_pair.first == tv_pair.second;
 
-        PangaeaMeshData& templateMesh = trackerSettings.usePrevForTemplateInTV ?
-            prevMeshPyramid.levels[tv_pair.first] : templateMeshPyramid.levels[tv_pair.first];
-        PangaeaMeshData& templateNeighborMesh = trackerSettings.usePrevForTemplateInTV ?
-            prevMeshPyramid.levels[tv_pair.second] : templateMeshPyramid.levels[tv_pair.second];
+        PangaeaMeshData& templateMesh = templateMeshPyramid.levels[tv_pair.first];
 
-        PangaeaMeshData& currentMesh = currentMeshPyramid.levels[tv_pair.first];
-        PangaeaMeshData& currentNeighborMesh = currentMeshPyramid.levels[tv_pair.second];
+        vector<vector<double> >& meshRot = trackerSettings.usePrevForTemplateInTV ?
+            prevMeshRotPyramid[tv_pair.first] : meshRotPyramid[tv_pair.first];
+        vector<vector<double> >& neighborMeshRot = trackerSettings.usePrevForTemplateInTV ?
+            prevMeshRotPyramid[tv_pair.second] : meshRotPyramid[tv_pair.second];
 
         vector<vector<unsigned int> >& meshNeighbors = same_level ?
-            currentMesh.adjVerticesInd : meshPropagation.neighborsPyramidUINT[tv_pair.first];
-        vector<vector<double> >& meshWeights = meshPropagation.weightsPyramid[tv_pair.first];
+            templateMesh.adjVerticesInd : meshPropagation.getNeighbors( tv_pair );
+        vector<vector<double> >& meshWeights = meshPropagation.getWeights( tv_pair );
 
-        vector<vector<double> >& meshRot = meshRotPyramid[tv_pair.first];
-        vector<vector<double> >& meshNeigborRot = meshRotPyramid[tv_pair.second];
-
-        for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
+        for(int vertex = 0; vertex < templateMesh.numVertices; ++vertex)
         {
             for(int neighbor = 0; neighbor < meshNeighbors[vertex].size(); ++neighbor)
             {
@@ -761,7 +782,7 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
                         new ResidualRotTV( weight )),
                     loss_function,
                     &meshRot[ vertex  ][0],
-                    &meshNeigborRot[ meshNeighbors[vertex][neighbor] ][0]);
+                    &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]);
             }
         }
     }
@@ -771,7 +792,7 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
     ceres::LossFunction* loss_function)
 {
     vector<std::pair<int,int> >& arap_pairs =
-        pStrategy->optimizationSettings[currLevel].arapTermPairs;
+        pStrategy->optimizationSettings[currLevel].regTermPairs;
     int num_arap_pairs = arap_pairs.size();
 
     for(int k = 0; k < num_arap_pairs; ++k)
@@ -785,28 +806,28 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[arap_pair.first];
         PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[arap_pair.second];
-        PangaeaMeshData& currentMesh = currentMeshPyramid.levels[arap_pair.first];
-        PangaeaMeshData& currentNeighborMesh = currentMeshPyramid.levels[arap_pair.second];
+
+        MeshDeformation& meshTrans = meshTransPyramid[arap_pair.first];
+        MeshDeformation& neighborMeshTrans = meshTransPyramid[arap_pair.second];
 
         vector<vector<double> >& meshRot = meshRotPyramid[arap_pair.first];
 
         vector<vector<unsigned int> >& meshNeighbors = same_level ?
-            currentMesh.adjVerticesInd : meshPropagation.neighborsPyramidUINT[arap_pair.first];
-        vector<vector<double> >& meshWeights = meshPropagation.weightsPyramid[arap_pair.first];
+            templateMesh.adjVerticesInd : meshPropagation.getNeighbors( arap_pair );
+        vector<vector<double> >& meshWeights = meshPropagation.getWeights( arap_pair );
 
-        for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
+        for(int vertex = 0; vertex < templateMesh.numVertices; ++vertex)
         {
             for(int neighbor = 0; neighbor < meshNeighbors[vertex].size(); ++neighbor)
             {
                 double weight = same_level ? 1 : meshWeights[vertex][neighbor];
-                //if(!same_level || vertex < meshNeighbors[vertex][neighbor])
                 problem.AddResidualBlock(
                     new ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>(
                         new ResidualARAP( weight, &templateMesh.vertices[vertex][0],
-                            &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0]) ),
+                            &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0], true) ),
                     loss_function,
-                    &currentMesh.vertices[ vertex  ][0],
-                    &currentNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0],
+                    &meshTrans[ vertex  ][0],
+                    &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0],
                     &meshRot[ vertex ][0]);
             }
         }
@@ -819,7 +840,8 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
     ceres::LossFunction* loss_function)
 {
     vector<std::pair<int,int> >& inextent_pairs =
-        pStrategy->optimizationSettings[currLevel].inextentTermPairs;
+        pStrategy->optimizationSettings[currLevel].regTermPairs;
+
     int num_inextent_pairs = inextent_pairs.size();
 
     for(int k = 0; k < num_inextent_pairs; ++k)
@@ -835,14 +857,15 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[inextent_pair.first];
         PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[inextent_pair.second];
-        PangaeaMeshData& currentMesh = currentMeshPyramid.levels[inextent_pair.first];
-        PangaeaMeshData& currentNeighborMesh = currentMeshPyramid.levels[inextent_pair.second];
+
+        MeshDeformation& meshTrans = meshTransPyramid[inextent_pair.first];
+        MeshDeformation& neighborMeshTrans = meshTransPyramid[inextent_pair.second];
 
         vector<vector<unsigned int> >& meshNeighbors = same_level ?
-            currentMesh.adjVerticesInd : meshPropagation.neighborsPyramidUINT[inextent_pair.first];
-        vector<vector<double> >& meshWeights = meshPropagation.weightsPyramid[inextent_pair.first];
+            templateMesh.adjVerticesInd : meshPropagation.getNeighbors( inextent_pair );
+        vector<vector<double> >& meshWeights = meshPropagation.getWeights( inextent_pair );
 
-        for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
+        for(int vertex = 0; vertex < templateMesh.numVertices; ++vertex)
         {
             for(int neighbor = 0; neighbor < meshNeighbors[vertex].size(); ++neighbor)
             {
@@ -850,11 +873,10 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
                 //if(!same_level || vertex < meshNeighbors[vertex][neighbor])
                 problem.AddResidualBlock(
                     new ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>(
-                        new ResidualINEXTENT( weight, &templateMesh.vertices[vertex][0],
-                            &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0]) ),
-                    loss_function,
-                    &currentMesh.vertices[ vertex  ][0],
-                    &currentNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0]);
+                        new ResidualINEXTENT( weight )),
+                        loss_function,
+                        &meshTrans[ vertex  ][0],
+                        &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]);
             }
         }
     }
@@ -869,23 +891,23 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
         cout << "add deformation residual" << endl;
         vector<int>& deform_level_vec =
             pStrategy->optimizationSettings[currLevel].deformTermLevelIDVec;
+        
         int num_deform_levels = deform_level_vec.size();
 
         for(int k = 0; k < num_deform_levels; ++k)
         {
             int deform_level = deform_level_vec[k];
 
-            PangaeaMeshData& prevMesh = prevMeshPyramid.levels[deform_level];
-            PangaeaMeshData& currentMesh = currentMeshPyramid.levels[deform_level];
+            MeshDeformation& meshTrans = meshTransPyramid[deform_level];
+            MeshDeformation& prevMeshTrans = prevMeshTransPyramid[deform_level];
 
-            for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
+            for(int vertex = 0; vertex < meshTrans.size(); ++vertex)
             {
-
                 problem.AddResidualBlock(
                     new ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>(
-                        new ResidualDeform(1,  &prevMesh.vertices[vertex][0])),
+                        new ResidualDeform(1,  &prevMeshTrans[ vertex ][ 0 ])),
                     loss_function,
-                    &currentMesh.vertices[ vertex ][0]);
+                    &meshTrans[ vertex ][0]);
             }
         }
     }
@@ -1158,29 +1180,16 @@ bool DeformNRSFMTracker::SaveData()
         }
     }
 
-    // save motion
-    std::stringstream motionPath;
-    std::ofstream motionResult;
-    motionPath << trackerSettings.savePath << "rt.txt";
-    if(currentFrameNo == 1)
-    motionResult.open(motionPath.str().c_str(),std::ofstream::trunc);
-    else
-    motionResult.open(motionPath.str().c_str(),std::ofstream::app);
-
-    // save motion result
-    motionResult << camPose[0] << "\t\t" << camPose[1] << "\t\t" << camPose[2] << "\t\t"
-                 << camPose[3] << "\t\t" << camPose[4] << "\t\t" << camPose[5] << std::endl;
-
     // save shape
     char buffer[BUFFER_SIZE];
     std::ofstream shapeFile;
     std::stringstream shapeFilePath;
     sprintf(buffer,"shape_%04d.txt",currentFrameNo);
     shapeFilePath << trackerSettings.savePath << buffer;
-    //    memset(&buffer[0], 0, sizeof(buffer));
+
     shapeFile.open(shapeFilePath.str().c_str(),std::ofstream::trunc);
 
-    PangaeaMeshData& currentMesh = currentMeshPyramid.levels[0];
+    PangaeaMeshData& currentMesh = outputInfoPyramid[0].meshData;
     for(int i =0; i < currentMesh.numVertices; ++i)
     {
         shapeFile << currentMesh.vertices[i][0] << " "
@@ -1241,7 +1250,7 @@ bool DeformNRSFMTracker::SaveMeshPyramid()
         sprintf(buffer, trackerSettings.meshPyramidFormat.c_str(), currentFrameNo, i);
         mesh_file << mesh_pyramid_path.str() << buffer;
 
-       PangaeaMeshIO::writeToFile(mesh_file.str(), outputInfoPyramid[i].meshData);
+        PangaeaMeshIO::writeToFile(mesh_file.str(), outputInfoPyramid[i].meshData);
 
         mesh_file.str("");
         //memset(&buffer[0], 0, sizeof(buffer));
@@ -1249,7 +1258,7 @@ bool DeformNRSFMTracker::SaveMeshPyramid()
 
     if(trackerSettings.savePropPyramid)
     {
-            // save mesh pyramid
+        // save mesh pyramid
         for(int i = 0; i < m_nMeshLevels; ++i)
         {
             sprintf(buffer, trackerSettings.propPyramidFormat.c_str(), currentFrameNo, i);

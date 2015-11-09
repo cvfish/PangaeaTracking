@@ -1,16 +1,10 @@
-// 
+//
 // OptimizationStrategy file
 
 #pragma once
 
 #include "../utils/global.h"
-
-// should use proper factory to avoid using switching case in Tracker
-enum OptimizationType{
-    Siggraph14 = 0,
-    DynamicFusion,
-    CoarseNode,
-};
+#include "../utils/settings.h"
 
 struct OptimizationLevel
 {
@@ -20,14 +14,13 @@ struct OptimizationLevel
     // if these two are the same level, do not need to do any interpolation
     // otherwise we interpolate the position based on its neighbors
     vector<std::pair<int, int> > dataTermPairs;
-    vector<std::pair<int, int> > tvTermPairs;
-    vector<std::pair<int, int> > arapTermPairs;
-    vector<std::pair<int, int> > inextentTermPairs;
-
-    vector<int> deformTermLevelIDVec;
-
+    vector<std::pair<int, int> > regTermPairs;
+    
     // propagation to be done after optimization
     vector<std::pair<int, int> > propPairs;
+
+    //
+    vector<int> deformTermLevelIDVec;
 };
 
 struct WeightPara
@@ -56,6 +49,7 @@ struct WeightScale
 {
     vector<double> dataTermScale;
     vector<double> tvTermScale;
+    vector<double> rotTVTermScale;
     vector<double> arapTermScale;
     vector<double> inextentTermScale;
     vector<double> deformTermScale;
@@ -70,7 +64,7 @@ class OptimizationStrategy
 {
 public:
 
-    
+
     vector<OptimizationLevel> optimizationSettings;
     int numOptimizationLevels;
     int numMeshLevels;
@@ -78,7 +72,7 @@ public:
     OptimizationStrategy(){};
     OptimizationStrategy(int numMeshLevels);
     ~OptimizationStrategy(){};
-    
+
     virtual void Initialize(){};
 
     virtual void setWeightParameters(WeightPara& inputWeightPara);
@@ -89,39 +83,17 @@ public:
     WeightScale weightScale;
 };
 
-class Siggraph14Strategy:public OptimizationStrategy
+// arbitary neighbors support for all terms goes here
+class FreeNeighborStrategy:public OptimizationStrategy
 {
 public:
 
-    Siggraph14Strategy(int numMeshLevels);
-    ~Siggraph14Strategy(){};
+    FreeNeighborStrategy(int numMeshLevels);
+    ~FreeNeighborStrategy(){};
 
     void Initialize();
 
-public:
-
-};
-
-class DynamicFusionStrategy:public OptimizationStrategy
-{
-public:
-    DynamicFusionStrategy(int numMeshLevels);
-    ~DynamicFusionStrategy(){};
-
-    void Initialize();
-
-    // never worry about scale weights
-    // for the only level optimization,
-    // we use the weights with no scale
-};
-
-class CoarseNodeStrategy:public OptimizationStrategy
-{
-public:
-
-    CoarseNodeStrategy(int numMeshLevels);
-    ~CoarseNodeStrategy(){};
-
-    void Initialize();
-    
+    void AddPropPairs(vector<std::pair<int, int> >& propPairs,
+        vector<std::pair<int, int> >& nextPairs,
+        vector<int>& updatedLevels);
 };

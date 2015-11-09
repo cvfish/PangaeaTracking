@@ -115,7 +115,7 @@ TrackingType mapTrackingType(std::string const& inString)
 void computeRot(vector<double>& template_vextex, vector<double>& vertex,
     vector<vector<double> >& template_nbor_mesh, vector<vector<double > >& nbor_mesh,
     vector<unsigned int>& neighbors, vector<double>& weights,
-    vector<double>& output_rot)
+    vector<double>& output_rot, bool deform)
 {
     int num_neighbors = neighbors.size();
     MatrixXd Xt(3, num_neighbors), X(3, num_neighbors);
@@ -125,8 +125,12 @@ void computeRot(vector<double>& template_vextex, vector<double>& vertex,
         {
             Xt(j,i) = weights[i] * (
                 template_vextex[j] - template_nbor_mesh[ neighbors[i] ][j]);
+
             X(j,i) = weights[i] * (
                 vertex[j] - nbor_mesh[ neighbors[i] ][j]);
+            
+            if(deform)
+            X(j,i) += Xt(j,i);
         }
     }
 
@@ -149,4 +153,4 @@ void computeRot(vector<double>& template_vextex, vector<double>& vertex,
 
 }
 
-
+// compute Rotation from deformation

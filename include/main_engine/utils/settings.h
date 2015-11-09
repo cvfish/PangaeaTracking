@@ -165,6 +165,17 @@ public:
     bool usePrevForTemplateInTV;
     
     double tvTukeyWidth;  // the real threshold is square
+
+    // arbitary neighbor mesh for data term and regularization term
+    // if data term pairs are not defined
+    // we use siggraph strategy(all neighbors
+    // are defined on the same mesh and for all levles)
+    // if reg terms are not defined, we use the same as data term
+    VecVecPairType dataTermPair;
+    VecVecPairType regTermPair;
+
+    VecVecVecType dataTermVec;
+    VecVecVecType regTermVec;
 };
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value);

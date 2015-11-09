@@ -292,13 +292,7 @@ void MainEngine::ReadConfigurationFile(int argc, char* argv[])
     // cv::FileStorage fs(wxString(argv[1]).ToStdString(), cv::FileStorage::READ);
     cv::FileStorage fs(argv[1], cv::FileStorage::READ);
 
-
-    // test input
-    cout << argv[1] << endl;
-    cout << "we are here.\n" << endl;
-
     // read settings
-
     std::string imageSource;
     std::string tracker;
 

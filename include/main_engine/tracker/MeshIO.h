@@ -714,6 +714,7 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
     colorImageBGR = tempColorImage;
     cv::cvtColor( colorImageBGR, grayImageBYTE, CV_BGR2GRAY );
     grayImageBYTE.convertTo(grayImage, cv::DataType<CoordinateType>::type, 1./255);
+
     delete[] pCurrentColorImageBGR;
 
     for(int i = 0; i < rows; ++i)
