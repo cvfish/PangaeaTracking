@@ -3,6 +3,8 @@
 #include "gui_app/BasicGLPane.h"
 #include "gui_app/ImagePanel.h"
 
+#include "third_party/Stopwatch.h"
+
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TIMER(ID_TIMER, MainFrame::OnTimer)
     EVT_IDLE(MainFrame::OnIdle)
@@ -15,8 +17,6 @@ MainFrame::MainFrame(const wxString& title, int argc, char* argv[])
     m_nTimer(this, ID_TIMER),
     isTrackingFinished(true)
 {
-    // test input
-    cout << "we are here" << endl;
     
     // read configuration file
     ReadConfigurationFile(argc,argv);
@@ -140,42 +140,30 @@ bool MainFrame::ProcessOneFrame(int nFrame)
     cout << "processing frame: " << nFrame << endl;
     
     // read input
-    btime::ptime inputtime1 = btime::microsec_clock::local_time();
+    TICK("getInput");
     if(!GetInput(nFrame))
     return false;
-    btime::ptime inputtime2= btime::microsec_clock::local_time();
-    btime::time_duration inputdiff = inputtime2 - inputtime1;
-    std::cout << "input time: " << inputdiff.total_milliseconds() << std::endl;
+    TOCK("getInput");
 
     // do tracking
-    btime::ptime trackingtime1 = btime::microsec_clock::local_time();
+    TICK("tracking");
     if(!m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo))
     {
         cout << "tracking failed: " << endl;
         return false;
     }
-    btime::ptime trackingtime2 = btime::microsec_clock::local_time();
-    btime::time_duration trackingdiff = trackingtime2 - trackingtime1;
-    std::cout << "tracking time: " << trackingdiff.total_milliseconds() << std::endl;
-
-    // update the visualization
-    // check if frame slider is correct
-    btime::ptime renderingtime1 = btime::microsec_clock::local_time();
-    cout << "frame number " << m_pControlPanel->m_nCurrentFrame << endl;
-    btime::ptime renderingtime2 = btime::microsec_clock::local_time();
-    btime::time_duration renderingdiff = renderingtime2 - renderingtime1;
-    std::cout << "rendering time: " << renderingdiff.total_milliseconds() << std::endl;
+    TOCK("tracking");
 
     // update imagePanel
-    btime::ptime renderingtime2d1 = btime::microsec_clock::local_time();
+    TICK("update2DRendering");
     m_pOverlayPane->updateImage(m_pColorImageRGB, m_nWidth, m_nHeight);
     m_pImagePane->updateImage(m_pColorImageRGB, m_nWidth, m_nHeight);
-    btime::ptime renderingtime2d2 = btime::microsec_clock::local_time();
-    btime::time_duration rendering2ddiff = renderingtime2 - renderingtime1;
-    std::cout << "2d rendering time: " << rendering2ddiff.total_milliseconds() << std::endl;
+    TOCK("update2DRendering");
     
     isTrackingFinished =  true;
 
+    Stopwatch::getInstance().printAll();
+    
     return true;
 }
 

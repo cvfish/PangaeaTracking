@@ -206,8 +206,7 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
     vector<CoordinateType> faceCenters;
     faceNormals.resize(3*outputInfo.meshData.numFaces);
     faceCenters.resize(3*outputInfo.meshData.numFaces);
-
-    btime::ptime faceTime1 = btime::microsec_clock::local_time();
+    
     for(int faceInd = 0; faceInd < outputInfo.meshData.numFaces; ++faceInd)
     {
         vertex1 = meshFaces[faceInd][0];
@@ -257,11 +256,6 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
             &meshVertices[vertex3][0], &faceNormals[3*faceInd],1);
 
     }
-
-    btime::ptime faceTime2 = btime::microsec_clock::local_time();
-    btime::time_duration faceDiff = faceTime2 - faceTime1;
-    std::cout << "prepare faces time: " << faceDiff.total_milliseconds() << std::endl;
-
 
     // // check if the projection of all faces looks reasonable
     // // PixelType* pMaskBuffer = new PixelType[m_nHeight*m_nWidth];
@@ -397,12 +391,8 @@ void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibil
     visibilityMask.resize(outputInfo.meshData.numVertices,true);
 
     CCamera camera(KK, camPose, width, height);
-
-    btime::ptime visTimeGL1 = btime::microsec_clock::local_time();
+    
     DepthBuffer depthBuffer(&camera, &outputInfo.meshData);
-    btime::ptime visTimeGL2 = btime::microsec_clock::local_time();
-    btime::time_duration visGLDiff = visTimeGL2 - visTimeGL1;
-    std::cout << "depth buffer time: " << visGLDiff.total_milliseconds() << std::endl;
 
     // at this point, check first if we got the depth buffer right
 

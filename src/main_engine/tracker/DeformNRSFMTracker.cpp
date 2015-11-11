@@ -228,7 +228,9 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
         // update the visibility of each vertex
         if(trackerSettings.useVisibilityMask)
         {
-            btime::ptime visTimeGL1 = btime::microsec_clock::local_time();
+
+            TICK( "visibilityMask" + std::to_string(i) );
+            
             if(trackerSettings.useOpenGLMask)
             {
                 double tempCamPose[6] = {0,0,0,0,0,0};
@@ -238,9 +240,9 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
             {
                 UpdateVisibilityMask(outputInfoPyramid[i], visibilityMaskPyramid[i], m_nWidth, m_nHeight);
             }
-            btime::ptime visTimeGL2 = btime::microsec_clock::local_time();
-            btime::time_duration visGLDiff = visTimeGL2 - visTimeGL1;
-            std::cout << "visibility mask time: " << visGLDiff.total_milliseconds() << std::endl;
+
+            TOCK( "visibilityMask" + std::to_string(i) );
+            
         }
 
     }
@@ -276,6 +278,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     // how many levels to do optimization on ?
     for(int i = numOptimizationLevels - 1; i >= 0; --i)
     {
+        TICK( "trackingTimeLevel" + std::to_string(i) );
+        
         currLevel = i;
         // start tracking
         // create the optimization problem we are trying to solve
@@ -284,20 +288,31 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         // seconds to allocate memory for each frame
         ceres::Problem problem;
 
+        TICK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemSetup");
         EnergySetup(problem);
+        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemSetup");
 
+        TICK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemMinimization");
         EnergyMinimization(problem);
+        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemMinimization");
 
         // at this point we've finished the optimization on level i
         // now we need to update all the results and propagate the optimization
         // results to next level if necessary
         // the first step is update the current results
+
+        TICK( "trackingTimeLevel" + std::to_string(i)  + "::UpdateResults");
         UpdateResults();
+        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::UpdateResults");
 
         //*pOutputInfoRendering = &outputInfoPyramid[i];
         //updateRenderingLevel(pOutputInfoRendering, i);
-
+        TICK( "trackingTimeLevel" + std::to_string(i)  + "::PropagateMesh");
         PropagateMesh();
+        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::PropagateMesh");
+
+        TOCK( "trackingTimeLevel" + std::to_string(i) );
+        
     }
     // update the results
     updateRenderingLevel(pOutputInfoRendering, 0);
@@ -307,6 +322,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     outputPropPyramid[m_nMeshLevels-1] = outputInfoPyramid[m_nMeshLevels-1];
 
     //save data
+    TICK("SavingTime");
     if(trackerSettings.saveResults)
     {
         if(trackerSettings.saveMesh)
@@ -330,7 +346,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         else
         SaveData();
     }
-
+    TOCK("SavingTime");
     // simply return true;
     return true;
 }
@@ -403,25 +419,25 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
     TrackerOutputInfo& output_info = outputInfoPyramid[level];
 
     // output result for rendering
-    btime::ptime updateTime1 = btime::microsec_clock::local_time();
+    TICK( "updateRenderingLevel" + std::to_string( level ) );
     
     UpdateRenderingData(output_info, KK, camPose, template_mesh, mesh_trans);
+
     // compute normals
     if(trackerSettings.loadMesh)
     output_info.meshData.computeNormalsNeil();
     else
     output_info.meshData.computeNormals();
     
-    btime::ptime updateTime2 = btime::microsec_clock::local_time();
-    btime::time_duration updateDiff = updateTime2 - updateTime1;
-    std::cout << "update level " << level << std::endl;
-    std::cout << "update data time: " << updateDiff.total_milliseconds() << std::endl;
+    TOCK( "updateRenderingLevel" + std::to_string( level ) );
 
     vector<bool>& visibility_mask = visibilityMaskPyramid[level];
     // update visibility mask if necessary
     if(trackerSettings.useVisibilityMask)
     {
-        btime::ptime visTimeGL1 = btime::microsec_clock::local_time();
+        
+        TICK( "updateVisbilityMaskLevel" + std::to_string( level ) );
+        
         if(trackerSettings.useOpenGLMask)
         {
             double tempCamPose[6] = {0,0,0,0,0,0};
@@ -431,9 +447,8 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
         {
             UpdateVisibilityMask(output_info, visibility_mask, m_nWidth, m_nHeight);
         }
-        btime::ptime visTimeGL2 = btime::microsec_clock::local_time();
-        btime::time_duration visGLDiff = visTimeGL2 - visTimeGL1;
-        std::cout << "visibility mask time: " << visGLDiff.total_milliseconds() << std::endl;
+
+        TOCK( "updateVisbilityMaskLevel" + std::to_string( level ) );
     }
 
     // need to update the color diff
@@ -462,7 +477,7 @@ void DeformNRSFMTracker::UpdateResults()
     // update the translation field
     // update the normals of optimized mesh
     // update rendering results
-
+    
     vector<std::pair<int,int> >& data_pairs =
         pStrategy->optimizationSettings[currLevel].dataTermPairs;
     int num_data_pairs = data_pairs.size();
@@ -622,6 +637,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
         ImageLevel* pFrame = &imagePyramid.levels[data_pair.first];
 
         cout << "camera width and height " << pCamera->width << " " << pCamera->height << endl;
+        cout << data_pair.first << "->" << data_pair.second << endl;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[ data_pair.first ];
         MeshDeformation& meshTrans = meshTransPyramid[ data_pair.first ];
@@ -746,6 +762,9 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
         std::pair<int, int>& tv_pair = tv_pairs[k];
 
         bool same_level = tv_pair.first == tv_pair.second;
+
+        cout << "tv pair" << endl;
+        cout << tv_pair.first << "->" << tv_pair.second << endl;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[tv_pair.first];
 

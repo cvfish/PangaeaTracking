@@ -31,11 +31,14 @@ MeshBufferReader::MeshBufferReader(MeshLoadingSettings& settings, int width,
     outputPropPyramidBuffer.resize(bufferSize);
 
     m_nGoodFrames = 0;
-    btime::ptime mst1  = btime::microsec_clock::local_time();
+
+    TICK("loadingMeshBuffer");
+    
     for(int i = startFrameNo; i <= numTrackingFrames; i = i + nFrameStep)
     {
 
-        btime::ptime loading1  = btime::microsec_clock::local_time();
+        // TICK("loadingOneFrame");
+        
         if(!existenceTest(settings.meshPath, settings.meshLevelFormat,
                 i, settings.meshLevelList))
         break;
@@ -44,9 +47,7 @@ MeshBufferReader::MeshBufferReader(MeshLoadingSettings& settings, int width,
         currentMeshPyramid = std::move(PangaeaMeshPyramid(settings.meshPath,
                 settings.meshLevelFormat, i, settings.meshLevelList));
 
-        btime::ptime loading2 = btime::microsec_clock::local_time();
-        btime::time_duration loadingDiff = loading2 - loading1;
-        std::cout << "Loading Mesh Pyramid Time: " << loadingDiff.total_milliseconds() << std::endl;
+        // TOCK("loadingOneFrame");
 
         if(settings.loadProp)
         {
@@ -56,21 +57,21 @@ MeshBufferReader::MeshBufferReader(MeshLoadingSettings& settings, int width,
         if(!settings.fastLoading)
         propMeshPyramid = currentMeshPyramid;
 
-        btime::ptime test1  = btime::microsec_clock::local_time();
-        setMeshPyramid();
-        btime::ptime test2 = btime::microsec_clock::local_time();
-        btime::time_duration testdiff = test2 - test1;
-        std::cout << "Setting Mesh Pyramid Time: " << testdiff.total_milliseconds() << std::endl;
 
+        // TICK("setOneFrame");
+        
+        setMeshPyramid();
+        
         int bufferPos = (i-startFrameNo)/nFrameStep;
         outputInfoPyramidBuffer[ bufferPos ] = std::move(outputInfoPyramid);
         outputPropPyramidBuffer[ bufferPos ] = std::move(outputPropPyramid);
+
+        // TOCK("setOneFrame");
+        
         cout << "loading frame " << i << endl;
     }
 
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-    std::cout << "Loading Mesh Pyramid Time: " << msdiff.total_milliseconds() << std::endl;
+    TOCK("loadingMeshBuffer");
 
 }
 
@@ -118,6 +119,8 @@ bool MeshBufferReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
 void MeshBufferReader::setMeshPyramid()
 {
+    TICK("setupMeshBufferRendering");
+    
     visibilityMaskPyramid.resize(m_nNumMeshLevels);
     outputInfoPyramid.resize(m_nNumMeshLevels);
     outputPropPyramid.resize(m_nNumMeshLevels);
@@ -160,15 +163,19 @@ void MeshBufferReader::setMeshPyramid()
         // update the visibility of each vertex
         if(useVisibilityMask)
         {
-            btime::ptime visTimeGL1 = btime::microsec_clock::local_time();
+            TICK( "visibilityMask" + std::to_string(i) );
+
             UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
             if(meshLoadingSettings.loadProp)
             UpdateVisibilityMaskGL(outputPropPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
-            btime::ptime visTimeGL2 = btime::microsec_clock::local_time();
-            btime::time_duration visGLDiff = visTimeGL2 - visTimeGL1;
-            std::cout << "visibility mask time: " << visGLDiff.total_milliseconds() << std::endl;
+
+            TOCK( "visibilityMask" + std::to_string(i) );
+            
         }
     }
+
+    TOCK("setupMeshBufferRendering");
+    
 }
 
 void MeshBufferReader::updateRenderingLevel(TrackerOutputInfo** pOutputInfoRendering,

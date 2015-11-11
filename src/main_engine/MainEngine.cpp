@@ -21,16 +21,18 @@ bool MainEngine::GetInput(int nFrame)
         // m_pImageSourceEngine->setCurrentFrame(m_nStartFrame +
         //     (nFrame-m_nStartFrame)*m_nFrameStep);
         unsigned char* m_pColorImage = m_pImageSourceEngine->getColorImage();
-        btime::ptime convertTime1 = btime::microsec_clock::local_time();
+
+        TICK("BGR2RGB");
+        
         for(int i = 0; i < m_nWidth * m_nHeight; ++i)
         {
             m_pColorImageRGB[3*i] = m_pColorImage[3*i+2];
             m_pColorImageRGB[3*i+1] = m_pColorImage[3*i+1];
             m_pColorImageRGB[3*i+2] = m_pColorImage[3*i];
         }
-        btime::ptime convertTime2 = btime::microsec_clock::local_time();
-        btime::time_duration convertDiff = convertTime2 - convertTime1;
-        std::cout << "convert time: " << convertDiff.total_milliseconds() << std::endl;
+
+        TOCK("BGR2RGB");
+        
         return true;
     }
     else
@@ -161,19 +163,15 @@ bool MainEngine::ProcessOneFrame(int nFrame)
 {
 
     // read input
-    btime::ptime inputtime1 = btime::microsec_clock::local_time();
+    TICK("getInput");
     if(!GetInput(nFrame))
     return false;
-    btime::ptime inputtime2= btime::microsec_clock::local_time();
-    btime::time_duration inputdiff = inputtime2 - inputtime1;
-    std::cout << "input time: " << inputdiff.total_milliseconds() << std::endl;
+    TOCK("getInput");
 
     // do tracking
-    btime::ptime trackingtime1 = btime::microsec_clock::local_time();
+    TICK("tracking");
     m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo);
-    btime::ptime trackingtime2 = btime::microsec_clock::local_time();
-    btime::time_duration trackingdiff = trackingtime2 - trackingtime1;
-    std::cout << "tracking time: " << trackingdiff.total_milliseconds() << std::endl;
+    TICK("tracking");
 
     return true;
 }

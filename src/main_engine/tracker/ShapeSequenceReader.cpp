@@ -345,8 +345,7 @@ bool ShapeSequenceReader::setCurrentFrame(int curFrame)
     {
         currentFrameNo = curFrame;
 
-        // changing new frame time
-        btime::ptime mst1 = btime::microsec_clock::local_time();
+        TICK("setCurrentFrame");
 
         if(!loadShape(false, shapePath, shapeFormat, currentFrameNo))
         return false;
@@ -360,9 +359,8 @@ bool ShapeSequenceReader::setCurrentFrame(int curFrame)
             computeNormal(true, radius);
         }
 
-        btime::ptime mst2 = btime::microsec_clock::local_time();
-        btime::time_duration msdiff = mst2 - mst1;
-        std::cout << "Change New Frame Time: " << msdiff.total_milliseconds() << std::endl;
+        TOCK("setCurrentFrame");
+        
     }
     return true;
 }
@@ -508,7 +506,8 @@ void ShapeSequenceReader::setTextureColors(unsigned char* pColorImageRGB)
 // just loading the first frame
 void ShapeSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 {
-    btime::ptime mst1 = btime::microsec_clock::local_time();
+
+    TICK("visualRenderingInit");
 
     // copy over data
     PangaeaMeshIO::createMeshFromPoints(outputInfo.meshData, m_nHeight, m_nWidth,
@@ -550,10 +549,7 @@ void ShapeSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 
     trackerInitialized = true;
 
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-
-    std::cout << "Mesh Initialization Time: " << msdiff.total_milliseconds() << std::endl;
+    TOCK("visualRenderingInit");
 
 }
 
@@ -561,7 +557,7 @@ void ShapeSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
 {
     // copy over data
 
-    btime::ptime mst1 = btime::microsec_clock::local_time();
+    TICK("visualRenderingUpdate");
 
     PangaeaMeshIO::updateMesh(outputInfo.meshData, m_nHeight, m_nWidth,
         getTrackingResult(), getNormals(), getTextureColors(),
@@ -584,17 +580,13 @@ void ShapeSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
             ++pntsId;
         }
     }
-    std::cout << "Projection Points Number: " << outputInfo.meshProj.size() <<
-        std::endl;
+    cout << "Projection Points Number: " << outputInfo.meshProj.size() << endl;
 
     // camera pose is always 0 in this case
     for(int i = 0; i < 6; ++i)
     outputInfo.camPose[i] = 0;
-
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-
-    std::cout << "Mesh Update Time: " << msdiff.total_milliseconds() << std::endl;
+    
+    TICK("visualRenderingUpdate");
 
 }
 

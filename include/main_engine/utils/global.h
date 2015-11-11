@@ -19,6 +19,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
+#include "third_party/Stopwatch.h"
+
 #ifdef Success
 #undef Success
 #endif

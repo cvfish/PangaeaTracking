@@ -559,7 +559,7 @@ void ShapesBufferReader::setTextureColors(unsigned char* pColorImageRGB)
 
 void ShapesBufferReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 {
-    btime::ptime mst1 = btime::microsec_clock::local_time();
+    TICK("setupShapeBufferRendering");
 
     // copy over initial data
     PangaeaMeshIO::createMeshFromPoints(outputInfo.meshData, m_nHeight, m_nWidth,
@@ -572,11 +572,7 @@ void ShapesBufferReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
         maskImage, m_vModelGT, m_vModelColors);
     else
     {
-        btime::ptime copytime1 = btime::microsec_clock::local_time();
         outputInfo.meshDataGT = outputInfo.meshData;
-        btime::ptime copytime2 = btime::microsec_clock::local_time();
-        btime::time_duration copydiff = copytime2 - copytime1;
-        std::cout << "Data Copy Time: " << copydiff.total_milliseconds() << std::endl;
     }
 
     outputInfo.meshDataColorDiff = outputInfo.meshData;
@@ -610,16 +606,14 @@ void ShapesBufferReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 
     trackerInitialized = true;
 
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
+    TOCK("setupShapeBufferRendering");
 
-    std::cout << "Mesh Initialization Time: " << msdiff.total_milliseconds() << std::endl;
-
+    
 }
 
 void ShapesBufferReader::trackerUpdate(TrackerOutputInfo& outputInfo)
 {
-    btime::ptime mst1 = btime::microsec_clock::local_time();
+    TICK("shapeBufferNewFrame");
 
     // copy over initial data
     PangaeaMeshIO::updateMesh(outputInfo.meshData, m_nHeight, m_nWidth,
@@ -651,9 +645,6 @@ void ShapesBufferReader::trackerUpdate(TrackerOutputInfo& outputInfo)
     for(int i = 0; i < 6; ++i)
     outputInfo.camPose[i] = 0;
 
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-
-    std::cout << "Mesh Update Time: " << msdiff.total_milliseconds() << std::endl;
+    TOCK("shapeBufferNewFrame");
 
 }

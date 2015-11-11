@@ -17,9 +17,8 @@ MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings, int width,
 
     setIntrinsicMatrix(K);
 
-
-    // cout << "per frame mesh loading time " << endl;
-    btime::ptime mst1  = btime::microsec_clock::local_time();
+    TICK("loadingMesh");
+    
     currentMeshPyramid = std::move(PangaeaMeshPyramid(settings.meshPath,
             settings.meshLevelFormat, currentFrameNo, settings.meshLevelList));
     if(settings.loadProp)
@@ -27,9 +26,8 @@ MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings, int width,
         propMeshPyramid = std::move(PangaeaMeshPyramid(settings.meshPath,
             settings.propLevelFormat, currentFrameNo, settings.meshLevelList));
     }
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-    std::cout << "Loading Mesh Pyramid Time: " << msdiff.total_milliseconds() << std::endl;
+
+    TOCK("loadingMesh");
 
     m_nNumMeshLevels = settings.meshLevelList.size();
 
@@ -45,17 +43,15 @@ bool MeshPyramidReader::setCurrentFrame(int curFrame)
     {
         currentFrameNo = curFrame;
 
-        // changing new frame time
-        btime::ptime mst1  = btime::microsec_clock::local_time();
+        TICK("setCurrentFrame");
         
         if(!loadMeshPyramid(meshLoadingSettings.meshPath,
                 meshLoadingSettings.meshLevelFormat, currentFrameNo,
                 meshLoadingSettings.meshLevelList))
         return false;
 
-        btime::ptime mst2 = btime::microsec_clock::local_time();
-        btime::time_duration msdiff = mst2 - mst1;
-        std::cout << "Change New Frame Time: " << msdiff.total_milliseconds() << std::endl;
+        TOCK("setCurrentFrame");
+        
     }
     return true;
    
@@ -170,17 +166,18 @@ void MeshPyramidReader::setMeshPyramid()
             outputInfoPyramid[i].meshProjGT = outputInfoPyramid[i].meshProj;
         }
 
-         // update the visibility of each vertex
+        // update the visibility of each vertex
         if(useVisibilityMask)
         {
-            btime::ptime visTimeGL1 = btime::microsec_clock::local_time();
-            UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
-            btime::ptime visTimeGL2 = btime::microsec_clock::local_time();
-            btime::time_duration visGLDiff = visTimeGL2 - visTimeGL1;
-            std::cout << "visibility mask time: " << visGLDiff.total_milliseconds() << std::endl;
 
+            TICK( "visibilityMaskLevel" + std::to_string(i) );
+            
+            UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
+            
             if(!meshLoadingSettings.fastLoading)
             UpdateColorDiff(outputInfoPyramid[i], outputInfoPyramid[i].visibilityMask, colorImageSplit);
+
+            TOCK( "visibilityMaskLevel"  + std::to_string(i) );
         }
 
         //////////////////////////// outputPropPyramid

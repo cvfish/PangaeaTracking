@@ -39,16 +39,13 @@ bool MeshSequenceReader::setCurrentFrame(int curFrame)
         currentFrameNo = curFrame;
 
         // changing new frame time
-        btime::ptime mst1  = btime::microsec_clock::local_time();
+        TICK("setCurrentFrame");
 
         if(!loadMesh(meshLoadingSettings.meshPath,
                 meshLoadingSettings.meshFormat,currentFrameNo))
         return false;
 
-        btime::ptime mst2 = btime::microsec_clock::local_time();
-        btime::time_duration msdiff = mst2 - mst1;
-        std::cout << "Change New Frame Time: " <<
-            msdiff.total_milliseconds() << std::endl;
+        TOCK("setCurrentFrame");
     }
     return true;
 }
@@ -109,7 +106,7 @@ bool MeshSequenceReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
 void MeshSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 {
-    btime::ptime mst1 = btime::microsec_clock::local_time();
+    TICK("visualRenderingInit");
 
     outputInfo.meshData = currentMesh;
     outputInfo.meshDataGT = outputInfo.meshData;
@@ -169,15 +166,14 @@ void MeshSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 
     trackerInitialized = true;
 
-    btime::ptime mst2 = btime::microsec_clock::local_time();
-    btime::time_duration msdiff = mst2 - mst1;
-
-    std::cout << "Mesh Initialization Time: " << msdiff.total_milliseconds() << std::endl;
+    TOCK("visualRenderingInit");
 
 }
 
 void MeshSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
 {
+    TICK("visualRenderingUpdate");
+    
     UpdateRenderingData(outputInfo, KK, camPose, currentMesh);
     UpdateRenderingDataFast(outputInfo, KK, currentMesh);
     
@@ -187,4 +183,6 @@ void MeshSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
         //UpdateVisibilityMask(outputInfo, visibilityMask, m_nWidth, m_nHeight);
         UpdateColorDiff(outputInfo, visibilityMask, colorImageSplit);
     }
+
+    TOCK("visualRenderingUpdate");
 }
