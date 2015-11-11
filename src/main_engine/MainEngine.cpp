@@ -202,7 +202,7 @@ void MainEngine::Run()
 {
     // retrieve new frame
     // process frame
-    while(!ProcessNextFrame())
+    while(ProcessNextFrame())
     {
         // update number of frames processed
         // how much time elapsed

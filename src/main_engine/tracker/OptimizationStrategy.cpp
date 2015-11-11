@@ -86,7 +86,7 @@ void FreeNeighborStrategy::Initialize()
     // get number of optimization levels
     if(trackerSettings.dataTermPair.size() > 0)
     {
-        numOptimizationLevels = trackerSettings.dataTermPair.size();
+        numOptimizationLevels = min<int>(numMeshLevels, trackerSettings.dataTermPair.size());
         optimizationSettings.resize( numOptimizationLevels );
         for(int i = 0; i < numOptimizationLevels; ++i)
         optimizationSettings[i].dataTermPairs = trackerSettings.dataTermPair[i];
