@@ -46,11 +46,15 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
 
 #2. Data
 
-One example sequence is available at on [google drive](https://drive.google.com/drive/folders/0B8-9V4y1N7pxZExaMlE3bnc3Mzg).
+One example sequence is available at [google drive](https://drive.google.com/drive/folders/0B8-9V4y1N7pxZExaMlE3bnc3Mzg).
 
 #3. Examples
 
 After building PangaeaTracking and preparing the data, you are ready to run the scripts in examples folder.
 Check examples/Yiwan.sh for usage.
+
+#4. GUI usage
+
+For rotating the 3d model in 2d image plane, use the middle mouse button.
 
 ------
