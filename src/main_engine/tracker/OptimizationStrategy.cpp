@@ -181,8 +181,11 @@ void FreeNeighborStrategy::Initialize()
             }
         }
         
-        // if(i > 0)
-        // optimizationSettings[ i ].propPairs.push_back( pair<int,int>(i, i-1) );
+        if(i == 0)
+        {
+            for(int j = updatedLevels[0]; j > 0 ; --j)
+            propPairsFinal.push_back( pair<int, int>(j, j-1) );
+        }
         
     }
     

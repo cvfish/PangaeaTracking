@@ -141,7 +141,7 @@ void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
     // copy result to output, has to add rotation and translation to make proper visualization
     CoordinateType uvd[3];
     CoordinateType normals[3];
-
+    
     for(int vertex = 0; vertex < currentMesh.numVertices; ++vertex)
     {
         // update 3d point cloud and normals
@@ -206,7 +206,7 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
     vector<CoordinateType> faceCenters;
     faceNormals.resize(3*outputInfo.meshData.numFaces);
     faceCenters.resize(3*outputInfo.meshData.numFaces);
-    
+
     for(int faceInd = 0; faceInd < outputInfo.meshData.numFaces; ++faceInd)
     {
         vertex1 = meshFaces[faceInd][0];
@@ -282,6 +282,7 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
     int projXminI, projYminI;
     int projXmaxI, projYmaxI;
     int position, faceInd;
+    
     for(unsigned int vertexInd = 0; vertexInd < outputInfo.meshData.numVertices;
         ++vertexInd)
     {
@@ -380,8 +381,8 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
     else
     occluded_num++;
 
-    cout << "visible num: " << visible_num << endl;
-    cout << "occluded num: " << occluded_num << endl;
+    // cout << "visible num: " << visible_num << endl;
+    // cout << "occluded num: " << occluded_num << endl;
 
 }
 
@@ -405,7 +406,7 @@ void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibil
     float depthValue;
     float depthRange = depthBuffer._zMax - depthBuffer._zMin;
     float depthTolerance = depthRange * toleranceRatio;
-
+    
     for(int i = 0; i < outputInfo.meshData.numVertices; ++i)
     {
         Vector3d point3d = camera.worldToCamera(outputInfo.meshData.vertices[i]);
@@ -434,16 +435,16 @@ void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibil
     else
     occluded_num++;
 
-    cout << "if we switch to opengl rendering" << endl;
-    cout << "visible num: " << visible_num << endl;
-    cout << "occluded num: " << occluded_num << endl;
+    // cout << "if we switch to opengl rendering" << endl;
+    // cout << "visible num: " << visible_num << endl;
+    // cout << "occluded num: " << occluded_num << endl;
 
 }
 
 void UpdateColorDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
     InternalIntensityImageType colorImageSplit[3])
 {
-        // compute the color difference between mesh and current frame
+    // compute the color difference between mesh and current frame
     for(int i = 0; i < outputInfo.meshData.numVertices; ++i) {
         // only compute the color difference for visible points
         if(visibilityMask[i])

@@ -81,6 +81,8 @@ public:
 
     WeightPara weightPara;
     WeightScale weightScale;
+
+    vector< pair<int, int> > propPairsFinal;
 };
 
 // arbitary neighbors support for all terms goes here
@@ -96,4 +98,5 @@ public:
     void AddPropPairs(vector<std::pair<int, int> >& propPairs,
         vector<std::pair<int, int> >& nextPairs,
         vector<int>& updatedLevels);
+    
 };

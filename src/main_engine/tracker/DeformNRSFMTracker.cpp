@@ -313,7 +313,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
         TOCK( "trackingTimeLevel" + std::to_string(i) );
         
-    }
+    }   
+    
     // update the results
     updateRenderingLevel(pOutputInfoRendering, 0);
     //*pOutputInfoRendering = &outputInfoPyramid[0];
@@ -441,6 +442,7 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
         if(trackerSettings.useOpenGLMask)
         {
             double tempCamPose[6] = {0,0,0,0,0,0};
+            cout << "opengl visibility test" << endl;
             UpdateVisibilityMaskGL(output_info, visibility_mask, KK, tempCamPose, m_nWidth, m_nHeight);
         }
         else
@@ -486,6 +488,14 @@ void DeformNRSFMTracker::UpdateResults()
     {
         std::pair<int, int>& data_pair = data_pairs[i];
         UpdateResultsLevel(data_pair.second);
+
+        cout << "updateResultsLevel " << data_pair.second << endl;
+
+        // if(data_pair.second != data_pair.first)
+        // {
+        //     UpdateResultsLevel(data_pair.first);
+        //     cout << "updateResultsLevel " << data_pair.first << endl;
+        // }
     }
 
 }
@@ -525,6 +535,8 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
         double temp_vertex[3];
         double diff_vertex[3];
         double rot_diff_vertex[3];
+
+        //#pragma omp parallel for
         for(int i = 0; i < template_fine_mesh.numVertices; ++i)
         {
             temp_vertex[0] = 0;
@@ -615,8 +627,27 @@ void DeformNRSFMTracker::PropagateMesh()
 
         // copy over the mesh right after propagation to outputPropPyramid
         outputPropPyramid[fine_level] = outputInfoPyramid[fine_level];
+
+        cout << "prop pairs" << endl;
+        cout << coarse_level << "->" << fine_level << endl;
+
+        cout << "updateResultsLevel " << fine_level << endl;
+            
     }
 
+    // if this is level zero, we propagate the mesh to all levels below
+    if( currLevel == 0)
+    {
+        vector<std::pair<int, int> >& final_pairs = pStrategy->propPairsFinal;
+        cout << "final prop" << endl;
+        for(int k = 0; k < final_pairs.size(); ++k)
+        {
+            PropagateMeshCoarseToFine(final_pairs[k].first, final_pairs[k].second);
+            UpdateResultsLevel(final_pairs[k].second);
+            cout << final_pairs[k].first << "->" << final_pairs[k].second << endl;
+        }
+    }
+    
 }
 
 void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
@@ -637,6 +668,8 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
         ImageLevel* pFrame = &imagePyramid.levels[data_pair.first];
 
         cout << "camera width and height " << pCamera->width << " " << pCamera->height << endl;
+
+        cout << "dataTerm pair" << endl;
         cout << data_pair.first << "->" << data_pair.second << endl;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[ data_pair.first ];
@@ -809,6 +842,9 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
         
         bool same_level = tv_pair.first == tv_pair.second;
 
+        cout << "rot_tv pair" << endl;
+        cout << tv_pair.first << "->" << tv_pair.second << endl;
+
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[tv_pair.first];
 
         vector<vector<double> >& meshRot = trackerSettings.usePrevForTemplateInTV ?
@@ -849,6 +885,9 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
         std::pair<int, int>& arap_pair = arap_pairs[k];
 
         bool same_level = arap_pair.first == arap_pair.second;
+
+        cout << "arap pair" << endl;
+        cout << arap_pair.first << "->" << arap_pair.second << endl;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[arap_pair.first];
         PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[arap_pair.second];
@@ -893,10 +932,11 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
     for(int k = 0; k < num_inextent_pairs; ++k)
     {
         std::pair<int, int>& inextent_pair = inextent_pairs[k];
-
-        cout << "inextent levels: " << inextent_pair.first << " " << inextent_pair.second << endl;
-
+        
         bool same_level = inextent_pair.first == inextent_pair.second;
+
+        cout << "inextent pair" << endl;
+        cout << inextent_pair.first << "->" << inextent_pair.second << endl;
 
         PangaeaMeshData& templateMesh = templateMeshPyramid.levels[inextent_pair.first];
         PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[inextent_pair.second];
@@ -931,7 +971,6 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
     if(currentFrameNo != startFrameNo)
     {
         //
-        cout << "add deformation residual" << endl;
         vector<int>& deform_level_vec =
             pStrategy->optimizationSettings[currLevel].deformTermLevelIDVec;
         
@@ -941,6 +980,8 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
         {
             int deform_level = deform_level_vec[k];
 
+            cout << "deformation level " << deform_level << endl;
+            
             MeshDeformation& meshTrans = meshTransPyramid[deform_level];
             MeshDeformation& prevMeshTrans = prevMeshTransPyramid[deform_level];
 
@@ -959,13 +1000,13 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
 void DeformNRSFMTracker::AddTemporalMotionCost(ceres::Problem& problem,
     double rotWeight, double transWeight)
 {
-    cout << "prev motion started:" << endl;
+    // cout << "prev motion started:" << endl;
 
-    for(int i = 0; i < 6; ++i)
-    {
-        prevCamPose[i] = camPose[i];
-        cout << camPose[i] << endl;
-    }
+    // for(int i = 0; i < 6; ++i)
+    // {
+    //     prevCamPose[i] = camPose[i];
+    //     cout << camPose[i] << endl;
+    // }
 
     problem.AddResidualBlock(
         new ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>(
@@ -1018,8 +1059,8 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
     }
 
-    cout << "data term weight" << " : " << weightParaLevel.dataTermWeight << endl;
-    cout << "data huber width" << " : " << weightParaLevel.dataHuberWidth << endl;
+    // cout << "data term weight" << " : " << weightParaLevel.dataTermWeight << endl;
+    // cout << "data huber width" << " : " << weightParaLevel.dataHuberWidth << endl;
 
     if(weightParaLevel.dataTermWeight)
     {
@@ -1082,7 +1123,7 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
     }
 
     // inextensibility term
-    cout << "inextent weight: " << weightParaLevel.inextentTermWeight << endl;
+    //    cout << "inextent weight: " << weightParaLevel.inextentTermWeight << endl;
     if(weightParaLevel.inextentTermWeight)
     {
         ceres::ScaledLoss* inextentScaledLoss = new ceres::ScaledLoss(NULL,
@@ -1091,7 +1132,7 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
     }
 
     // deformation term
-    cout << "deform weight: " << weightParaLevel.deformWeight << endl;
+    //cout << "deform weight: " << weightParaLevel.deformWeight << endl;
     if(weightParaLevel.deformWeight)
     {
         ceres::ScaledLoss* deformScaledLoss = new ceres::ScaledLoss(NULL,
@@ -1100,8 +1141,8 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
     }
 
     // temporal term
-    cout << "translation and rotation parameter: " << weightParaLevel.transWeight
-         << " " << weightParaLevel.rotWeight << endl;
+    // cout << "translation and rotation parameter: " << weightParaLevel.transWeight
+    //      << " " << weightParaLevel.rotWeight << endl;
     if(weightParaLevel.transWeight || weightParaLevel.rotWeight)
     AddTemporalMotionCost(problem, sqrt(weightParaLevel.rotWeight),
         sqrt(weightParaLevel.transWeight));
@@ -1156,10 +1197,10 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
         // make the structure variable again after optimization
         AddVariableMask(problem, BA_STR);
 
-        cout << "printing after motion optimization started" << endl;
-        cout << camPose[0] << " " << camPose[1] << " " << camPose[2] << endl;
-        cout << camPose[3] << " " << camPose[4] << " " << camPose[5] << endl;
-        cout << "printing after motion optimization finished" << endl;
+        // cout << "printing after motion optimization started" << endl;
+        // cout << camPose[0] << " " << camPose[1] << " " << camPose[2] << endl;
+        // cout << camPose[3] << " " << camPose[4] << " " << camPose[5] << endl;
+        // cout << "printing after motion optimization finished" << endl;
 
         // optimize the shape
         // fix the motion
