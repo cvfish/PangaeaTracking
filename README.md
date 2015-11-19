@@ -25,7 +25,7 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
    sudo apt-get install libtbb-dev
 ```
 
-  - OPENCV (e.g. version 2.4.8 or 3.0)   
+  - OPENCV (e.g. version 2.4.8 or later)   
     available at http://opencv.org/
 
   - Ceres Solver   
