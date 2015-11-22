@@ -2,11 +2,10 @@
 #define _DEFORMNRSFM_TRACKER_H
 
 #include "./TrackingEngine.h"
-
 #include "./ImagePyramid.h"
 #include "./OptimizationStrategy.h"
-
 #include "./residual.h"
+#include "./ProblemWrapper.h"
 
 #include "ceres/ceres.h"
 
@@ -63,7 +62,8 @@ public:
     //
     void EnergySetup(ceres::Problem& problem);
     void EnergyMinimization(ceres::Problem& problem);
-
+    void RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel);
+    
     //
     bool SaveData();
     bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
@@ -134,6 +134,13 @@ private:
 
     boost::thread* preProcessingThread;
     boost::thread* savingThread;
+
+    //problem wrapper
+    ProblemWrapper problemWrapper;
+    bool useProblemWrapper;  // for debug
+
+    vector<ceres::ResidualBlockId> dataTermResidualBlocks;
+    
 };
 
 #endif

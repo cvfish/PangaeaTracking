@@ -47,14 +47,14 @@ void BackProjection(const CameraInfo* pCamera, const ImageLevel* pFrame, T* u, T
 
     currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->depthImage,
         pFrame->depthGradXImage, pFrame->depthGradYImage, u[0], v[0]);
-    
+
     backProj[2] = currentValue;
 
     if(pCamera->isOrthoCamera)
     {
         backProj[0] = u[0]; backProj[1] = v[0];
     }else
-    {            
+    {
         backProj[0] = backProj[2] * (pCamera->invKK[0][0]*u[0] + pCamera->invKK[0][2]);
         backProj[1] = backProj[2] * (pCamera->invKK[1][1]*v[0] + pCamera->invKK[1][2]);
     }
@@ -66,9 +66,9 @@ void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
     double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
 {
     T transformed_r, transformed_c;
-    
+
     IntrinsicProjection(pCamera, p, &transformed_c, &transformed_r);
-    
+
     T templateValue, currentValue;
 
     if( transformed_r >= T(0.0) && transformed_r < T(pCamera->height) &&
@@ -100,7 +100,7 @@ void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
                 // depth value of the point
                 T back_projection[3];
                 BackProjection(pCamera, pFrame, &transformed_c, &transformed_r, back_projection);
-                    
+
                 residuals[0] = T(weight) * (p[0] - back_projection[0]);
                 residuals[1] = T(weight) * (p[1] - back_projection[1]);
                 residuals[2] = T(weight) * (p[2] - back_projection[2]);
@@ -284,7 +284,7 @@ public:
 
         const T* const* const trans = parameters;
         const T* const* const rotations = &(parameters[ numNeighbors ]);
-        
+
         // compute the position from neighbors nodes first
         for(int i = 0; i < numNeighbors; ++i)
         {
@@ -302,7 +302,7 @@ public:
         getResiudal(weight, pCamera, pFrame, pValue, p, residuals, PE_TYPE);
 
         return true;
-        
+
     }
 
 private:
@@ -313,11 +313,11 @@ private:
     const CameraInfo* pCamera;
     const ImageLevel* pFrame;
     dataTermErrorType PE_TYPE;
-    
-    int numNeighbors;  
+
+    int numNeighbors;
     vector<double> neighborWeights;
     vector<double*> neighborVertices;
-    
+
 };
 
 

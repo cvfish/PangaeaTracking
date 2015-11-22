@@ -122,6 +122,7 @@ void MainEngine::SetupInputAndTracker()
 
     // read input image
     GetInput(m_nCurrentFrame);
+    memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
 
     // load initial mesh
     switch(trackingType)

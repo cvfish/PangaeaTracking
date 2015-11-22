@@ -78,10 +78,14 @@ public:
     virtual void setWeightParameters(WeightPara& inputWeightPara);
     virtual void setWeightScale(IntegerContainerType& meshVertexNum);
     virtual void setWeightScale(WeightScale& inputWeightScale);
+    virtual void setWeightParametersVec();
 
     WeightPara weightPara;
     WeightScale weightScale;
 
+    // weightPara
+    vector< WeightPara > weightParaVec;
+    
     vector< pair<int, int> > propPairsFinal;
 };
 

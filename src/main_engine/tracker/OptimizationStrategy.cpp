@@ -75,6 +75,41 @@ void OptimizationStrategy::setWeightScale(WeightScale& inputWeightScale)
     weightScale = inputWeightScale;
 }
 
+void OptimizationStrategy::setWeightParametersVec()
+{
+
+    WeightPara weightParaLevel;
+    
+    for(int currLevel = 0; currLevel < numOptimizationLevels; ++currLevel)
+    {
+        weightParaLevel.dataTermWeight = weightPara.dataTermWeight * weightScale.dataTermScale[currLevel];
+        weightParaLevel.tvTermWeight =
+            weightPara.tvTermWeight * weightScale.tvTermScale[currLevel];
+        weightParaLevel.tvRotTermWeight = weightPara.tvRotTermWeight *
+            weightScale.tvTermScale[currLevel];
+        weightParaLevel.arapTermWeight = weightPara.arapTermWeight *
+            weightScale.arapTermScale[currLevel];
+        weightParaLevel.inextentTermWeight = weightPara.inextentTermWeight *
+            weightScale.inextentTermScale[currLevel];
+        weightParaLevel.deformWeight = weightPara.deformWeight *
+            weightScale.deformTermScale[currLevel];
+
+        // always the same dataHuberWidth and tvHuberWidth
+        weightParaLevel.dataHuberWidth = weightPara.dataHuberWidth;
+        weightParaLevel.tvHuberWidth = weightPara.tvHuberWidth;
+        weightParaLevel.tvRotHuberWidth = weightPara.tvRotHuberWidth;
+
+        // rotWeight and transWeight
+        weightParaLevel.rotWeight = weightPara.rotWeight *
+            weightScale.rotScale[currLevel];
+        weightParaLevel.transWeight = weightPara.transWeight *
+            weightScale.transScale[currLevel];
+        
+        weightParaVec.push_back( weightParaLevel );
+    }
+    
+}
+
 // free neighbor
 FreeNeighborStrategy::FreeNeighborStrategy(int numMeshLevels):
     OptimizationStrategy(numMeshLevels)
