@@ -91,7 +91,7 @@ DeformNRSFMTracker::~DeformNRSFMTracker()
     
     if(savingThread != NULL)
     savingThread->join();
-
+    
     if(pStrategy) delete pStrategy;
     if(pImagePyramid) delete pImagePyramid;
     if(pImagePyramidBuffer) delete pImagePyramidBuffer;
@@ -379,9 +379,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         // should make problem a member of DeformNRSFMTracker to
         // avoid the same memory allocation every frame, could take
         // seconds to allocate memory for each frame
-        //ceres::Problem problem;
-        ceres::Problem& problem = problemWrapper.getProblem(i);
-        useProblemWrapper = true;
+        ceres::Problem problem;
+        // ceres::Problem& problem = problemWrapper.getProblem(i);
+        // useProblemWrapper = true;
 
         TICK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemSetup");
         EnergySetup(problem);

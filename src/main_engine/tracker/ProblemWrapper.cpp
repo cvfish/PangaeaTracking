@@ -2,11 +2,12 @@
 
 ProblemWrapper::ProblemWrapper()
 {
+    numLevels = 0;
 }
 
-ProblemWrapper::ProblemWrapper(int numLevels):numLevels(numLevels)
+ProblemWrapper::ProblemWrapper(int num)
 {
-    Initialize(numLevels);
+    Initialize(num);
 }
 
 ProblemWrapper::~ProblemWrapper()
@@ -15,8 +16,10 @@ ProblemWrapper::~ProblemWrapper()
     delete problems[i];
 }
 
-void ProblemWrapper::Initialize(int numLevels)
+void ProblemWrapper::Initialize(int num)
 {
+    numLevels = num;
+    
     problems.resize(numLevels);
     setupFlag.resize(numLevels, false);
 
