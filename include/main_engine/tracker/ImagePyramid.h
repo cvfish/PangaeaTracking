@@ -44,12 +44,22 @@ public:
     ImagePyramid();
     ~ImagePyramid();
 
+    ImagePyramid& operator=(const ImagePyramid&);
+
     void create(int width, int height);
+    
     void allocateMemory(int width, int height); // allocate memory based on the size
     void deallocateMemory();
 
     void setupPyramid(unsigned char* pColorImageRGB, int numLevels);
     void setupCameraPyramid(int numLevels, CameraInfo& camInfo);
+
+    CameraInfo& getCameraInfo(int nLevel);
+    ImageLevel& getImageLevel(int nLevel);
+
+    InternalIntensityImageType* getColorImageSplit(int nLevel);
+
+private:
 
     unsigned char* pCurrentColorImageRGB;
     unsigned char* pCurrentColorImageBGR;

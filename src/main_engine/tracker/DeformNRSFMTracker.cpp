@@ -24,9 +24,41 @@ ceres::LinearSolverType mapLinearSolver(std::string const& inString){
     if(inString == "DQR") return ceres::DENSE_QR;
 }
 
+ceres::MinimizerType mapMinimizerType(std::string const& inString){
+    if(inString == "TRUST_REGION") return ceres::TRUST_REGION;
+    if(inString == "LINE_SEARCH") return ceres::LINE_SEARCH;
+}
+
+ceres::LineSearchDirectionType mapLineSearchDirectionType(std::string const& inString){
+    if(inString == "STEEPEST_DESCENT") return ceres::STEEPEST_DESCENT;
+    if(inString == "NONLINEAR_CONJUGATE_GRADIENT") return ceres::NONLINEAR_CONJUGATE_GRADIENT;
+    if(inString == "LBFGS") return ceres::LBFGS;
+    if(inString == "BFGS") return ceres::BFGS;
+}
+
+ceres::LineSearchType mapLineSearchType(std::string const& inString){
+    if(inString == "ARMIJO") return ceres::ARMIJO;
+    if(inString == "WOLFE") return ceres::WOLFE;
+}
+
+ceres::LineSearchInterpolationType mapLineSearchInterpType(std::string const& inString){
+    if(inString == "BISECTION") return ceres::BISECTION;
+    if(inString == "QUADRATIC") return ceres::QUADRATIC;
+    if(inString == "CUBIC") return ceres::CUBIC;    
+}
+
+ceres::NonlinearConjugateGradientType mapNonLinearCGType(std::string const& inString){
+    if(inString == "FLETCHER_REEVES") return ceres::FLETCHER_REEVES;
+    if(inString == "POLAK_RIBIERE") return ceres::POLAK_RIBIERE;
+    if(inString == "HESTENES_STIEFEL") return ceres::HESTENES_STIEFEL;
+}
+
 DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int height, double K[3][3],
     int startFrame, int numTrackingFrames):
-    trackerInitialized(false)
+    trackerInitialized(false),
+    preProcessingThread(NULL),
+    savingThread(NULL),
+    dataInBuffer(false)
 {
     BAType = mapBA(settings.baType);
     PEType = mapErrorType(settings.errorType);
@@ -46,11 +78,16 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 
     // cout << ceresOutputPath.str() << endl;
 
+    pImagePyramid = new ImagePyramid;
+    pImagePyramidBuffer = new ImagePyramid;
+
 }
 
 DeformNRSFMTracker::~DeformNRSFMTracker()
 {
     delete pStrategy;
+    delete pImagePyramid;
+    delete pImagePyramidBuffer;
 }
 
 bool DeformNRSFMTracker::setCurrentFrame(int curFrame)
@@ -162,8 +199,11 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
     }
 
     // imagePyramid will be created during the processing of the first image
-    imagePyramid.create(m_nWidth, m_nHeight);
-    imagePyramid.setupCameraPyramid(m_nMeshLevels, camInfo);
+    pImagePyramidBuffer->create(m_nWidth, m_nHeight);
+    pImagePyramidBuffer->setupCameraPyramid(m_nMeshLevels, camInfo);
+
+    pImagePyramid->create(m_nWidth, m_nHeight);
+    pImagePyramid->setupCameraPyramid(m_nMeshLevels, camInfo);
 
     // setup visibilitymask pyramid
     visibilityMaskPyramid.resize(m_nMeshLevels);
@@ -269,10 +309,51 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     // copy over previous camera pose
     memcpy(prevCamPose, camPose, 6*sizeof(double));
 
+    TICK("imagePreprocessing");
     // update the image pyramid, including images and gradients
     // also depth and normals if there is anything related
-    imagePyramid.setupPyramid(pColorImageRGB, m_nMeshLevels);
+    //imagePyramid.setupPyramid(pColorImageRGB, m_nMeshLevels);
 
+    if(preProcessingThread == NULL)
+    {
+        preProcessingThread = new boost::thread(
+            boost::bind(&ImagePyramid::setupPyramid,
+                pImagePyramidBuffer,
+                pColorImageRGB,
+                m_nMeshLevels));
+        preProcessingThread->join();
+        dataInBuffer = true;
+        ImagePyramid* temp = pImagePyramid;
+        pImagePyramid = pImagePyramidBuffer;
+        pImagePyramidBuffer = temp;
+        dataInBuffer = false;
+    }
+    else
+    {
+        preProcessingThread->join();
+        
+        TICK("assignmentTime");
+        if(dataInBuffer)
+        {
+            ImagePyramid* temp = pImagePyramid;
+            pImagePyramid = pImagePyramidBuffer;
+            pImagePyramidBuffer = temp;
+            dataInBuffer = false;
+        }
+        TOCK("assignmentTime");
+
+        delete preProcessingThread;
+        preProcessingThread = new boost::thread(
+            boost::bind(&ImagePyramid::setupPyramid,
+                pImagePyramidBuffer,
+                pColorImageRGB,
+                m_nMeshLevels));
+        dataInBuffer = true;
+        
+    }
+
+    TOCK("imagePreprocessing");
+    
     int numOptimizationLevels = pStrategy->numOptimizationLevels;
 
     // how many levels to do optimization on ?
@@ -313,40 +394,31 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
         TOCK( "trackingTimeLevel" + std::to_string(i) );
         
-    }   
-    
+    }
+
+    TICK("updateProp");
     // update the results
     updateRenderingLevel(pOutputInfoRendering, 0);
     //*pOutputInfoRendering = &outputInfoPyramid[0];
-
+    
     // update the top level of propagation result
     outputPropPyramid[m_nMeshLevels-1] = outputInfoPyramid[m_nMeshLevels-1];
-
+    TOCK("updateProp");
+    
     //save data
     TICK("SavingTime");
-    if(trackerSettings.saveResults)
+
+    if(savingThread == NULL)
     {
-        if(trackerSettings.saveMesh)
-        {
-            if(trackerSettings.saveMeshPyramid)
-            {
-                // the current mesh pyramid is outputInfoPyramid
-                cout << "save mesh pyramid started " << endl;
-                SaveMeshPyramid();
-                cout << "save mesh pyramid finished " << endl;
-            }
-            else
-            {
-                cout << "save mesh started " << endl;
-                // the output mesh has been rotated and translated
-                // to align with images
-                SaveMeshToFile(**pOutputInfoRendering);
-                cout << "save mesh finished " << endl;
-            }
-        }
-        else
-        SaveData();
+        savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
+        
+    }else
+    {
+        savingThread->join();
+        delete savingThread;
+        savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
     }
+    
     TOCK("SavingTime");
     // simply return true;
     return true;
@@ -454,8 +526,9 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
     }
 
     // need to update the color diff
-    InternalIntensityImageType* color_image_split =
-        imagePyramid.levels[level].colorImageSplit;
+    InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
+
+    
     UpdateColorDiff(output_info, visibility_mask, color_image_split);
 
     // update previous deformation
@@ -664,8 +737,8 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
     {
         std::pair<int, int>& data_pair = data_pairs[k];
 
-        CameraInfo* pCamera = &imagePyramid.camInfoLevels[data_pair.first];
-        ImageLevel* pFrame = &imagePyramid.levels[data_pair.first];
+        CameraInfo* pCamera = &pImagePyramid->getCameraInfo(data_pair.first);
+        ImageLevel* pFrame = &pImagePyramid->getImageLevel(data_pair.first);
 
         cout << "camera width and height " << pCamera->width << " " << pCamera->height << endl;
 
@@ -1149,10 +1222,12 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
 }
 
+
 void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
 {
-    // solve the term and get solution
     ceres::Solver::Options options;
+    
+    // solve the term and get solution
     options.max_num_iterations = trackerSettings.maxNumIterations[currLevel];
     options.linear_solver_type = mapLinearSolver(trackerSettings.linearSolver);
     options.minimizer_progress_to_stdout = trackerSettings.isMinimizerProgressToStdout;
@@ -1166,6 +1241,12 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
     options.num_linear_solver_threads = trackerSettings.numLinearSolverThreads;
     options.num_threads = trackerSettings.numThreads;
     options.max_num_consecutive_invalid_steps = 0;
+
+    options.minimizer_type = mapMinimizerType(trackerSettings.minimizerType);
+    options.line_search_direction_type = mapLineSearchDirectionType(trackerSettings.lineSearchDirectionType);
+    options.line_search_type = mapLineSearchType(trackerSettings.lineSearchType);
+    options.nonlinear_conjugate_gradient_type = mapNonLinearCGType(trackerSettings.nonlinearConjugateGradientType);
+    options.line_search_interpolation_type = mapLineSearchInterpType(trackerSettings.lineSearchInterpolationType);
 
     EnergyCallback energy_callback = EnergyCallback();
     options.update_state_every_iteration = false;
@@ -1370,4 +1451,31 @@ void DeformNRSFMTracker::updateRenderingLevel(TrackerOutputInfo** pOutputInfoRen
     //      << outputInfoPyramid[nRenderLevel].meshData.center[1] << " "
     //      << outputInfoPyramid[nRenderLevel].meshData.center[2] << " "
     //      << endl;
+}
+
+void DeformNRSFMTracker::SaveThread(TrackerOutputInfo** pOutputInfoRendering)
+{
+    if(trackerSettings.saveResults)
+    {
+        if(trackerSettings.saveMesh)
+        {
+            if(trackerSettings.saveMeshPyramid)
+            {
+                // the current mesh pyramid is outputInfoPyramid
+                cout << "save mesh pyramid started " << endl;
+                SaveMeshPyramid();
+                cout << "save mesh pyramid finished " << endl;
+            }
+            else
+            {
+                cout << "save mesh started " << endl;
+                // the output mesh has been rotated and translated
+                // to align with images
+                SaveMeshToFile(**pOutputInfoRendering);
+                cout << "save mesh finished " << endl;
+            }
+        }
+        else
+        SaveData();
+    }
 }

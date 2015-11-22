@@ -1,19 +1,23 @@
 #include "main_engine/MainEngine.h"
+#include "third_party/Stopwatch.h"
 
 MainEngine::MainEngine():
-    m_nNumMeshLevels(1)
+    m_nNumMeshLevels(1),
+    pInputThread(NULL),
+    inputFlag(false)
 {
 }
 
 MainEngine::~MainEngine()
 {
     SafeDeleteArray(m_pColorImageRGB);
+    SafeDeleteArray(m_pColorImageRGBBuffer);
 
     delete m_pImageSourceEngine;
     delete m_pTrackingEngine;
 }
 
-bool MainEngine::GetInput(int nFrame)
+void MainEngine::GetInput(int nFrame)
 {
     if(nFrame <= m_NumTrackingFrames)
     {
@@ -22,21 +26,27 @@ bool MainEngine::GetInput(int nFrame)
         //     (nFrame-m_nStartFrame)*m_nFrameStep);
         unsigned char* m_pColorImage = m_pImageSourceEngine->getColorImage();
 
-        TICK("BGR2RGB");
+        //TICK("BGR2RGB");
         
         for(int i = 0; i < m_nWidth * m_nHeight; ++i)
         {
-            m_pColorImageRGB[3*i] = m_pColorImage[3*i+2];
-            m_pColorImageRGB[3*i+1] = m_pColorImage[3*i+1];
-            m_pColorImageRGB[3*i+2] = m_pColorImage[3*i];
+            m_pColorImageRGBBuffer[3*i] = m_pColorImage[3*i+2];
+            m_pColorImageRGBBuffer[3*i+1] = m_pColorImage[3*i+1];
+            m_pColorImageRGBBuffer[3*i+2] = m_pColorImage[3*i];
+            
         }
 
-        TOCK("BGR2RGB");
-        
-        return true;
+        //TOCK("BGR2RGB");
+
+        inputFlag = true;
+        //        return true;
     }
     else
-    return false;
+    {
+        inputFlag = false;
+        //return false;
+    }
+
 }
 
 void MainEngine::SetIntrinsicMatrix(double K[3][3])
@@ -108,6 +118,7 @@ void MainEngine::SetupInputAndTracker()
     // allocate memory
     int nPoints = m_nWidth * m_nHeight;
     SafeAllocArrayType(m_pColorImageRGB, 3*nPoints, unsigned char);
+    SafeAllocArrayType(m_pColorImageRGBBuffer, 3*nPoints, unsigned char);
 
     // read input image
     GetInput(m_nCurrentFrame);
@@ -161,17 +172,58 @@ void MainEngine::SetupInputAndTracker()
 
 bool MainEngine::ProcessOneFrame(int nFrame)
 {
-
     // read input
+    // if(!GetInput(nFrame))
+    // return false;
+    
+
+    // if(inputThreadGroup.size() > 0){
+    //     inputThreadGroup.join_all();
+    //     memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+    //     inputThreadGroup.remove_thread(pInputThread);
+    //     pInputThread = inputThreadGroup.create_thread( boost::bind(&MainEngine::GetInput, this, nFrame) );
+    // }
+    // // for the first frame, we have to wait
+    // else{
+    //     pInputThread = inputThreadGroup.create_thread( boost::bind(&MainEngine::GetInput, this, nFrame) );
+    //     inputThreadGroup.join_all();
+    //     memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+    // }
+
+    TICK("timePerFrame");
+
     TICK("getInput");
-    if(!GetInput(nFrame))
-    return false;
+    if(pInputThread == NULL)
+    {
+        pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
+        pInputThread->join();
+        memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+    }
+    else
+    {
+        pInputThread->join();
+        memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+        delete pInputThread;
+        pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
+    }
     TOCK("getInput");
 
+    if(!inputFlag)
+    {
+        cout << "getting input failure" << endl;
+        return false;
+    }
+    
     // do tracking
     TICK("tracking");
-    m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo);
-    TICK("tracking");
+    if(!m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo))
+    {
+        cout << "tracking failed: " << endl;
+        return false;
+    }
+    TOCK("tracking");
+
+    TOCK("timePerFrame");
 
     return true;
 }
@@ -204,6 +256,7 @@ void MainEngine::Run()
     {
         // update number of frames processed
         // how much time elapsed
+        Stopwatch::getInstance().printAll();
     }
 }
 
@@ -222,7 +275,7 @@ void MainEngine::LoadInitialMeshUVD()
 
     m_pImageSourceEngine->readUVDImage(uImage,vImage,dImage,maskImage);
 
-//     // we need to compute normals
+    //     // we need to compute normals
     // specify the depth scale for the level we want to do optimization on
     if(!trackerSettings.useDepthPyramid)
     {

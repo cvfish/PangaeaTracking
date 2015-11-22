@@ -68,6 +68,7 @@ public:
     bool SaveData();
     bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
     bool SaveMeshPyramid();
+    void SaveThread(TrackerOutputInfo** pOutputInfoRendering);
 
     void UpdateResults();
     void UpdateResultsLevel(int level);
@@ -104,7 +105,9 @@ private:
     MeshPropagation meshPropagation;
 
     // ImagePyramid
-    ImagePyramid imagePyramid;
+    ImagePyramid* pImagePyramid;
+    ImagePyramid* pImagePyramidBuffer;
+    bool dataInBuffer;
 
     // visibilityMask Pyramid
     vector<vector<bool> > visibilityMaskPyramid;
@@ -128,6 +131,9 @@ private:
 
     // ceres output
     std::ofstream ceresOutput;
+
+    boost::thread* preProcessingThread;
+    boost::thread* savingThread;
 };
 
 #endif

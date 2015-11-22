@@ -3,6 +3,44 @@
 
 ImagePyramid::ImagePyramid(){}
 
+ImagePyramid& ImagePyramid::operator=(const ImagePyramid& imagePyramid)
+{
+    m_nWidth = imagePyramid.m_nWidth;
+    m_nHeight = imagePyramid.m_nHeight;
+
+    // ignore the pCurrentColorImageBGR, pCurrentColorImageRGB, pCurrentGrayImage
+    // copy over the data in each ImageLevel
+    levels.resize(imagePyramid.levels.size());
+    camInfoLevels.resize(imagePyramid.camInfoLevels.size());
+    
+    for(int i = 0; i < imagePyramid.levels.size(); ++i)
+    {
+        imagePyramid.levels[i].grayImage.copyTo( levels[i].grayImage );
+        imagePyramid.levels[i].gradXImage.copyTo( levels[i].gradXImage );
+        imagePyramid.levels[i].gradYImage.copyTo( levels[i].gradYImage );
+        
+        imagePyramid.levels[i].colorImage.copyTo( levels[i].colorImage );
+
+        imagePyramid.levels[i].depthImage.copyTo( levels[i].depthImage );
+        imagePyramid.levels[i].depthGradXImage.copyTo( levels[i].depthGradXImage );
+        imagePyramid.levels[i].depthGradYImage.copyTo( levels[i].depthGradYImage );
+        
+        for(int j = 0; j < 3; ++j)
+        {
+            imagePyramid.levels[i].colorImageSplit[j].copyTo( levels[i].colorImageSplit[j] );
+            imagePyramid.levels[i].colorImageGradXSplit[j].copyTo( levels[i].colorImageGradXSplit[j] );
+            imagePyramid.levels[i].colorImageGradYSplit[j].copyTo( levels[i].colorImageGradYSplit[j] );
+
+            imagePyramid.levels[i].depthNormalImageSplit[j].copyTo( levels[i].depthNormalImageSplit[j] );
+            imagePyramid.levels[i].depthNormalImageGradXSplit[j].copyTo( levels[i].depthNormalImageGradXSplit[j] );
+            imagePyramid.levels[i].depthNormalImageGradYSplit[j].copyTo( levels[i].depthNormalImageGradYSplit[j] );
+            
+        }
+        
+    }
+    
+}
+
 void ImagePyramid::create(int width, int height)
 {
     allocateMemory(width, height);
@@ -173,4 +211,19 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 
     // support for depth image will be added here
 
+}
+
+CameraInfo& ImagePyramid::getCameraInfo(int nLevel)
+{
+    return camInfoLevels[nLevel];
+}
+
+ImageLevel& ImagePyramid::getImageLevel(int nLevel)
+{
+    return levels[nLevel];
+}
+
+InternalIntensityImageType* ImagePyramid::getColorImageSplit(int nLevel)
+{
+    return levels[nLevel].colorImageSplit;
 }

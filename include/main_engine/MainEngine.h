@@ -30,7 +30,7 @@ public:
     // void ReadConfigurationFile(int argc, wxChar* argv[]);
     void ReadConfigurationFile(int argc, char* argv[]);
     
-    bool GetInput(int nFrame);
+    void GetInput(int nFrame);
 
     void Run();
     bool ProcessNextFrame();
@@ -40,6 +40,7 @@ public:
     TrackingEngine* m_pTrackingEngine;
 
     unsigned char* m_pColorImageRGB;
+    unsigned char* m_pColorImageRGBBuffer;
 
     int m_nWidth;
     int m_nHeight;
@@ -60,6 +61,9 @@ public:
     int m_nNumMeshLevels;
 
     boost::mutex mutex;
+    //boost::thread_group inputThreadGroup;
+    boost::thread* pInputThread;
+    bool inputFlag;
 
 };
 

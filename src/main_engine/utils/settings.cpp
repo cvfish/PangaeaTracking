@@ -296,7 +296,12 @@ TrackerSettings::TrackerSettings()
     
     tvTukeyWidth = 0;
 
-    // 
+    //
+    minimizerType = "TRUST_REGION";
+    lineSearchDirectionType = "LBFGS";
+    lineSearchType = "WOLFE";
+    nonlinearConjugateGradientType = "FLETCHER_REEVES";
+    lineSearchInterpolationType = "CUBIC";
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -498,6 +503,22 @@ void TrackerSettings::read(const cv::FileNode& node)
     if(!node["reg_term_pair"].empty())
     ::read(node["reg_term_pair"], regTermPair);
     // node["reg_term_pair"] >> regTermPair;
+
+    // added stuff to support line search
+    if(!node["minimizer_type"].empty())
+    node["minimizer_type"] >> minimizerType;
+
+    if(!node["line_search_direction_type"].empty())
+    node["line_search_direction_type"] >> lineSearchDirectionType;
+
+    if(!node["line_search_type"].empty())
+    node["line_search_type"] >> lineSearchType;
+
+    if(!node["nonlinear_conjugate_gradient_type"].empty())
+    node["nonlinear_conjugate_gradient_type"] >> nonlinearConjugateGradientType;
+    
+    if(!node["line_search_interpolation_type"].empty())
+    node["line_search_interpolation_type"] >> lineSearchInterpolationType;
 }
 
 ImageSourceType imageSourceType = IMAGESEQUENCE;

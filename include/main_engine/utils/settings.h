@@ -173,6 +173,13 @@ public:
     // if reg terms are not defined, we use the same as data term
     VecVecPairType dataTermPair;
     VecVecPairType regTermPair;
+
+    // minimizer typpe(if we switch to line search)
+    std::string minimizerType;
+    std::string lineSearchDirectionType;
+    std::string lineSearchType;
+    std::string nonlinearConjugateGradientType;
+    std::string lineSearchInterpolationType;
 };
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value);

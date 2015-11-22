@@ -139,20 +139,22 @@ bool MainFrame::ProcessOneFrame(int nFrame)
     isTrackingFinished =  false;
     cout << "processing frame: " << nFrame << endl;
     
-    // read input
-    TICK("getInput");
-    if(!GetInput(nFrame))
-    return false;
-    TOCK("getInput");
+    // // read input
+    // TICK("getInput");
+    // if(!GetInput(nFrame))
+    // return false;
+    // TOCK("getInput");
 
-    // do tracking
-    TICK("tracking");
-    if(!m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo))
-    {
-        cout << "tracking failed: " << endl;
-        return false;
-    }
-    TOCK("tracking");
+    // // do tracking
+    // TICK("tracking");
+    // if(!m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo))
+    // {
+    //     cout << "tracking failed: " << endl;
+    //     return false;
+    // }
+    // TOCK("tracking");
+    if(!MainEngine::ProcessOneFrame(nFrame))
+    return false;
 
     // update imagePanel
     TICK("update2DRendering");
