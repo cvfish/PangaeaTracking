@@ -145,7 +145,7 @@ MeshPyramid<FloatType>::MeshPyramid(MeshData<FloatType>& mesh)
     numLevels = 1;
     levels.resize(1);
     meshPyramidVertexNum.resize(1);
-    meshPyramidVertexNum.push_back(mesh.numVertices);
+    meshPyramidVertexNum[0] = mesh.numVertices;
     levels[0] = std::move(mesh);
 
 }

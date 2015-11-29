@@ -12,60 +12,55 @@ void OptimizationStrategy::setWeightParameters(WeightPara& inputWeightPara)
 
 void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
 {
-
-    if(numOptimizationLevels > 1)
-    {
-        // setting up the proper scale according to the number of vertices
-        // of each level, starting from the 0th level
-        weightScale.dataTermScale.resize(numOptimizationLevels, 1);
+    // setting up the proper scale according to the number of vertices
+    // of each level, starting from the 0th level
+    weightScale.dataTermScale.resize(numOptimizationLevels, 1);
         
-        weightScale.tvTermScale.resize(numOptimizationLevels, 1);
+    weightScale.tvTermScale.resize(numOptimizationLevels, 1);
 
-        weightScale.rotTVTermScale.resize(numOptimizationLevels,1);
+    weightScale.rotTVTermScale.resize(numOptimizationLevels,1);
 
-        weightScale.arapTermScale.resize(numOptimizationLevels, 1);
+    weightScale.arapTermScale.resize(numOptimizationLevels, 1);
 
-        weightScale.inextentTermScale.resize(numOptimizationLevels, 1);
+    weightScale.inextentTermScale.resize(numOptimizationLevels, 1);
 
-        weightScale.deformTermScale.resize(numOptimizationLevels, 1);
+    weightScale.deformTermScale.resize(numOptimizationLevels, 1);
 
-        weightScale.rotScale.resize(numOptimizationLevels, 1);
+    weightScale.rotScale.resize(numOptimizationLevels, 1);
 
-        weightScale.transScale.resize(numOptimizationLevels, 1);
+    weightScale.transScale.resize(numOptimizationLevels, 1);
 
-        // // all the 0th level have scale 1
-        // weightScale.dataTermScale[0] = 1;
-        // weightScale.tvTermScale[0] = 1;
-        // weightScale.arapTermScale[0] = 1;
-        // weightScale.inextentTermScale[0] = 1;
-        // weightScale.deformTermScale[0] = 1;
+    // // all the 0th level have scale 1
+    // weightScale.dataTermScale[0] = 1;
+    // weightScale.tvTermScale[0] = 1;
+    // weightScale.arapTermScale[0] = 1;
+    // weightScale.inextentTermScale[0] = 1;
+    // weightScale.deformTermScale[0] = 1;
 
-        // weightScale.rotScale[0] = 1;
-        // weightScale.transScale[0] = 1;
+    // weightScale.rotScale[0] = 1;
+    // weightScale.transScale[0] = 1;
 
-        for(int i = 1; i < numOptimizationLevels; ++i)
-        {
-            double decreaseFactor = double(meshVertexNum[i]) / meshVertexNum[0];
+    for(int i = 1; i < numOptimizationLevels; ++i)
+    {
+        double decreaseFactor = double(meshVertexNum[i]) / meshVertexNum[0];
             
-            weightScale.dataTermScale[i] = 1;
+        weightScale.dataTermScale[i] = 1;
 
-            weightScale.tvTermScale[i] = decreaseFactor * weightScale.tvTermScale[0];
+        weightScale.tvTermScale[i] = decreaseFactor * weightScale.tvTermScale[0];
 
-            weightScale.rotTVTermScale[i] = decreaseFactor * weightScale.rotTVTermScale[0];
+        weightScale.rotTVTermScale[i] = decreaseFactor * weightScale.rotTVTermScale[0];
 
-            weightScale.arapTermScale[i] =
-                pow(decreaseFactor,2) * weightScale.arapTermScale[0];
+        weightScale.arapTermScale[i] =
+            pow(decreaseFactor,2) * weightScale.arapTermScale[0];
 
-            weightScale.inextentTermScale[i] =
-                pow(decreaseFactor,2) * weightScale.inextentTermScale[0];
+        weightScale.inextentTermScale[i] =
+            pow(decreaseFactor,2) * weightScale.inextentTermScale[0];
 
-            weightScale.deformTermScale[i] = 1;
+        weightScale.deformTermScale[i] = 1;
 
-            weightScale.rotScale[i] = decreaseFactor *  weightScale.rotScale[0];
+        weightScale.rotScale[i] = decreaseFactor *  weightScale.rotScale[0];
 
-            weightScale.transScale[i] = decreaseFactor * weightScale.transScale[0];
-        }
-
+        weightScale.transScale[i] = decreaseFactor * weightScale.transScale[0];
     }
 
 }
