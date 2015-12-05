@@ -84,10 +84,11 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLOG_NO_ABBREVIATED_SEVERITIES;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\third_party;$(OPENCV_PATH)\include;$(EIGEN_PATH);$(EIGEN_PATH)\unsupported;$(BOOST_ROOT);$(SUITESPARSE_PATH)\include;$(CERES_PATH)\include;$(GLOG_PATH)\src\windows;$(GLUT_ROOT)\include;$(GLEW_ROOT)\include;$(WXWIN)\include\msvc;$(WXWIN)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -97,11 +98,14 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLOG_NO_ABBREVIATED_SEVERITIES;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\third_party;$(OPENCV_PATH)\include;$(EIGEN_PATH);$(EIGEN_PATH)\unsupported;$(BOOST_ROOT);$(SUITESPARSE_PATH)\include;$(CERES_PATH)\include;$(GLOG_PATH)\src\windows;$(GLUT_ROOT)\include;$(GLEW_ROOT)\include;$(WXWIN)\include\msvc;$(WXWIN)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\x64\Debug;$(GLUT_ROOT)\lib;$(GLEW_ROOT)\lib;$(BOOST_ROOT)\stage\lib;$(SUITESPARSE_PATH)\lib64\lapack_blas_windows;$(SUITESPARSE_PATH)\lib64;$(OPENCV_PATH)\x64\vc12\lib;$(CERES_PATH)\lib;$(GLOG_PATH)\x64\Debug;$(WXWIN)\lib\vc_x64_lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MainEngine.lib;opencv_core300d.lib;opencv_highgui300d.lib;opencv_imgcodecs300d.lib;opencv_imgproc300d.lib;libblas.lib;liblapack.lib;libamdd.lib;libbtfd.lib;libcamdd.lib;libccolamdd.lib;libcholmodd.lib;libcolamdd.lib;libcxsparsed.lib;libklud.lib;libldld.lib;libspqrd.lib;libumfpackd.lib;suitesparseconfigd.lib;libglog_d.lib;ceres-debug.lib;freeglutd.lib;GLU32.lib;OPENGL32.lib;glew32.lib;Ws2_32.lib;wxmsw30ud_core.lib;wxbase30ud.lib;wxmsw30ud_gl.lib;wxexpatd.lib;wxjpegd.lib;wxpngd.lib;wxregexud.lib;wxtiffd.lib;wxzlibd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;libboost_filesystem-vc120-mt-gd-1_59.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,10 +116,11 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLOG_NO_ABBREVIATED_SEVERITIES;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\third_party;$(OPENCV_PATH)\include;$(EIGEN_PATH);$(EIGEN_PATH)\unsupported;$(BOOST_ROOT);$(SUITESPARSE_PATH)\include;$(CERES_PATH)\include;$(GLOG_PATH)\src\windows;$(GLUT_ROOT)\include;$(GLEW_ROOT)\include;$(WXWIN)\include\msvc;$(WXWIN)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
@@ -129,16 +134,36 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;GLOG_NO_ABBREVIATED_SEVERITIES;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\include;$(SolutionDir)\..\include\third_party;$(OPENCV_PATH)\include;$(EIGEN_PATH);$(EIGEN_PATH)\unsupported;$(BOOST_ROOT);$(SUITESPARSE_PATH)\include;$(CERES_PATH)\include;$(GLOG_PATH)\src\windows;$(GLUT_ROOT)\include;$(GLEW_ROOT)\include;$(WXWIN)\include\msvc;$(WXWIN)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\x64\Release;$(GLUT_ROOT)\lib;$(GLEW_ROOT)\lib;$(BOOST_ROOT)\stage\lib;$(SUITESPARSE_PATH)\lib64\lapack_blas_windows;$(SUITESPARSE_PATH)\lib64;$(OPENCV_PATH)\x64\vc12\lib;$(CERES_PATH)\lib;$(GLOG_PATH)\x64\Release;$(WXWIN)\lib\vc_x64_lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>MainEngine.lib;opencv_core300.lib;opencv_highgui300.lib;opencv_imgcodecs300.lib;opencv_imgproc300.lib;libblas.lib;liblapack.lib;libamdd.lib;libbtfd.lib;libcamd.lib;libccolamd.lib;libcholmod.lib;libcolamd.lib;libcxsparse.lib;libklu.lib;libldl.lib;libspqr.lib;libumfpack.lib;suitesparseconfig.lib;libglog.lib;ceres.lib;freeglut.lib;GLU32.lib;OPENGL32.lib;glew32.lib;Ws2_32.lib;wxmsw30u_core.lib;wxbase30u.lib;wxmsw30u_gl.lib;wxexpat.lib;wxjpeg.lib;wxpng.lib;wxregexu.lib;wxtiff.lib;wxzlib.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;libboost_filesystem-vc120-mt-1_59.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\gui_app\BasicGLPane.h" />
+    <ClInclude Include="..\..\include\gui_app\CameraControl.h" />
+    <ClInclude Include="..\..\include\gui_app\controlPanel.h" />
+    <ClInclude Include="..\..\include\gui_app\ImagePanel.h" />
+    <ClInclude Include="..\..\include\gui_app\MainFrame.h" />
+    <ClInclude Include="..\..\include\gui_app\Matrices.h" />
+    <ClInclude Include="..\..\include\gui_app\PangaeaTracking.h" />
+    <ClInclude Include="..\..\include\gui_app\Vectors.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\gui_app\BasicGLPane.cpp" />
+    <ClCompile Include="..\..\src\gui_app\CameraControl.cpp" />
+    <ClCompile Include="..\..\src\gui_app\controlPanel.cpp" />
+    <ClCompile Include="..\..\src\gui_app\ImagePanel.cpp" />
+    <ClCompile Include="..\..\src\gui_app\MainFrame.cpp" />
+    <ClCompile Include="..\..\src\gui_app\Matrices.cpp" />
+    <ClCompile Include="..\..\src\gui_app\PangaeaTracking.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

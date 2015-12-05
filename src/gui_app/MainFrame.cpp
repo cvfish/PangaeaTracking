@@ -3,7 +3,11 @@
 #include "gui_app/BasicGLPane.h"
 #include "gui_app/ImagePanel.h"
 
+#ifdef _MSC_VER
+#include "third_party/msvc/Stopwatch.h"
+#else
 #include "third_party/Stopwatch.h"
+#endif
 
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TIMER(ID_TIMER, MainFrame::OnTimer)
