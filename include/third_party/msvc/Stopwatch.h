@@ -71,16 +71,6 @@
 
 #endif
 
-int gettimeofday(struct timeval* tp, void* tzp)
-{
-	DWORD t;
-	t = timeGetTime();
-	tp->tv_sec = t / 1000;
-	tp->tv_usec = t % 1000;
-	/* 0 indicates that the call succeeded. */
-	return 0;
-}
-
 class Stopwatch
 {
     public:
@@ -209,6 +199,16 @@ class Stopwatch
 
             return (unsigned char *)dataPacket;
         }
+
+		static int gettimeofday(struct timeval* tp, void* tzp)
+		{
+			DWORD t;
+			t = timeGetTime();
+			tp->tv_sec = t / 1000;
+			tp->tv_usec = t % 1000;
+			/* 0 indicates that the call succeeded. */
+			return 0;
+		}
 
         timeval clock;
         long long int currentSend, lastSend;
