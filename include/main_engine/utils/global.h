@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <set>
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -19,7 +20,11 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
+#ifdef _MSC_VER
+#include "third_party/msvc/Stopwatch.h"
+#else
 #include "third_party/Stopwatch.h"
+#endif
 
 #ifdef Success
 #undef Success

@@ -1,5 +1,10 @@
 #include "main_engine/MainEngine.h"
+
+#ifdef _MSC_VER
+#include "third_party/msvc/Stopwatch.h"
+#else
 #include "third_party/Stopwatch.h"
+#endif
 
 MainEngine::MainEngine():
     m_nNumMeshLevels(1),

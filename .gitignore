@@ -23,3 +23,16 @@ pangaea
 #folder
 /build_*
 /old_stuff
+
+# MSVC files
+*.opensdf
+*.sdf
+*.suo
+*.user
+
+# MSVC folders
+msvc/.localhistory/
+msvc/x64
+msvc/MainEngine/x64
+msvc/ConsoleApp/x64
+msvc/GUIApp/x64

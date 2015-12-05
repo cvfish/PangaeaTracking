@@ -92,6 +92,8 @@ public:
         levels = std::move(d.levels);
         numLevels = d.numLevels;
         meshPyramidVertexNum = std::move(d.meshPyramidVertexNum);
+
+		return *this;
     }
 
     void updatePyramid(string meshPath, string meshLevelFormat, int frame,

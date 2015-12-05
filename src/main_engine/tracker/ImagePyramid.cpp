@@ -39,6 +39,7 @@ ImagePyramid& ImagePyramid::operator=(const ImagePyramid& imagePyramid)
         
     }
     
+	return *this;
 }
 
 void ImagePyramid::create(int width, int height)
