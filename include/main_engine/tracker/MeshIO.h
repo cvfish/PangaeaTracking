@@ -86,11 +86,11 @@ void MeshIO<FloatType>::loadfromFile(const std::string& filename, MeshData<Float
 
     //cout << filePath.extension().c_str() << endl;
 
-    if(filePath.extension().compare(".off") == 0) {
+    if(filePath.extension().compare(std::string(".off")) == 0) {
         loadFromOFF(filename,meshData);
-    } else if(filePath.extension().compare(".ply") == 0){
+    } else if(filePath.extension().compare(std::string(".ply")) == 0){
         loadFromPLY(filename,meshData);
-    } else if(filePath.extension().compare(".obj") == 0){
+    } else if(filePath.extension().compare(std::string(".obj")) == 0){
         loadFromOBJ(filename,meshData);
     } else {
         cerr << "file format not supported for mesh loading" << endl;
@@ -107,11 +107,11 @@ void MeshIO<FloatType>::updateFromFile(const std::string& filename, MeshData<Flo
     bfs::path filePath(filename.c_str());
     //cout << filePath.extension().c_str() << endl;
 
-    if(filePath.extension().compare(".off") == 0) {
+    if(filePath.extension().compare(std::string(".off")) == 0) {
         cout << "not supported yet" << endl;
-    } else if(filePath.extension().compare(".ply") == 0){
+    } else if(filePath.extension().compare(std::string(".ply")) == 0){
         cout << "not supported yet" << endl;
-    } else if(filePath.extension().compare(".obj") == 0){
+    } else if(filePath.extension().compare(std::string(".obj")) == 0){
         updateFromOBJ(filename,meshData);
     } else {
         cerr << "file format not supported for mesh loading" << endl;
@@ -452,11 +452,11 @@ template<class FloatType>
 void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<FloatType>& meshData)
 {
     bfs::path filePath(filename.c_str());
-    if(filePath.extension().compare(".off") == 0) {
+    if(filePath.extension().compare(std::string(".off")) == 0) {
         writeToOFF(filename,meshData);
-    } else if(filePath.extension().compare(".ply") == 0){
+    } else if(filePath.extension().compare(std::string(".ply")) == 0){
         writeToPLY(filename,meshData);
-    } else if(filePath.extension().compare(".obj") == 0){
+    } else if(filePath.extension().compare(std::string(".obj")) == 0){
         writeToOBJ(filename,meshData);
     } else {
         cerr << "file format not supported for mesh saving" << endl;

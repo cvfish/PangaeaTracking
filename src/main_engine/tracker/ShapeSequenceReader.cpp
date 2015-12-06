@@ -586,7 +586,7 @@ void ShapeSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
     for(int i = 0; i < 6; ++i)
     outputInfo.camPose[i] = 0;
     
-    TICK("visualRenderingUpdate");
+    TOCK("visualRenderingUpdate");
 
 }
 

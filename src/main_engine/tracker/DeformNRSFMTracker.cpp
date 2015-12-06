@@ -1486,6 +1486,7 @@ bool DeformNRSFMTracker::SaveMeshPyramid()
         }
     }
 
+	return true;
 }
 
 void DeformNRSFMTracker::updateRenderingLevel(TrackerOutputInfo** pOutputInfoRendering,

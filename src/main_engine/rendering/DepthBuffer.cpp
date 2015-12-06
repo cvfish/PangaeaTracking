@@ -1,5 +1,8 @@
 #include "main_engine/rendering/DepthBuffer.h"
+
+#ifndef _MSC_VER
 #include "main_engine/rendering/NcvGlXContext.h"
+#endif
 
 class DepthConverter
 {
@@ -68,9 +71,13 @@ void DepthBuffer::renderMeshGL()
 {
     uint W = _pCamera->W();
     uint H = _pCamera->H();
+
+#ifndef _MSC_VER
     ncv::GlXOffscreenContextPtr context(new ncv::GlXOffscreenContext(W, H));
 
     context->makeActive();
+#endif
+
     // Should be able to use openGL here..
 
     glViewport(0,0,W,H);
