@@ -202,6 +202,9 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
     vector< vector<unsigned int> >& meshFaces = outputInfo.meshData.facesVerticesInd;
     vector< vector<CoordinateType> >& meshProj = outputInfo.meshProj;
     vector< vector<CoordinateType> >& meshVertices = outputInfo.meshData.vertices;
+
+	bool clockwise = outputInfo.meshData.clockwise;
+
     vector<CoordinateType> faceNormals;
     vector<CoordinateType> faceCenters;
     faceNormals.resize(3*outputInfo.meshData.numFaces);
@@ -253,7 +256,7 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
             meshVertices[ vertex3 ][2]) / 3;
 
         compnorm(&meshVertices[vertex1][0], &meshVertices[vertex2][0],
-            &meshVertices[vertex3][0], &faceNormals[3*faceInd],1);
+            &meshVertices[vertex3][0], &faceNormals[3*faceInd], clockwise);
 
     }
 
