@@ -227,9 +227,9 @@ void MeshData<FloatType>::computeNormalsNeil()
                 &vertices[ facesVerticesInd[i][m] ][0],
 				normal, clockwise);
 
-            normals[ facesVerticesInd[i][j] ][0] += normal[0] / 6;
-            normals[ facesVerticesInd[i][j] ][1] += normal[1] / 6;
-            normals[ facesVerticesInd[i][j] ][2] += normal[2] / 6;
+            normals[ facesVerticesInd[i][j] ][0] += normal[0];
+            normals[ facesVerticesInd[i][j] ][1] += normal[1];
+            normals[ facesVerticesInd[i][j] ][2] += normal[2];
 
         }
 
