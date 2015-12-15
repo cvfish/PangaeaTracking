@@ -302,6 +302,10 @@ TrackerSettings::TrackerSettings()
     lineSearchType = "WOLFE";
     nonlinearConjugateGradientType = "FLETCHER_REEVES";
     lineSearchInterpolationType = "CUBIC";
+
+	// By default, faces are supposed to be defined clockwise to support the 
+	// original implementation of Pangaea
+	clockwise = true;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -519,6 +523,10 @@ void TrackerSettings::read(const cv::FileNode& node)
     
     if(!node["line_search_interpolation_type"].empty())
     node["line_search_interpolation_type"] >> lineSearchInterpolationType;
+
+	// Read if faces are defined clockwise or anti-clockwise
+	if (!node["clockwise"].empty())
+		node["clockwise"] >> clockwise;
 }
 
 ImageSourceType imageSourceType = IMAGESEQUENCE;
