@@ -170,6 +170,9 @@ MeshPyramid<FloatType>::MeshPyramid(string meshLevelFormat,
         meshFile << buffer;
         PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh);
 
+		// Set orientation of the faces of the mesh
+		tempMesh.clockwise = trackerSettings.clockwise;
+
         levels[i] = std::move(tempMesh);
         meshPyramidVertexNum[i] = levels[i].numVertices;
 
