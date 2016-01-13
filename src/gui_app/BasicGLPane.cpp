@@ -325,6 +325,17 @@ void BasicGLPane::meshRender(PangaeaMeshData& mesh, bool showTexture, bool isGT,
     }
     glEnd();
 
+    // if(m_pControlPanel->m_bShowEdges)
+    // {
+    //      for(int i = 0; i < mesh.numFaces; ++i)
+    //      {
+    //          glBegin(GL_LINE_LOOP);
+    //          // renderHelper(mesh, i, showTexture, isGT);
+    //          renderHelper(mesh, i, 0, isGT);
+    //          glEnd();             
+    //      }
+    // }
+
 }
 
 void BasicGLPane::pointRender(PangaeaMeshData& mesh, bool showTexture, bool isGT, bool deletePoints, GLfloat thresh)
@@ -406,6 +417,10 @@ void BasicGLPane::renderHelper(PangaeaMeshData& mesh, int faceID, bool showTextu
                         sqrt(mesh.normals[ offset ][1]/2.0 + 0.5),
                         sqrt(mesh.normals[ offset ][2]/2.0 + 0.5));
                 }
+
+                // // show the gray edges
+                // glColor3f( 0, 0, 0);
+                
             }
 
         }
