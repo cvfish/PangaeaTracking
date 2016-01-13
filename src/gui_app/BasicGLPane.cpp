@@ -413,9 +413,14 @@ void BasicGLPane::renderHelper(PangaeaMeshData& mesh, int faceID, bool showTextu
 
                 if(m_pControlPanel->m_bShowNormals)
                 {
-                    glColor3f( sqrt(mesh.normals[ offset ][0]/2.0 + 0.5),
-                        sqrt(mesh.normals[ offset ][1]/2.0 + 0.5),
-                        sqrt(mesh.normals[ offset ][2]/2.0 + 0.5));
+					//glColor3f(sqrt(mesh.normals[offset][0] / 2.0 + 0.5),
+					//	sqrt(mesh.normals[offset][1] / 2.0 + 0.5),
+					//	sqrt(mesh.normals[offset][2] / 2.0 + 0.5));
+					glColor3f(
+						(mesh.normals[offset][0] + 1.0f) / 2.0,
+						(mesh.normals[offset][1] + 1.0f) / 2.0,
+						(mesh.normals[offset][2] + 1.0f) / 2.0
+						);
                 }
 
                 // // show the gray edges

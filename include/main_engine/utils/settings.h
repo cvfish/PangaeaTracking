@@ -112,6 +112,9 @@ public:
 
     double meshScaleUpFactor;
 
+	// Faces of the mesh are defined clockwise or not (anti-clockwise)
+	bool clockwise;
+
     // ceres parameter
     std::string linearSolver;
     int numOptimizationLevels;
