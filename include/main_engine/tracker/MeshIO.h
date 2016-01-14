@@ -10,9 +10,11 @@ class MeshIO
 public:
 
     // To be added, loading mesh from files
-    static MeshData<FloatType> loadfromFile(const std::string& filename);
+    static MeshData<FloatType> loadfromFile(const std::string& filename, bool clockwise = true);
 
-    static void loadfromFile(const std::string& filename, MeshData<FloatType>& meshData);
+    static void loadfromFile(const std::string& filename, MeshData<FloatType>& meshData,
+                             bool clockwise = true);
+    
     static void updateFromFile(const std::string& filename, MeshData<FloatType>& meshData);
 
     static void writeToFile(const std::string& filename, const MeshData<FloatType>& meshData);
@@ -72,15 +74,17 @@ private:
 
 /// meshIO
 template<class FloatType>
-MeshData<FloatType> MeshIO<FloatType>::loadfromFile(const std::string& filename)
+MeshData<FloatType> MeshIO<FloatType>::loadfromFile(const std::string& filename, bool clockwise)
 {
     MeshData<FloatType> meshData;
-    loadfromFile(filename, meshData);
+    loadfromFile(filename, meshData, clockwise);
+    
     return meshData;
 }
 
 template<class FloatType>
-void MeshIO<FloatType>::loadfromFile(const std::string& filename, MeshData<FloatType>& meshData)
+void MeshIO<FloatType>::loadfromFile(const std::string& filename,
+    MeshData<FloatType>& meshData, bool clockwise)
 {
     bfs::path filePath(filename.c_str());
 
@@ -96,6 +100,8 @@ void MeshIO<FloatType>::loadfromFile(const std::string& filename, MeshData<Float
         cerr << "file format not supported for mesh loading" << endl;
     }
 
+    meshData.clockwise = clockwise;
+    
     // we will update the number of vertices, faces and mesh center in the
     // following line
     setupMeshFromFile(meshData);
@@ -586,6 +592,8 @@ void MeshIO<FloatType>::createMeshFromDepth(MeshData<FloatType>& meshData,
     createMeshFromPoints(meshData, m_nHeight, m_nWidth, pResults, pNormals,
         pColors, maskVector, modelLabels, modelColors);
 
+    meshData.clockwise = true;
+
     delete[] pColors;
     delete[] pNormals;
     delete[] pResults;
@@ -666,6 +674,8 @@ void MeshIO<FloatType>::createMeshFromDepth(MeshData<FloatType>& meshData,
 
     createMeshFromPoints(meshData, m_nHeight, m_nWidth, pResults, pNormals,
         pColors, maskVector, modelLabels, modelColors);
+
+    meshData.clockwise = true;
 
     delete[] pColors;
     delete[] pNormals;
@@ -795,13 +805,13 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                 left  = i*cols + j - 1;
                 right = i*cols + j + 1;
                 // for p(i,j), add p(i-1,j), p(i+1,j), p(i,j-1), p(i,j+1)
-                // triangle (i,j), (i-1,j) and (i,j-1)
+                // triangle (i,j), (i,j-1), (i-1,j) 
                 if( i > 0 && maskImage[upper] &&
                     j > 0 && maskImage[left])
                 {
                     triVerticesInd[0] = pPntsInd[self];
-                    triVerticesInd[1] = pPntsInd[upper];
-                    triVerticesInd[2] = pPntsInd[left];
+                    triVerticesInd[1] = pPntsInd[left];
+                    triVerticesInd[2] = pPntsInd[upper];
                     meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
                 // triangle (i,j), (i-1,j), (i,j+1)
@@ -822,13 +832,13 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                     triVerticesInd[2] = pPntsInd[left];
                     meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
-                // triangle (i,j), (i+1,j), (i,j+1)
+                // triangle (i,j), (i,j+1), (i+1,j)
                 if(i < rows && maskImage[lower] &&
                     j < cols && maskImage[right])
                 {
                     triVerticesInd[0] = pPntsInd[self];
-                    triVerticesInd[1] = pPntsInd[lower];
-                    triVerticesInd[2] = pPntsInd[right];
+                    triVerticesInd[1] = pPntsInd[right];
+                    triVerticesInd[2] = pPntsInd[lower];
                     meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
                 // add all possible neighbors, in this case, some edges may not necessarily

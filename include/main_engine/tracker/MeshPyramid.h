@@ -82,9 +82,9 @@ public:
     MeshPyramid(){};
     MeshPyramid(Mesh& mesh);
     MeshPyramid(string meshLevelFormat,
-        IntegerContainerType& meshVertexNum);
+        IntegerContainerType& meshVertexNum, bool clockwise = true);
     MeshPyramid(string meshPath, string meshLevelFormat, int frame,
-        IntegerContainerType& meshLevelList);
+        IntegerContainerType& meshLevelList, bool clockwise = true);
 
     MeshPyramid& operator=(const MeshPyramid& d) = default;
     MeshPyramid& operator=(MeshPyramid&& d)
@@ -154,7 +154,7 @@ MeshPyramid<FloatType>::MeshPyramid(MeshData<FloatType>& mesh)
 
 template<class FloatType>
 MeshPyramid<FloatType>::MeshPyramid(string meshLevelFormat,
-    IntegerContainerType& meshVertexNum)
+    IntegerContainerType& meshVertexNum, bool clockwise)
 {
     numLevels = meshVertexNum.size();
     levels.resize(numLevels);
@@ -168,10 +168,10 @@ MeshPyramid<FloatType>::MeshPyramid(string meshLevelFormat,
         std::stringstream meshFile;
         sprintf(buffer, meshLevelFormat.c_str(), meshVertexNum[i]);
         meshFile << buffer;
-        PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh);
+        PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh, clockwise);
 
-		// Set orientation of the faces of the mesh
-		tempMesh.clockwise = trackerSettings.clockwise;
+		// // Set orientation of the faces of the mesh
+		// tempMesh.clockwise = trackerSettings.clockwise;
 
         levels[i] = std::move(tempMesh);
         meshPyramidVertexNum[i] = levels[i].numVertices;
@@ -181,8 +181,8 @@ MeshPyramid<FloatType>::MeshPyramid(string meshLevelFormat,
 }
 
 template<class FloatType>
-MeshPyramid<FloatType>::MeshPyramid(string meshPath,
-    string meshLevelFormat, int frame, IntegerContainerType& meshLevelList)
+MeshPyramid<FloatType>::MeshPyramid(string meshPath, string meshLevelFormat,
+    int frame, IntegerContainerType& meshLevelList, bool clockwise)
 {
     numLevels = meshLevelList.size();
     levels.resize(numLevels);
@@ -196,7 +196,7 @@ MeshPyramid<FloatType>::MeshPyramid(string meshPath,
         std::stringstream meshFile;
         sprintf(buffer, meshLevelFormat.c_str(), frame, meshLevelList[i]);
         meshFile << meshPath << buffer;
-        PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh);
+        PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh, clockwise);
         levels[i] = std::move(tempMesh);
 
         meshPyramidVertexNum[i] = levels[i].numVertices;

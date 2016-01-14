@@ -200,6 +200,10 @@ MeshLoadingSettings::MeshLoadingSettings()
 
     loadProp = true;
     fastLoading = true;
+
+    // By default, faces are supposed to be defined clockwise to support the 
+	// original implementation of Pangaea
+	clockwise = true;
 }
 
 void MeshLoadingSettings::read(const cv::FileNode& node)
@@ -227,6 +231,10 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
 
     if(!node["fastLoading"].empty())
     node["fastLoading"] >> fastLoading;
+
+    // Read if faces are defined clockwise or anti-clockwise
+	if (!node["clockwise"].empty())
+    node["clockwise"] >> clockwise;
 }
 
 TrackerSettings::TrackerSettings()

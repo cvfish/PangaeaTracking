@@ -70,6 +70,9 @@ public:
 
     bool loadProp;
     bool fastLoading;
+
+    // Faces of the mesh are defined clockwise or not (anti-clockwise)
+	bool clockwise;
 };
 
 class TrackerSettings

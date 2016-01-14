@@ -75,7 +75,7 @@ bool MeshSequenceReader::loadMesh(std::string& meshPath,
     }
     
     if(!trackerInitialized)
-    PangaeaMeshIO::loadfromFile(meshFile.str(), currentMesh);
+    PangaeaMeshIO::loadfromFile(meshFile.str(), currentMesh, trackerSettings.clockwise);
     else
     PangaeaMeshIO::updateFromFile(meshFile.str(), currentMesh);
 

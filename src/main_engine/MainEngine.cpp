@@ -330,15 +330,13 @@ void MainEngine::LoadInitialMeshFromFile()
     if(trackerSettings.meshLevelFormat.empty())
     {
         // load mesh from obj, off or ply file
-        PangaeaMeshIO::loadfromFile(trackerSettings.meshFile, templateMesh);
-
-		templateMesh.clockwise = trackerSettings.clockwise;
-
+        PangaeaMeshIO::loadfromFile(trackerSettings.meshFile, templateMesh,
+                                    trackerSettings.clockwise);
         templateMeshPyramid = std::move(PangaeaMeshPyramid(templateMesh));
     }else{
         templateMeshPyramid = std::move(
             PangaeaMeshPyramid(trackerSettings.meshLevelFormat,
-                trackerSettings.meshVertexNum));
+                trackerSettings.meshVertexNum, trackerSettings.clockwise));
     }
 
 }

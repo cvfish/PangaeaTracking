@@ -61,6 +61,10 @@ int main(int argc, char** args)
     ParameterReader pd;
     bool use_mesh_file = atof(pd.getData("use_mesh_file").c_str());
 
+    bool clockwise = true;
+    if(pd.getData("clockwise").compare("NOT_FOUND") != 0)
+    clockwise = atof(pd.getData("clockwise").c_str());
+
     if(use_mesh_file)
     {
         // this works for a single mesh
@@ -69,7 +73,7 @@ int main(int argc, char** args)
         std::string input_file = pd.getData("input_mesh_file");
         std::string output_file = pd.getData("output_mesh_file");
 
-        PangaeaMeshIO::loadfromFile(input_file, inputMesh);
+        PangaeaMeshIO::loadfromFile(input_file, inputMesh, clockwise);
         vector<vector<double> > bbox;
         getMeshBoundingBox(inputMesh, bbox);
         
@@ -122,7 +126,7 @@ int main(int argc, char** args)
             output_file << buffer;
             //memset(&buffer[0], 0, sizeof(buffer));
 
-            PangaeaMeshIO::loadfromFile(input_file.str(), inputMesh);
+            PangaeaMeshIO::loadfromFile(input_file.str(), inputMesh, clockwise);
 
             if(factor == 0) // if this is the first frame
             {
