@@ -314,6 +314,10 @@ TrackerSettings::TrackerSettings()
 	// By default, faces are supposed to be defined clockwise to support the 
 	// original implementation of Pangaea
 	clockwise = true;
+
+    // patch optimization stuff
+    // by default we do not do any patch based stuff
+    neighborPatchRadius = 0;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -533,8 +537,11 @@ void TrackerSettings::read(const cv::FileNode& node)
     node["line_search_interpolation_type"] >> lineSearchInterpolationType;
 
 	// Read if faces are defined clockwise or anti-clockwise
-	if (!node["clockwise"].empty())
-		node["clockwise"] >> clockwise;
+	if(!node["clockwise"].empty())
+    node["clockwise"] >> clockwise;
+
+    if(!node["neighbor_patch_radius"].empty())
+    node["neighbor_patch_radius"] >> neighborPatchRadius;
 }
 
 ImageSourceType imageSourceType = IMAGESEQUENCE;

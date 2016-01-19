@@ -18,10 +18,12 @@ enum dataTermErrorType{
     PE_COLOR,
     PE_DEPTH,
     PE_DEPTH_PLANE,
+    PE_NCC,
+    PE_COLOR_NCC,
     NUM_DATA_TERM_ERROR
 };
 
-static int PE_RESIDUAL_NUM_ARRAY[NUM_DATA_TERM_ERROR] = {1,3,3,1};
+static int PE_RESIDUAL_NUM_ARRAY[NUM_DATA_TERM_ERROR] = {1,3,3,1,1,3};
 
 //
 template<typename T>
@@ -61,8 +63,127 @@ void BackProjection(const CameraInfo* pCamera, const ImageLevel* pFrame, T* u, T
 
 }
 
+// patch based score estimation
 template<typename T>
-void getResiudal(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
+void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, T* pScore)
+{
+    T neighborMean, projMean, neighborSTD, projSTD;
+    neighborMean = T(0.0); projMean = T(0.0);
+    neighborSTD = T(0.0); projSTD = T(0.0);
+
+    pScore[0] = T(0.0);
+
+    int num = neighborValues.size();
+    for(int i = 0; i < num; ++i)
+    {
+        neighborMean += neighborValues[ k1*i + k2 ];
+        projMean += projValues[ k1*i+k2 ];
+    }
+
+    neighborMean = neighborMean / T(num);
+    projMean = projMean / T(num);
+
+    for(int i = 0; i < num; ++i)
+    {
+        neighborSTD += (neighborValues[k1*i + k2] - neighborMean) *
+            (neighborValues[k1*i + k2] - neighborMean);
+        projSTD += (projValues[k1*i + k2] - projMean) *
+            (projValues[k1*i + k2] - projMean);
+    }
+
+    neighborSTD = sqrt(neighborSTD);
+    projSTD = sqrt(projSTD);
+
+    for(int i = 0; i < num; ++i)
+    {
+        pScore[0] += (neighborValues[k1*i + k2] - neighborMean) / neighborSTD *
+            (projValues[k1*i + k2] - projMean) / projSTD;
+    }
+}
+
+template<typename T>
+void getPatchScore(vector<T>& neighborValues, vector<T>& projValues,
+    T* pScore, const dataTermErrorType& PE_TYPE=PE_NCC)
+{
+
+    switch(PE_TYPE)
+    {
+        case PE_NCC:
+            
+            nccScore(neighborValues, projValues, 1, 0, pScore);
+            break;
+
+        case PE_COLOR_NCC:
+
+            for(int i = 0; i < 3; ++i)
+            nccScore(neighborValues, projValues, 3, i, pScore+i);
+            
+            break;
+    }
+
+}
+
+template<typename T>
+void getValue(const CameraInfo* pCamera, const ImageLevel* pFrame,
+    T* p, T* value, const dataTermErrorType& PE_TYPE)
+{
+    T transformed_r, transformed_c;
+
+    IntrinsicProjection(pCamera, p, &transformed_c, &transformed_r);
+
+    T templateValue, currentValue;
+
+    if( transformed_r >= T(0.0) && transformed_r < T(pCamera->height) &&
+        transformed_c >= T(0.0) && transformed_c < T(pCamera->width))
+    {
+        switch(PE_TYPE)
+        {
+            case PE_INTENSITY:
+            {
+                value[0] = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->grayImage,
+                    pFrame->gradXImage, pFrame->gradYImage, transformed_c, transformed_r );
+                break;
+            }
+            case PE_COLOR:
+            {
+                for(int i = 0; i < 3; ++i)
+                {
+                    value[i] = SampleWithDerivative< T, InternalIntensityImageType >( pFrame->colorImageSplit[i],
+                        pFrame->colorImageGradXSplit[i], pFrame->colorImageGradYSplit[i], transformed_c, transformed_r );
+                }
+                break;
+            }
+            case PE_DEPTH:   // point-to-point error
+            {
+                // depth value of the point
+                BackProjection(pCamera, pFrame, &transformed_c, &transformed_r, value);
+
+                break;
+            }
+            case PE_DEPTH_PLANE: // point-to-plane error
+            {
+                //
+                BackProjection(pCamera, pFrame, &transformed_c, &transformed_r, value);
+
+                // normals at back projection point
+                T normals_at_bp[3];
+                for(int  i = 0; i < 3; ++i)
+                {
+                    normals_at_bp[i] = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->depthNormalImageSplit[i],
+                        pFrame->depthNormalImageGradXSplit[i], pFrame->depthNormalImageGradYSplit[i], transformed_c, transformed_r );
+
+                    p[i] = normals_at_bp[i] * p[i];
+                    value[i] = normals_at_bp[i] * value[i];
+                }
+
+            }
+        }
+    }
+
+}
+
+template<typename T>
+void getResidual(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
     double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
 {
     T transformed_r, transformed_c;
@@ -160,32 +281,32 @@ ResidualImageProjection(double weight, double* pValue, double* pVertex,
     const CameraInfo* pCamera, const ImageLevel* pFrame,
     dataTermErrorType PE_TYPE=PE_INTENSITY):
     weight(weight),
-    pValue(pValue),
-    pVertex(pVertex),
-    pCamera(pCamera),
-    pFrame(pFrame),
-    PE_TYPE(PE_TYPE),
-    optimizeDeformation(true)
-    {
-        // check the consistency between camera and images
-        assert(pCamera->width == pFrame->grayImage.cols);
-        assert(pCamera->height == pFrame->grayImage.rows);
-    }
+        pValue(pValue),
+        pVertex(pVertex),
+        pCamera(pCamera),
+        pFrame(pFrame),
+        PE_TYPE(PE_TYPE),
+        optimizeDeformation(true)
+        {
+            // check the consistency between camera and images
+            assert(pCamera->width == pFrame->grayImage.cols);
+            assert(pCamera->height == pFrame->grayImage.rows);
+        }
 
 ResidualImageProjection(double weight, double* pTemplateVertex,
     const CameraInfo* pCamera, const ImageLevel* pFrame,
     dataTermErrorType PE_TYPE=PE_INTENSITY):
     weight(weight),
-    pVertex(pVertex),
-    pCamera(pCamera),
-    pFrame(pFrame),
-    PE_TYPE(PE_TYPE),
-    optimizeDeformation(true)
-    {
-        // check the consistency between camera and images
-        assert(pCamera->width == pFrame->grayImage.cols);
-        assert(pCamera->height == pFrame->grayImage.rows);
-    }
+        pVertex(pVertex),
+        pCamera(pCamera),
+        pFrame(pFrame),
+        PE_TYPE(PE_TYPE),
+        optimizeDeformation(true)
+        {
+            // check the consistency between camera and images
+            assert(pCamera->width == pFrame->grayImage.cols);
+            assert(pCamera->height == pFrame->grayImage.rows);
+        }
 
     template<typename T>
         bool operator()(const T* const rotation,
@@ -230,7 +351,7 @@ ResidualImageProjection(double weight, double* pTemplateVertex,
         //     p_[i] = ceres::JetOps<T>::GetScalar(p[i]);
         // }
 
-        getResiudal(weight, pCamera, pFrame, pValue, p, residuals, PE_TYPE);
+        getResidual(weight, pCamera, pFrame, pValue, p, residuals, PE_TYPE);
 
         return true;
     }
@@ -252,11 +373,11 @@ private:
 class ResidualImageProjectionDeform
 {
 public:
-    ResidualImageProjectionDeform(double weight, double* pValue, double* pVertex,
-        const CameraInfo* pCamera, const ImageLevel* pFrame, int numNeighbors,
-        vector<double> neighborWeights, vector<double*> neighborVertices,
-        dataTermErrorType PE_TYPE=PE_INTENSITY):
-        weight(weight),
+ResidualImageProjectionDeform(double weight, double* pValue, double* pVertex,
+    const CameraInfo* pCamera, const ImageLevel* pFrame, int numNeighbors,
+    vector<double> neighborWeights, vector<double*> neighborVertices,
+    dataTermErrorType PE_TYPE=PE_INTENSITY):
+    weight(weight),
         pValue(pValue),
         pVertex(pVertex),
         pCamera(pCamera),
@@ -265,25 +386,31 @@ public:
         neighborWeights(neighborWeights),
         neighborVertices(neighborVertices),
         PE_TYPE(PE_TYPE)
-    {
-        // check the consistency between camera and images
-        assert(pCamera->width == pFrame->grayImage.cols);
-        assert(pCamera->height == pFrame->grayImage.rows);
-    }
+        {
+            // check the consistency between camera and images
+            assert(pCamera->width == pFrame->grayImage.cols);
+            assert(pCamera->height == pFrame->grayImage.rows);
+        }
 
     template<typename T>
-    bool operator()(const T* const* const parameters, T* residuals) const
+        bool operator()(const T* const* const parameters, T* residuals) const
     {
         int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
         for(int i = 0; i < residual_num; ++i)
         residuals[i] = T(0.0);
 
-        T p[3], diff_vertex[3], rot_diff_vertex[3];
+        // v is the position after applying deformation only
+        // p is the position after rigid transformation on v
+        T v[3], p[3], diff_vertex[3], rot_diff_vertex[3];
+        v[0] = T(0.0); v[1] = T(0.0); v[2] = T(0.0);
         p[0] = T(0.0); p[1] = T(0.0); p[2] = T(0.0);
         T transformed_r, transformed_c;
 
         const T* const* const trans = parameters;
         const T* const* const rotations = &(parameters[ numNeighbors ]);
+
+        const T* const rigid_rot = parameters[ 2*numNeighbors ];
+        const T* const rigid_trans = parameters[ 2*numNeighbors+1 ];
 
         // compute the position from neighbors nodes first
         for(int i = 0; i < numNeighbors; ++i)
@@ -295,11 +422,16 @@ public:
             ceres::AngleAxisRotatePoint( &(rotations[ i ][ 0 ]), diff_vertex, rot_diff_vertex );
 
             for(int index = 0; index < 3; ++index)
-            p[index] += neighborWeights[i] * (rot_diff_vertex[ index ]
+            v[index] += neighborWeights[i] * (rot_diff_vertex[ index ]
                 + neighborVertices[ i ][ index ] + trans[ i ][ index] );
         }
 
-        getResiudal(weight, pCamera, pFrame, pValue, p, residuals, PE_TYPE);
+        ceres::AngleAxisRotatePoint( rigid_rot, v , p);
+        p[0] += rigid_trans[0];
+        p[1] += rigid_trans[1];
+        p[2] += rigid_trans[2];
+
+        getResidual(weight, pCamera, pFrame, pValue, p, residuals, PE_TYPE);
 
         return true;
 
@@ -358,6 +490,128 @@ private:
 
 };
 
+// ResidualImageProjectionPatch
+class ResidualImageProjectionPatch
+{
+public:
+
+ResidualImageProjectionPatch(double weight, const PangaeaMeshData* pMesh,
+    const CameraInfo* pCamera, const ImageLevel* pFrame, int numNeighbors,
+    vector<double> neighborWeights, vector<unsigned int> neighborRadii,
+    vector<unsigned int> neighbors, dataTermErrorType PE_TYPE=PE_NCC):
+    weight(weight),
+        pMesh(pMesh),
+        pCamera(pCamera),
+        pFrame(pFrame),
+        numNeighbors(numNeighbors),
+        neighborWeights(neighborWeights),
+        neighborRadii(neighborRadii),
+        neighbors(neighbors),
+        PE_TYPE(PE_TYPE)
+        {
+            // check the consistency between camera and images
+            assert(pCamera->width == pFrame->grayImage.cols);
+            assert(pCamera->height == pFrame->grayImage.rows);
+        }
+
+    template<typename T>
+        bool operator()(const T* const* const parameters, T* residuals) const
+    {
+        int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
+        for(int i = 0; i < residual_num; ++i)
+        residuals[i] = T(0.0);
+        
+        const T* const* const trans = parameters;
+
+        const T* const rigid_rot = parameters[ numNeighbors ];
+        const T* const rigid_trans = parameters[ numNeighbors + 1 ];
+
+        vector<T> neighborVertices;
+        neighborVertices.resize( 3*numNeighbors );
+
+        T p[3];
+        for(int i = 0; i < numNeighbors; ++i)
+        {
+            for( int k = 0; k < 3; ++k)
+            p[k] = trans[i][k] + T(pMesh->vertices[ neighbors[i] ][k]);
+
+            ceres::AngleAxisRotatePoint( rigid_rot, p, &neighborVertices[3*i] );
+
+            neighborVertices[3*i+k] += rigid_trans[k];
+        }
+
+        vector<T> neighborValues;
+        vector<T> projValues;
+
+        switch(PE_TYPE)
+        {
+            case PE_NCC:
+            {
+                neighborValues.resize(numNeighbors);
+                projValues.resize(numNeighbors);
+
+                for(int i = 0; i < numNeighbors; ++i)
+                {
+                    getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_INTENSITY);
+                    neighborValues.push_back( T(pMesh->grays[ neighbors[i] ]) );
+                }
+
+                T gray_score;
+                gray_score = T(0.0);
+                getPatchScore(neighborValues, projValues, &gray_score, PE_TYPE);
+
+                residuals[0] = T(1.0) - gray_score;
+
+            }
+            break;
+
+            case PE_COLOR_NCC:
+            {
+
+                neighborValues.resize( 3*numNeighbors );
+                projValues.resize( 3*numNeighbors );
+
+                for(int i = 0; i < numNeighbors; ++i)
+                {
+                    getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_COLOR);
+                    for(int k = 0; k < 3; ++k)
+                    neighborValues.push_back( T(pMesh->colors[ neighbors[i] ][k]) );
+                }
+
+                T color_score[3];
+                getPatchScore(neighborValues, projValues, color_score, PE_TYPE);
+
+                for(int i = 0; i < 3; ++i)
+                residuals[i] = residuals[i] - color_score[i];
+
+            }
+            break;
+        }
+        
+        return true;
+
+    }
+
+
+private:
+
+    double weight;
+
+    const PangaeaMeshData* pMesh;
+    const CameraInfo* pCamera;
+    const ImageLevel* pFrame;
+    dataTermErrorType PE_TYPE;
+
+    int numNeighbors;
+    
+    vector<unsigned int> neighborRadii;
+    vector<unsigned int> neighbors;
+    vector<double> neighborWeights;
+
+    vector<double> neighborVertexPositions;
+
+};
+
 // total variation on top of the local rotations
 class ResidualRotTV
 {
@@ -389,7 +643,7 @@ ResidualINEXTENT(double weight):
     weight(weight), optimizeDeformation(true)
     {}
 
-    ResidualINEXTENT(double weight, double* pVertex, double* pNeighbor):
+ResidualINEXTENT(double weight, double* pVertex, double* pNeighbor):
     weight(weight),pVertex(pVertex),pNeighbor(pNeighbor), optimizeDeformation(false)
     {}
 
@@ -520,9 +774,9 @@ private:
 class ResidualTemporalMotion
 {
 public:
-    ResidualTemporalMotion(double* pPrevRot, double* pPrevTrans,
-        double rotWeight, double transWeight):
-        pPrevRot(pPrevRot), pPrevTrans(pPrevTrans),
+ResidualTemporalMotion(double* pPrevRot, double* pPrevTrans,
+    double rotWeight, double transWeight):
+    pPrevRot(pPrevRot), pPrevTrans(pPrevTrans),
         rotWeight(rotWeight), transWeight(transWeight)
     {}
 

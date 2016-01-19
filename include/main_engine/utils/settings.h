@@ -186,6 +186,9 @@ public:
     std::string lineSearchType;
     std::string nonlinearConjugateGradientType;
     std::string lineSearchInterpolationType;
+
+    // patch based optimization
+    int neighborPatchRadius;
 };
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value);

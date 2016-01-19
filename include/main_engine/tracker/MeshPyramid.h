@@ -12,10 +12,25 @@ typedef vector<vector<size_t> > MeshNeighborsNano;
 
 class MeshPropagation
 {
-    
+
 public:
 
     typedef map<pair<int,int>, int > NeighborsMap;
+
+    MeshNeighbors& getPatchNeighbors(int level)
+    {
+        return patchNeighborsVec[ level ];
+    }
+
+    MeshWeights& getPatchWeights(int level)
+    {
+        return patchWeightsVec[ level ];
+    }
+
+    MeshNeighbors& getPatchRadii(int level)
+    {
+        return patchRadiiVec[ level ];
+    }
 
     MeshNeighbors& getNeighbors(pair<int,int>& meshPair)
     {
@@ -35,12 +50,12 @@ public:
         else
         return true;
     }
-    
+
     void addNeighborsAndWeights(pair<int,int> meshPair, MeshNeighbors& meshNeighbors, MeshWeights& meshWeights)
     {
         // std::pair<NeighborsMap::iterator, bool> ret;
         // ret = neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
-        
+
         // if(ret.second == false){
         //     cout << "already inserted:" << endl;
         // }
@@ -53,12 +68,12 @@ public:
             neighborsVec.push_back( move( meshNeighbors ) );
             weightsVec.push_back( move( meshWeights ) );
             neighborMap.insert( pair<MeshPair, int >(meshPair, neighborMap.size() ) );
-        }        
+        }
     }
 
 // private:
 public:
-    
+
     // support propagation between arbitary two different levels,
     // every time we need to get the weights and neighbors, we give
     // a pair of levels as input, and get the index/corresponding weights or
@@ -67,7 +82,14 @@ public:
 
     vector< MeshWeights > weightsVec;
     vector< MeshNeighbors > neighborsVec;
-    
+
+    // patch support on mesh
+    // note the difference with weights/neighors for data term interpolation
+    // or regularization terms
+    vector< MeshWeights > patchWeightsVec;
+    vector< MeshNeighbors > patchNeighborsVec;
+    vector< MeshNeighbors > patchRadiiVec;
+
 };
 
 // mesh pyramid

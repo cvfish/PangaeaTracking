@@ -270,7 +270,7 @@ void BasicGLPane::initLighting(bool spot,GLfloat ambient,GLfloat spot1,GLfloat s
   GLfloat mat_shininess[] = { 50.0 };
   //  GLfloat intense[] = { 1.0, 1.0, 1.0, 1.0 };
   GLfloat intense[] = { 0.5, 0.5, 0.5, 0.5 };
-  glShadeModel (GL_SMOOTH);
+  glShadeModel(GL_SMOOTH);
 
   glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
   if(spot)
