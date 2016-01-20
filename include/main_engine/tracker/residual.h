@@ -105,11 +105,10 @@ template<typename T>
 void getPatchScore(vector<T>& neighborValues, vector<T>& projValues,
     T* pScore, const dataTermErrorType& PE_TYPE=PE_NCC)
 {
-
     switch(PE_TYPE)
     {
         case PE_NCC:
-            
+
             nccScore(neighborValues, projValues, 1, 0, pScore);
             break;
 
@@ -117,10 +116,14 @@ void getPatchScore(vector<T>& neighborValues, vector<T>& projValues,
 
             for(int i = 0; i < 3; ++i)
             nccScore(neighborValues, projValues, 3, i, pScore+i);
-            
+
+            break;
+
+        default:
+
+            cerr << "Not supported data term type in getPatchScore" << endl;
             break;
     }
-
 }
 
 template<typename T>
@@ -257,6 +260,62 @@ void getResidual(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
 
 }
 
+template<typename T>
+void getPatchResidual(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
+    const PangaeaMeshData* pMesh, const vector<T>& neighborVertices,
+    int numNeighbors, const vector<unsignded int>& neighbors, T* residuals,
+    const dataTermErrorType& PE_TYPE=PE_NCC)
+{
+    vector<T> neighborValues;
+    vector<T> projValues;
+
+    switch(PE_TYPE)
+    {
+        case PE_NCC:
+        {
+            neighborValues.resize(numNeighbors);
+            projValues.resize(numNeighbors);
+
+            for(int i = 0; i < numNeighbors; ++i)
+            {
+                getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_INTENSITY);
+                neighborValues.push_back( T(pMesh->grays[ neighbors[i] ]) );
+            }
+
+            T gray_score;
+            gray_score = T(0.0);
+            getPatchScore(neighborValues, projValues, &gray_score, PE_TYPE);
+
+            residuals[0] = T(weight) * (T(1.0) - gray_score);
+        }
+        break;
+
+        case PE_COLOR_NCC:
+        {
+
+            neighborValues.resize( 3*numNeighbors );
+            projValues.resize( 3*numNeighbors );
+
+            for(int i = 0; i < numNeighbors; ++i)
+            {
+                getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_COLOR);
+                for(int k = 0; k < 3; ++k)
+                neighborValues.push_back( T(pMesh->colors[ neighbors[i] ][k]) );
+            }
+
+            T color_score[3];
+            getPatchScore(neighborValues, projValues, color_score, PE_TYPE);
+
+            for(int i = 0; i < 3; ++i)
+            residuals[i] = T(weight) * (T(1.0) - color_score[i]);
+
+        }
+        break;
+    }
+
+
+}
+
 // need to write a new ResidualImageProjection(ResidualImageInterpolationProjection)
 // for a data term similar to dynamicFusion
 // optional parameters: vertex value(will be needed if we are using photometric)
@@ -370,10 +429,10 @@ private:
 
 
 // ResidualImageProjection from coarse level deformation,
-class ResidualImageProjectionDeform
+class ResidualImageProjectionCoarse
 {
 public:
-ResidualImageProjectionDeform(double weight, double* pValue, double* pVertex,
+ResidualImageProjectionCoarse(double weight, double* pValue, double* pVertex,
     const CameraInfo* pCamera, const ImageLevel* pFrame, int numNeighbors,
     vector<double> neighborWeights, vector<double*> neighborVertices,
     dataTermErrorType PE_TYPE=PE_INTENSITY):
@@ -412,7 +471,7 @@ ResidualImageProjectionDeform(double weight, double* pValue, double* pVertex,
         const T* const rigid_rot = parameters[ 2*numNeighbors ];
         const T* const rigid_trans = parameters[ 2*numNeighbors+1 ];
 
-        // compute the position from neighbors nodes first
+        // compute the position from coarse neighbors nodes first
         for(int i = 0; i < numNeighbors; ++i)
         {
             // get template difference
@@ -520,7 +579,7 @@ ResidualImageProjectionPatch(double weight, const PangaeaMeshData* pMesh,
         int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
         for(int i = 0; i < residual_num; ++i)
         residuals[i] = T(0.0);
-        
+
         const T* const* const trans = parameters;
 
         const T* const rigid_rot = parameters[ numNeighbors ];
@@ -537,57 +596,12 @@ ResidualImageProjectionPatch(double weight, const PangaeaMeshData* pMesh,
 
             ceres::AngleAxisRotatePoint( rigid_rot, p, &neighborVertices[3*i] );
 
+            for( int k = 0; k < 3; ++k)
             neighborVertices[3*i+k] += rigid_trans[k];
         }
 
-        vector<T> neighborValues;
-        vector<T> projValues;
+        getPatchResidual(weight, pCaemra, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
 
-        switch(PE_TYPE)
-        {
-            case PE_NCC:
-            {
-                neighborValues.resize(numNeighbors);
-                projValues.resize(numNeighbors);
-
-                for(int i = 0; i < numNeighbors; ++i)
-                {
-                    getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_INTENSITY);
-                    neighborValues.push_back( T(pMesh->grays[ neighbors[i] ]) );
-                }
-
-                T gray_score;
-                gray_score = T(0.0);
-                getPatchScore(neighborValues, projValues, &gray_score, PE_TYPE);
-
-                residuals[0] = T(1.0) - gray_score;
-
-            }
-            break;
-
-            case PE_COLOR_NCC:
-            {
-
-                neighborValues.resize( 3*numNeighbors );
-                projValues.resize( 3*numNeighbors );
-
-                for(int i = 0; i < numNeighbors; ++i)
-                {
-                    getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_COLOR);
-                    for(int k = 0; k < 3; ++k)
-                    neighborValues.push_back( T(pMesh->colors[ neighbors[i] ][k]) );
-                }
-
-                T color_score[3];
-                getPatchScore(neighborValues, projValues, color_score, PE_TYPE);
-
-                for(int i = 0; i < 3; ++i)
-                residuals[i] = residuals[i] - color_score[i];
-
-            }
-            break;
-        }
-        
         return true;
 
     }
@@ -603,15 +617,130 @@ private:
     dataTermErrorType PE_TYPE;
 
     int numNeighbors;
-    
+
     vector<unsigned int> neighborRadii;
     vector<unsigned int> neighbors;
     vector<double> neighborWeights;
 
     vector<double> neighborVertexPositions;
 
+    dataTermErrorType PE_TYPE;
+
 };
 
+// ResidualImageProjectionPatch from coarse level deformation
+class ResidualImageProjectionPatchCoarse
+{
+public:
+
+    ResidualImageProjectionPatchCoarse(double weight, const PangaeaMeshData* pMesh,
+        const PangaeaMeshData* pNeighborMesh, const CameraInfo* pCamera,
+        const ImageLevel* pFrame, int numNeighbors, int numCoarseNeighbors,
+        vector<double> neighborWeights, vector<unsigned int> neighborRadii,
+        vector<unsigned int> neighbors, vector<unsigned int> parameterIndices,
+        vector<unsigned int> coarseNeighborIndices, vector<unsigned int> coarseNeighborBiases,
+        vector<double> coarseNeighborWeights, dataTermErrorType PE_TYPE=PE_NCC):
+        weight(weight),
+        pMesh(pMesh),
+        pNeighborMesh(pNeighborMesh),
+        pCamera(pCamera),
+        pFrame(pFrame),
+        numNeighbors(numNeighbors),
+        numCoarseNeighbors(numCoarseNeighbors),
+        neighborWeights(neighborWeights),
+        neighborRadii(neighborRadii),
+        neighbors(neighbors),
+        parameterIndices(parameterIndices),
+        coarseNeighborIndices(coarseNeighborIndices),
+        coarseNeighborBiases(coarseNeighborBiases),
+        coarseNeighborWeights(coarseNeighborWeights),
+        PE_TYPE(PE_TYPE)
+    {
+        // check the consistency between camera and images
+        assert(pCamera->width == pFrame->grayImage.cols);
+        assert(pCamera->height == pFrame->grayImage.rows);
+    }
+
+    template<typename T>
+    bool operator()(const T* const* const parameters, T* residuals) const
+    {
+
+        int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
+        for(int i = 0; i < residual_num; ++i)
+        residuals[i] = T(0.0);
+
+        const T* const* const trans = parameters;
+        const T* const* const rotations = &(parameters[ numCoarseNeighbors ]  );
+
+        const T* const rigid_rot = parameters[ 2*numCoarseNeighbors ];
+        const T* const rigid_trans = parameters[ 2*numCoarseNeighbors + 1 ];
+
+        vector<T> neighborVertices;
+        neighborVertices.resize( 3*numNeighbors );
+
+        // computer the position from coarse neighbors nodes first
+
+        T p[3], diff_vertex[3], rot_diff_vertex[3];
+
+        int startPos = 0; // starting position for neighbors of i
+        for(int i = 0; i < numNeighbors; ++i)
+        {
+
+            p[0] = T(0.0); p[1] = T(0.0); p[2] = T(0.0);
+
+            int endPos = coarseNeighborBiases[i];  // ending position for neighbors of i
+
+            for(int j = startPos; j < endPos; ++j)
+            {
+                for(int k = 0; k < 3; ++k)
+                diff_vertex[k] = pMesh->vertices[ neighbors[i] ][k] - T(pNeighborMesh->vertices[ coarseNeighborIndices[ j ]  ][k] );
+
+                ceres::AngleAxisRotatePoint( &(rotations[ parameterIndices[j] ][ k ]), diff_vertex, rot_diff_vertex );
+
+                for(int index = 0; index < 3; ++index)
+                v[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ]
+                    + pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ] + trans[ parameterIndices[j] ][ index] );
+            }
+
+            startPos = endPos;
+
+            ceres::AngleAxisRotatePoint( rigid_rot, p, &neighborVertices[3*i] );
+
+            for( int k = 0; k < 3; ++k)
+            neighborVertices[3*i+k] += rigid_trans[k];
+
+        }
+
+        getPatchResidual(weight, pCaemra, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
+
+        return true;
+
+    }
+
+private:
+
+    double weight;
+
+    const PangaeaMeshData* pMesh;
+    const PangaeaMeshData* pNeighborMesh;
+    const CameraInfo* pCamera;
+    const ImageLevel* pFrame;
+
+    int numNeighbors;
+    int numCoarseNeighbors;
+
+    vector<unsigned int> neighborRadii;
+    vector<unsigned int> neighbors;
+    vector<double> neighborWeights;
+
+    vector<unsigned int> parameterIndices;
+    vector<unsigned int> coarseNeighborIndices;
+    vector<unsigned int> coarseNeighborBiases;
+    vector<double> coarseNeighborWeights;
+
+    dataTermErrorType PE_TYPE;
+
+};
 // total variation on top of the local rotations
 class ResidualRotTV
 {

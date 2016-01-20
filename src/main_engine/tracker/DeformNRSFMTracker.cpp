@@ -88,10 +88,10 @@ DeformNRSFMTracker::~DeformNRSFMTracker()
 {
     if(preProcessingThread != NULL)
     preProcessingThread->join();
-    
+
     if(savingThread != NULL)
     savingThread->join();
-    
+
     if(pStrategy) delete pStrategy;
     if(pImagePyramid) delete pImagePyramid;
     if(pImagePyramidBuffer) delete pImagePyramidBuffer;
@@ -216,7 +216,7 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
         templateMeshPyramid,
         meshPropagation,
         trackerSettings.neighborPatchRadius);
-    
+
     // imagePyramid will be created during the processing of the first image
     pImagePyramidBuffer->create(m_nWidth, m_nHeight);
     pImagePyramidBuffer->setupCameraPyramid(m_nMeshLevels, camInfo);
@@ -404,7 +404,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
         dataTermResidualBlocks.resize(0);
         TOCK( "trackingTimeLevel" + std::to_string(i)  + "::RemoveDataTermResidual");
-        
+
 
         // at this point we've finished the optimization on level i
         // now we need to update all the results and propagate the optimization
@@ -817,7 +817,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                         case PE_NCC:
                         case PE_COLOR_NCC:
-                            
+
                             // in patchNeighbors, point itself is counted as a neighbor of itself
                             // patch based photometric error
                             int numNeighbors = patchNeighbors[i].size();
@@ -839,14 +839,17 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                                         numNeighbors,
                                         patchWeights[i],
                                         patchRadii[i],
-                                        patchNeighbors[i],                                        
+                                        patchNeighbors[i],
                                         errorType ) );
 
                             for(int j = 0; j < numNeighbors; ++j)
                             cost_function->AddParameterBlock(3);
 
+                            cost_function->AddParameterBlock(3);
+                            cost_function->AddParameterBlock(3);
+
                             cost_function->SetNumResiduals( errorType == PE_NCC? 1 : 3  );
-                            
+
                             dataTermResidualBlocks.push_back(
                                 problem.AddResidualBlock(
                                     cost_function,
@@ -854,7 +857,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                                     parameter_blocks));
 
                             break;
-                            
+
                     }
                 }
             }
@@ -862,9 +865,9 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
         else
         {
 
-            if(errorType == PE_NCC )
-            cerr << " NCC error measure not supported in sparse deformation node case yet! "<< endl;
-            
+            // if(errorType == PE_NCC )
+            // cerr << " NCC error measure not supported in sparse deformation node case yet! "<< endl;
+
             // just try propagation strategy first
             PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[ data_pair.second ];
             MeshDeformation& neighborMeshTrans = meshTransPyramid[ data_pair.second ];
@@ -878,50 +881,157 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
             {
                 if(visibilityMask[i])
                 {
-                    // collect neighbors info
-                    vector<double*> neighborVertices;
-                    vector<double> neighborWeights;
-                    vector<double*> parameter_blocks;
-
-                    int numNeighbors = neighbors[i].size();
-                    for(int j = 0; j < numNeighbors; ++j )
+                    switch(errorType)
                     {
-                        neighborWeights.push_back( weights[i][j] );
-                        neighborVertices.push_back( &( templateNeighborMesh.vertices[ neighbors[i][j] ][ 0 ] ) );
-                        parameter_blocks.push_back( &( neighborMeshTrans[ neighbors[i][j] ][0] ) );
+                        case PE_INTENSITY:
+                        case PE_COLOR:
+                        {
+                            // collect neighbors info
+                            vector<double*> neighborVertices;
+                            vector<double> neighborWeights;
+                            vector<double*> parameter_blocks;
+
+                            int numNeighbors = neighbors[i].size();
+                            for(int j = 0; j < numNeighbors; ++j )
+                            {
+                                neighborWeights.push_back( weights[i][j] );
+                                neighborVertices.push_back( &( templateNeighborMesh.vertices[ neighbors[i][j] ][ 0 ] ) );
+                                parameter_blocks.push_back( &( neighborMeshTrans[ neighbors[i][j] ][0] ) );
+                            }
+                            for(int j = 0; j < numNeighbors; ++j )
+                            parameter_blocks.push_back( &( neighborMeshRot[ neighbors[i][j] ][0] ) );
+
+                            parameter_blocks.push_back( &camPose[0] );
+                            parameter_blocks.push_back( &camPose[3] );
+
+                            ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionCoarse, 5>* cost_function =
+                                new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionCoarse, 5 >(
+                                    new ResidualImageProjectionCoarse(
+                                        1,
+                                        errorType == PE_INTENSITY ? &templateMesh.grays[i] : &templateMesh.colors[i][0],
+                                        &templateMesh.vertices[i][0],
+                                        pCamera,
+                                        pFrame,
+                                        numNeighbors,
+                                        neighborWeights,
+                                        neighborVertices,
+                                        errorType ) );
+
+                            for(int j = 0; j < 2*numNeighbors; ++j)
+                            cost_function->AddParameterBlock(3);
+
+                            cost_function->AddParameterBlock(3);
+                            cost_function->AddParameterBlock(3);
+
+                            cost_function->SetNumResiduals(errorType == PE_INTENSITY? 1 : 3);
+
+                            dataTermResidualBlocks.push_back(
+                                problem.AddResidualBlock(
+                                    cost_function,
+                                    loss_function,
+                                    parameter_blocks));
+                        }
+
+                        break;
+
+                        case PE_NCC:
+                        case PE_COLOR_NCC:
+                        {
+                            // patch neighbors
+                            int numNeighbors;
+                            vector<double> neighborWeights;
+                            vector<unsigned int> neighborRadii;
+                            vector<unsigned int> neighbors;
+                            
+                            // coarse neighbors
+                            int numCoarseNeighbors;
+                            vector<unsigned int> coarseNeighborIndices;
+                            vector<unsigned int> coarseNeighborBiases;
+                            vector<unsigned int> coarseNeighborWeights;
+                            
+                            vector<double*> parameter_blocks;
+                            vector<double*> parameter_blocks_rot;
+                            
+                            numNeighbors = patchNeighbors[i].size();
+
+                            int bias = 0;
+                            vector<double*>::iterator iter;
+                            for(int j = 0; j < numNeighbors; ++j)
+                            {
+                                int m = patchNeighbors[i][j];
+                                int coarseNum = neighbors[ m ].size();
+
+                                bias += coarseNum;
+                                coarseNeighborBiases.push_back( bias );
+                                
+                                for(int k = 0; k < coaraseNum; ++k)
+                                {
+                                    coarseNeighborIndices.push_back( neighbors[m][k] );
+                                    coarseNeighborWeights.push_back( weights[m][k] );
+
+                                    // if not in parameter_blocks yet
+                                    double* block = &( neighborMeshTrans[ neighbors[m][k] ][0] );
+                                    double* block_rot = &( neighborMeshRot[ neighbors[m][k] ][0] );
+
+                                    iter = std::find(parameter_blocks.begin(), parameter_blocks.end(), block);
+                                    if(iter != parameter_blocks.end())
+                                    {
+                                        parameter_blocks.push_back( block );
+                                        parameter_blocks_rot.push_back( block_rot );
+                                        parameterIndices.push_back( parameter_blocks.size() - 1 );
+                                    }
+                                    else
+                                    parameterIndices.push_back( iter - parameters_blocks.begin() );
+                                    
+                                }
+                            }
+
+                            numCoarseNeighbors = parameter_blocks.size();
+                            
+                            for(int k = 0; k < parameter_blocks_rot.size(); ++k)
+                            parameter_blocks.push_back( paramters_block_rot[k] );
+
+                            parameter_blocks.push_back( &camPose[0] );
+                            parameter_blocks.push_back( &camPose[3] );
+
+                            ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatchCoarse, 5>* cost_function =
+                                new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(
+                                    new ResidualImageProjectionPatchCoarse(
+                                        1,
+                                        &templateMesh,
+                                        &templateNeighborMesh,
+                                        pCamera,
+                                        pFrame,
+                                        numNeighbors,
+                                        numCoarseNeighbors,
+                                        patchWeights[i],
+                                        patchRadii[i],
+                                        patchNeighbors[i],
+                                        parameterIndices,
+                                        coarseNeighborIndices,
+                                        coarseNeighborBiases,
+                                        coarseNeighborWeights,
+                                        errorType ) );
+
+                            for(int j = 0; j < 2*numCoarseNeighbors; ++j)
+                            cost_function->AddParameterBlock(3);
+
+                            cost_function->AddParameterBlock(3);
+                            cost_function->AddParameterBlock(3);
+
+                            cost_function->SetNumResiduals(errorType == PE_NCC? 1 : 3);
+
+                            dataTermResidualBlocks.push_back(
+                                problem.AddResidualBlock(
+                                    cost_function,
+                                    loss_function,
+                                    parameter_blocks));
+                            
+                        }
+
+                        break;
+                        
                     }
-                    for(int j = 0; j < numNeighbors; ++j )
-                    parameter_blocks.push_back( &( neighborMeshRot[ neighbors[i][j] ][0] ) );
-
-                    parameter_blocks.push_back( &camPose[0] );
-                    parameter_blocks.push_back( &camPose[3] );
-
-                    ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionDeform, 5>* cost_function =
-                        new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionDeform, 5 >(
-                            new ResidualImageProjectionDeform(
-                                1,
-                                errorType == PE_INTENSITY ? &templateMesh.grays[i] : &templateMesh.colors[i][0],
-                                &templateMesh.vertices[i][0],
-                                pCamera,
-                                pFrame,
-                                numNeighbors,
-                                neighborWeights,
-                                neighborVertices,
-                                errorType ) );
-
-                    for(int j = 0; j < 2*numNeighbors; ++j)
-                    cost_function->AddParameterBlock(3);
-
-                    cost_function->AddParameterBlock(3);
-                    cost_function->AddParameterBlock(3);
-
-                    cost_function->SetNumResiduals(errorType == PE_INTENSITY? 1 : 3);
-
-                    dataTermResidualBlocks.push_back(
-                        problem.AddResidualBlock(
-                            cost_function,
-                            loss_function,
-                            parameter_blocks));
 
                     // switch(errorType)
                     // {
@@ -934,7 +1044,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                     //                 cost_function,
                     //                 loss_function,
                     //                 parameter_blocks));
-                            
+
                     //         break;
 
                     //     case PE_COLOR:
@@ -946,7 +1056,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                     //                 cost_function,
                     //                 loss_function,
                     //                 parameter_blocks));
-                            
+
                     //         break;
                     // }
                 }
@@ -1252,7 +1362,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     if(weightParaLevel.tvTermWeight)
     {
         //TICK("SetupTVCost"  + std::to_string( currLevel ) );
-        
+
         ceres::LossFunction* pTVLossFunction = NULL;
 
         if(trackerSettings.tvTukeyWidth)
@@ -1267,7 +1377,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
 
         AddTotalVariationCost(problem, tvScaledLoss);
         //AddTotalVariationCost(problem, NULL);
-        
+
         //TOCK("SetupTVCost"  + std::to_string( currLevel ) );
     }
 
@@ -1276,7 +1386,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     if(weightParaLevel.arapTermWeight &&  weightParaLevel.tvRotTermWeight)
     {
         //TICK("SetupRotTVCost"  + std::to_string( currLevel ) );
-        
+
         ceres::LossFunction* pRotTVLossFunction = NULL;
 
         if(trackerSettings.tvRotHuberWidth)
@@ -1287,7 +1397,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
             pRotTVLossFunction , weightParaLevel.tvRotTermWeight, ceres::TAKE_OWNERSHIP);
 
         AddRotTotalVariationCost(problem, tvRotScaledLoss);
-        
+
         //TOCK("SetupRotTVCost"  + std::to_string( currLevel ) );
 
     }
@@ -1296,11 +1406,11 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     if(weightParaLevel.arapTermWeight)
     {
         //TICK("SetupARAPCost"  + std::to_string( currLevel ) );
-        
+
         ceres::ScaledLoss* arapScaledLoss = new ceres::ScaledLoss(NULL,
             weightParaLevel.arapTermWeight, ceres::TAKE_OWNERSHIP);
         AddARAPCost(problem, arapScaledLoss);
-        
+
         //TOCK("SetupARAPCost"  + std::to_string( currLevel ) );
     }
 
@@ -1309,7 +1419,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     if(weightParaLevel.inextentTermWeight)
     {
         //TICK("SetupInextentCost"  + std::to_string( currLevel ) );
-        
+
         ceres::ScaledLoss* inextentScaledLoss = new ceres::ScaledLoss(NULL,
             weightParaLevel.inextentTermWeight, ceres::TAKE_OWNERSHIP);
         AddInextentCost(problem, inextentScaledLoss);
@@ -1322,7 +1432,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     if(weightParaLevel.deformWeight)
     {
         //TICK("SetupDeformationCost"  + std::to_string( currLevel ) );
-        
+
         ceres::ScaledLoss* deformScaledLoss = new ceres::ScaledLoss(NULL,
             weightParaLevel.deformWeight, ceres::TAKE_OWNERSHIP);
         AddDeformationCost(problem, deformScaledLoss);
@@ -1351,7 +1461,7 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
     options.gradient_tolerance = trackerSettings.gradientTolerances[currLevel];
     options.parameter_tolerance = trackerSettings.parameterTolerances[currLevel];
     options.min_relative_decrease = trackerSettings.minRelativeDecreases[currLevel];
-    
+
     options.initial_trust_region_radius = trackerSettings.initialTrustRegionRadiuses[0];
     options.max_trust_region_radius = trackerSettings.maxTrustRegionRadiuses[currLevel];
     options.min_trust_region_radius = trackerSettings.minTrustRegionRadiuses[currLevel];
