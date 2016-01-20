@@ -262,8 +262,8 @@ void getResidual(double weight, const CameraInfo* pCamera, const ImageLevel* pFr
 
 template<typename T>
 void getPatchResidual(double weight, const CameraInfo* pCamera, const ImageLevel* pFrame,
-    const PangaeaMeshData* pMesh, const vector<T>& neighborVertices,
-    int numNeighbors, const vector<unsignded int>& neighbors, T* residuals,
+    const PangaeaMeshData* pMesh, vector<T>& neighborVertices,
+    int numNeighbors, const vector<unsigned int>& neighbors, T* residuals,
     const dataTermErrorType& PE_TYPE=PE_NCC)
 {
     vector<T> neighborValues;
@@ -511,44 +511,6 @@ private:
 
 };
 
-
-class ResidualTV
-{
-public:
-
-ResidualTV(double weight):
-    weight(weight), optimizeDeformation(true) {}
-
-ResidualTV(double weight, double* pVertex, double* pNeighbor):
-    weight(weight), pVertex(pVertex), pNeighbor(pNeighbor), optimizeDeformation(false) {}
-
-    template <typename T>
-        bool operator()(const T* const pCurrentVertex,
-            const T* const pCurrentNeighbor,
-            T* residuals) const
-    {
-
-        if(optimizeDeformation){
-            // in this case, pCurrentVertex and pCurrentNeighbor refer to translation
-            for(int i = 0; i <3; ++i)
-            residuals[i] = T(weight) * ( pCurrentVertex[i] - pCurrentNeighbor[i]);
-        }
-        else{
-            for(int i = 0; i <3; ++i)
-            residuals[i] = T(weight) * ( T(pVertex[i]  - pNeighbor[i]) -
-                ( pCurrentVertex[i] - pCurrentNeighbor[i]) );
-        }
-        return true;
-    }
-
-private:
-    bool optimizeDeformation;
-    double weight;
-    const double* pVertex;
-    const double* pNeighbor;
-
-};
-
 // ResidualImageProjectionPatch
 class ResidualImageProjectionPatch
 {
@@ -600,7 +562,7 @@ ResidualImageProjectionPatch(double weight, const PangaeaMeshData* pMesh,
             neighborVertices[3*i+k] += rigid_trans[k];
         }
 
-        getPatchResidual(weight, pCaemra, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
+        getPatchResidual(weight, pCamera, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
 
         return true;
 
@@ -614,7 +576,6 @@ private:
     const PangaeaMeshData* pMesh;
     const CameraInfo* pCamera;
     const ImageLevel* pFrame;
-    dataTermErrorType PE_TYPE;
 
     int numNeighbors;
 
@@ -623,7 +584,7 @@ private:
     vector<double> neighborWeights;
 
     vector<double> neighborVertexPositions;
-
+    
     dataTermErrorType PE_TYPE;
 
 };
@@ -695,10 +656,10 @@ public:
                 for(int k = 0; k < 3; ++k)
                 diff_vertex[k] = pMesh->vertices[ neighbors[i] ][k] - T(pNeighborMesh->vertices[ coarseNeighborIndices[ j ]  ][k] );
 
-                ceres::AngleAxisRotatePoint( &(rotations[ parameterIndices[j] ][ k ]), diff_vertex, rot_diff_vertex );
+                ceres::AngleAxisRotatePoint( &(rotations[ parameterIndices[j] ][ 0 ]), diff_vertex, rot_diff_vertex );
 
                 for(int index = 0; index < 3; ++index)
-                v[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ]
+                p[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ]
                     + pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ] + trans[ parameterIndices[j] ][ index] );
             }
 
@@ -711,7 +672,7 @@ public:
 
         }
 
-        getPatchResidual(weight, pCaemra, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
+        getPatchResidual(weight, pCamera, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
 
         return true;
 
@@ -741,6 +702,44 @@ private:
     dataTermErrorType PE_TYPE;
 
 };
+
+class ResidualTV
+{
+public:
+
+ResidualTV(double weight):
+    weight(weight), optimizeDeformation(true) {}
+
+ResidualTV(double weight, double* pVertex, double* pNeighbor):
+    weight(weight), pVertex(pVertex), pNeighbor(pNeighbor), optimizeDeformation(false) {}
+
+    template <typename T>
+        bool operator()(const T* const pCurrentVertex,
+            const T* const pCurrentNeighbor,
+            T* residuals) const
+    {
+
+        if(optimizeDeformation){
+            // in this case, pCurrentVertex and pCurrentNeighbor refer to translation
+            for(int i = 0; i <3; ++i)
+            residuals[i] = T(weight) * ( pCurrentVertex[i] - pCurrentNeighbor[i]);
+        }
+        else{
+            for(int i = 0; i <3; ++i)
+            residuals[i] = T(weight) * ( T(pVertex[i]  - pNeighbor[i]) -
+                ( pCurrentVertex[i] - pCurrentNeighbor[i]) );
+        }
+        return true;
+    }
+
+private:
+    bool optimizeDeformation;
+    double weight;
+    const double* pVertex;
+    const double* pNeighbor;
+
+};
+
 // total variation on top of the local rotations
 class ResidualRotTV
 {
