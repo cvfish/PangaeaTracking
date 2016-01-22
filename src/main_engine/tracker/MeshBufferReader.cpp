@@ -163,13 +163,15 @@ void MeshBufferReader::setMeshPyramid()
         // update the visibility of each vertex
         if(useVisibilityMask)
         {
-            TICK( "visibilityMask" + std::to_string(i) );
+          long long int ii = i;
+
+            TICK( "visibilityMask" + std::to_string(ii) );
 
             UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
             if(meshLoadingSettings.loadProp)
             UpdateVisibilityMaskGL(outputPropPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
 
-            TOCK( "visibilityMask" + std::to_string(i) );
+            TOCK( "visibilityMask" + std::to_string(ii) );
             
         }
     }

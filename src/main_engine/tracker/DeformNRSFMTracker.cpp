@@ -288,7 +288,9 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
         if(trackerSettings.useVisibilityMask)
         {
 
-            TICK( "visibilityMask" + std::to_string(i) );
+          long long int ii = i;
+
+            TICK( "visibilityMask" + std::to_string(ii) );
 
             if(trackerSettings.useOpenGLMask)
             {
@@ -300,7 +302,7 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
                 UpdateVisibilityMask(outputInfoPyramid[i], visibilityMaskPyramid[i], m_nWidth, m_nHeight);
             }
 
-            TOCK( "visibilityMask" + std::to_string(i) );
+            TOCK( "visibilityMask" + std::to_string(ii) );
 
         }
 
@@ -390,20 +392,22 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         // ceres::Problem& problem = problemWrapper.getProblem(i);
         // useProblemWrapper = true;
 
-        TICK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemSetup");
+        long long int ii = i;
+
+        TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
         EnergySetup(problem);
-        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemSetup");
+        TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
 
-        TICK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemMinimization");
+        TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
         EnergyMinimization(problem);
-        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::ProblemMinimization");
+        TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
 
-        TICK( "trackingTimeLevel" + std::to_string(i)  + "::RemoveDataTermResidual");
+        TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
         //remove dataTermResidualBlocks from previous frame
         for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
         problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
         dataTermResidualBlocks.resize(0);
-        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::RemoveDataTermResidual");
+        TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
 
 
         // at this point we've finished the optimization on level i
@@ -411,17 +415,17 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         // results to next level if necessary
         // the first step is update the current results
 
-        TICK( "trackingTimeLevel" + std::to_string(i)  + "::UpdateResults");
+        TICK( "trackingTimeLevel" + std::to_string(ii)  + "::UpdateResults");
         UpdateResults();
-        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::UpdateResults");
+        TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::UpdateResults");
 
         //*pOutputInfoRendering = &outputInfoPyramid[i];
         //updateRenderingLevel(pOutputInfoRendering, i);
-        TICK( "trackingTimeLevel" + std::to_string(i)  + "::PropagateMesh");
+        TICK( "trackingTimeLevel" + std::to_string(ii)  + "::PropagateMesh");
         PropagateMesh();
-        TOCK( "trackingTimeLevel" + std::to_string(i)  + "::PropagateMesh");
+        TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::PropagateMesh");
 
-        TOCK( "trackingTimeLevel" + std::to_string(i) );
+        TOCK( "trackingTimeLevel" + std::to_string(ii) );
 
     }
 

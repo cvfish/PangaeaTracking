@@ -170,14 +170,16 @@ void MeshPyramidReader::setMeshPyramid()
         if(useVisibilityMask)
         {
 
-            TICK( "visibilityMaskLevel" + std::to_string(i) );
+          long long int ii = i;
+
+            TICK( "visibilityMaskLevel" + std::to_string(ii) );
             
             UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
             
             if(!meshLoadingSettings.fastLoading)
             UpdateColorDiff(outputInfoPyramid[i], outputInfoPyramid[i].visibilityMask, colorImageSplit);
 
-            TOCK( "visibilityMaskLevel"  + std::to_string(i) );
+            TOCK( "visibilityMaskLevel"  + std::to_string(ii) );
         }
 
         //////////////////////////// outputPropPyramid
