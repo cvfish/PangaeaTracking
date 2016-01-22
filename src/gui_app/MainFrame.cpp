@@ -21,7 +21,7 @@ MainFrame::MainFrame(const wxString& title, int argc, char* argv[])
     m_nTimer(this, ID_TIMER),
     isTrackingFinished(true)
 {
-    
+
     // read configuration file
     ReadConfigurationFile(argc,argv);
 
@@ -142,7 +142,7 @@ bool MainFrame::ProcessOneFrame(int nFrame)
     // return true;
     isTrackingFinished =  false;
     cout << "processing frame: " << nFrame << endl;
-    
+
     // // read input
     // TICK("getInput");
     // if(!GetInput(nFrame))
@@ -165,11 +165,11 @@ bool MainFrame::ProcessOneFrame(int nFrame)
     m_pOverlayPane->updateImage(m_pColorImageRGB, m_nWidth, m_nHeight);
     m_pImagePane->updateImage(m_pColorImageRGB, m_nWidth, m_nHeight);
     TOCK("update2DRendering");
-    
+
     isTrackingFinished =  true;
 
     Stopwatch::getInstance().printAll();
-    
+
     return true;
 }
 
@@ -244,7 +244,7 @@ void MainFrame::SaveImage()
     cout<<"width is "<<width<<endl;
     cout<<"height is "<<height<<endl;
     wxInitAllImageHandlers();
-    
+
     //glReadPixels(l_ViewPort[0], l_ViewPort[1], l_ViewPort[2], l_ViewPort[3],
     //             GL_RGB,GL_UNSIGNED_BYTE,(GLvoid*)&(pixels[0]));
     //wxImage img(width, height, &(pixels[0]),true);
@@ -313,4 +313,3 @@ void MainFrame::SaveOverlay()
 
     delete overlay;
 }
-

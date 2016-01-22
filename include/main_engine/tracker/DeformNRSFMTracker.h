@@ -16,7 +16,6 @@
 // // Linear Solver mapping
 // ceres::LinearSolverType mapLinearSolver(std::string const& inString);
 
-
 class DeformNRSFMTracker : public TrackingEngine
 {
 
@@ -63,7 +62,7 @@ public:
     void EnergySetup(ceres::Problem& problem);
     void EnergyMinimization(ceres::Problem& problem);
     void RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel);
-    
+
     //
     bool SaveData();
     bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
@@ -121,7 +120,7 @@ private:
     // transformation Pyramid
     vector< MeshDeformation > meshTransPyramid;
     vector< MeshDeformation > meshRotPyramid;
-    
+
     vector< MeshDeformation > prevMeshTransPyramid;
     vector< MeshDeformation > prevMeshRotPyramid;
 
@@ -140,7 +139,7 @@ private:
     bool useProblemWrapper;  // for debug
 
     vector<ceres::ResidualBlockId> dataTermResidualBlocks;
-    
+
 };
 
 #endif

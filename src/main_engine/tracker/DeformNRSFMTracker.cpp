@@ -87,10 +87,10 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 DeformNRSFMTracker::~DeformNRSFMTracker()
 {
     if(preProcessingThread != NULL)
-    preProcessingThread->join();
+      preProcessingThread->join();
 
     if(savingThread != NULL)
-    savingThread->join();
+      savingThread->join();
 
     if(pStrategy) delete pStrategy;
     if(pImagePyramid) delete pImagePyramid;
@@ -473,12 +473,13 @@ void DeformNRSFMTracker::AddVariableMask(ceres::Problem& problem, baType BA)
             {
                 if(parameter_blocks[i] != &camPose[0]
                     && parameter_blocks[i] != &camPose[3])
-                problem.SetParameterBlockVariable( parameter_blocks[i] );
+                  problem.SetParameterBlockVariable( parameter_blocks[i] );
             }
             break;
         }
     }
 }
+
 
 void DeformNRSFMTracker::AddConstantMask(ceres::Problem& problem, baType BA)
 {
@@ -939,17 +940,17 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                         {
                             // patch neighbors
                             int numNeighbors;
-                            
+
                             // coarse neighbors
                             int numCoarseNeighbors;
                             vector<unsigned int> parameterIndices;
                             vector<unsigned int> coarseNeighborIndices;
                             vector<unsigned int> coarseNeighborBiases;
                             vector<double> coarseNeighborWeights;
-                            
+
                             vector<double*> parameter_blocks;
                             vector<double*> parameter_blocks_rot;
-                            
+
                             numNeighbors = patchNeighbors[i].size();
 
                             int bias = 0;
@@ -961,7 +962,7 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                                 bias += coarseNum;
                                 coarseNeighborBiases.push_back( bias );
-                                
+
                                 for(int k = 0; k < coarseNum; ++k)
                                 {
                                     coarseNeighborIndices.push_back( neighbors[m][k] );
@@ -980,12 +981,12 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                                     }
                                     else
                                     parameterIndices.push_back( iter - parameter_blocks.begin() );
-                                    
+
                                 }
                             }
 
                             numCoarseNeighbors = parameter_blocks.size();
-                            
+
                             for(int k = 0; k < parameter_blocks_rot.size(); ++k)
                             parameter_blocks.push_back( parameter_blocks_rot[k] );
 
@@ -1024,11 +1025,11 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                                     cost_function,
                                     loss_function,
                                     parameter_blocks));
-                            
+
                         }
 
                         break;
-                        
+
                     }
                 }
             }
@@ -1681,3 +1682,4 @@ void DeformNRSFMTracker::SaveThread(TrackerOutputInfo** pOutputInfoRendering)
         SaveData();
     }
 }
+//  LocalWords:  assignmentTime

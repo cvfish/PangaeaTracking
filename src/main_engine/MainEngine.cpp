@@ -22,6 +22,7 @@ MainEngine::~MainEngine()
     delete m_pTrackingEngine;
 }
 
+
 void MainEngine::GetInput(int nFrame)
 {
     if(nFrame <= m_NumTrackingFrames)
@@ -32,13 +33,13 @@ void MainEngine::GetInput(int nFrame)
         unsigned char* m_pColorImage = m_pImageSourceEngine->getColorImage();
 
         //TICK("BGR2RGB");
-        
+
         for(int i = 0; i < m_nWidth * m_nHeight; ++i)
         {
             m_pColorImageRGBBuffer[3*i] = m_pColorImage[3*i+2];
             m_pColorImageRGBBuffer[3*i+1] = m_pColorImage[3*i+1];
             m_pColorImageRGBBuffer[3*i+2] = m_pColorImage[3*i];
-            
+
         }
 
         //TOCK("BGR2RGB");
@@ -181,7 +182,7 @@ bool MainEngine::ProcessOneFrame(int nFrame)
     // read input
     // if(!GetInput(nFrame))
     // return false;
-    
+
 
     // if(inputThreadGroup.size() > 0){
     //     inputThreadGroup.join_all();
@@ -219,7 +220,7 @@ bool MainEngine::ProcessOneFrame(int nFrame)
         cout << "getting input failure" << endl;
         return false;
     }
-    
+
     // do tracking
     TICK("tracking");
     if(!m_pTrackingEngine->trackFrame(nFrame, m_pColorImageRGB, &pOutputInfo))
@@ -239,7 +240,7 @@ bool MainEngine::ProcessNextFrame()
     // set the current frame to next frame
     // call ProcessOneFrame
     mutex.lock();
-    
+
     bool flag = false;
 
     if(m_nCurrentFrame + m_nFrameStep <= m_NumTrackingFrames)
@@ -250,7 +251,7 @@ bool MainEngine::ProcessNextFrame()
     }
 
     mutex.unlock();
-    
+
     return flag;
 }
 
