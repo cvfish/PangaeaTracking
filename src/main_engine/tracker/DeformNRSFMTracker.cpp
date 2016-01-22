@@ -380,7 +380,10 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     // how many levels to do optimization on ?
     for(int i = numOptimizationLevels - 1; i >= 0; --i)
     {
-        TICK( "trackingTimeLevel" + std::to_string(i) );
+
+      long long int ii = i;
+
+        TICK( "trackingTimeLevel" + std::to_string(ii) );
 
         currLevel = i;
         // start tracking
@@ -391,8 +394,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         ceres::Problem problem;
         // ceres::Problem& problem = problemWrapper.getProblem(i);
         // useProblemWrapper = true;
-
-        long long int ii = i;
 
         TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
         EnergySetup(problem);
@@ -525,8 +526,10 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
     // update output results
     TrackerOutputInfo& output_info = outputInfoPyramid[level];
 
+    long long int ii = level;
+
     // output result for rendering
-    TICK( "updateRenderingLevel" + std::to_string( level ) );
+    TICK( "updateRenderingLevel" + std::to_string( ii ) );
 
     UpdateRenderingData(output_info, KK, camPose, template_mesh, mesh_trans);
 
@@ -536,14 +539,14 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
     else
     output_info.meshData.computeNormals();
 
-    TOCK( "updateRenderingLevel" + std::to_string( level ) );
+    TOCK( "updateRenderingLevel" + std::to_string( ii ) );
 
     vector<bool>& visibility_mask = visibilityMaskPyramid[level];
     // update visibility mask if necessary
     if(trackerSettings.useVisibilityMask)
     {
 
-        TICK( "updateVisbilityMaskLevel" + std::to_string( level ) );
+        TICK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
 
         if(trackerSettings.useOpenGLMask)
         {
@@ -556,7 +559,7 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
             UpdateVisibilityMask(output_info, visibility_mask, m_nWidth, m_nHeight);
         }
 
-        TOCK( "updateVisbilityMaskLevel" + std::to_string( level ) );
+        TOCK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
     }
 
     // need to update the color diff
@@ -1302,7 +1305,9 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
     // cout << "data term weight" << " : " << weightParaLevel.dataTermWeight << endl;
     // cout << "data huber width" << " : " << weightParaLevel.dataHuberWidth << endl;
 
-    TICK( "SetupDataTermCost" + std::to_string(currLevel) );
+    long long int ii = currLevel;
+
+    TICK( "SetupDataTermCost" + std::to_string(ii) );
     if(weightParaLevel.dataTermWeight)
     {
         ceres::LossFunction* pPhotometricLossFunction = NULL;
@@ -1318,16 +1323,16 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
         AddPhotometricCost(problem, photometricScaledLoss, PEType);
         //AddPhotometricCost(problem, NULL, PEType);
     }
-    TOCK( "SetupDataTermCost" + std::to_string(currLevel) );
+    TOCK( "SetupDataTermCost" + std::to_string(ii) );
 
 
-    TICK( "SetupRegTermCost" + std::to_string(currLevel) );
+    TICK( "SetupRegTermCost" + std::to_string(ii) );
     if(!useProblemWrapper || !problemWrapper.getLevelFlag( currLevel ) )
     {
         RegTermsSetup( problem, weightParaLevel );
         problemWrapper.setLevelFlag( currLevel );
     }
-    TOCK( "SetupRegTermCost" + std::to_string(currLevel) );
+    TOCK( "SetupRegTermCost" + std::to_string(ii) );
 
 }
 
