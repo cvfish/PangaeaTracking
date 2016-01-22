@@ -11,6 +11,8 @@ dataTermErrorType mapErrorType(std::string const& inString){
     if(inString == "color") return PE_COLOR;
     if(inString == "depth") return PE_DEPTH;
     if(inString == "depth_plane") return PE_DEPTH_PLANE;
+    if(inString == "ncc") return PE_NCC;
+    if(inString == "color_ncc") return PE_COLOR_NCC;
 }
 
 // Linear Solver mapping
@@ -440,21 +442,24 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     TOCK("updateProp");
 
     //save data
-    TICK("SavingTime");
+    // TICK("SavingTime");
 
-    if(savingThread == NULL)
-    {
-        savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
+    // if(savingThread == NULL)
+    // {
+    //     savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
 
-    }else
-    {
-        savingThread->join();
-        delete savingThread;
-        savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
-    }
+    // }else
+    // {
+    //     savingThread->join();
+    //     delete savingThread;
+    //     savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
+    // }
 
-    TOCK("SavingTime");
-    // simply return true;
+    // TOCK("SavingTime");
+    // // simply return true;
+
+      SaveThread(pOutputInfoRendering);
+
     return true;
 }
 

@@ -25,7 +25,7 @@ void read(const cv::FileNode& node, vector<vector< pair<int, int> > >& termPair)
         }
         termPair.push_back(first_second);
     }
-    
+
 }
 
 void read(const cv::FileNode& node, ImageSourceSettings& settings,
@@ -201,7 +201,7 @@ MeshLoadingSettings::MeshLoadingSettings()
     loadProp = true;
     fastLoading = true;
 
-    // By default, faces are supposed to be defined clockwise to support the 
+    // By default, faces are supposed to be defined clockwise to support the
 	// original implementation of Pangaea
 	clockwise = true;
 }
@@ -243,7 +243,7 @@ TrackerSettings::TrackerSettings()
     // default value for tracking
     errorType = "gray";
     baType = "motstr";
-    
+
     isRigid = false;
     doAlternation = true;
     updateColor = false;
@@ -298,10 +298,10 @@ TrackerSettings::TrackerSettings()
     meshLevelFormat = "";
     meshPyramidUseRadius = false;
 
-    // 
-    useDepthPyramid = false; 
+    //
+    useDepthPyramid = false;
     usePrevForTemplateInTV = false;
-    
+
     tvTukeyWidth = 0;
 
     //
@@ -311,7 +311,7 @@ TrackerSettings::TrackerSettings()
     nonlinearConjugateGradientType = "FLETCHER_REEVES";
     lineSearchInterpolationType = "CUBIC";
 
-	// By default, faces are supposed to be defined clockwise to support the 
+	// By default, faces are supposed to be defined clockwise to support the
 	// original implementation of Pangaea
 	clockwise = true;
 
@@ -331,7 +331,7 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["mesh_file"].empty())
     node["mesh_file"] >> meshFile;
-    
+
     if(!node["rigid_sequence"].empty())
     node["rigid_sequence"] >> isRigid;
 
@@ -414,7 +414,7 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["imagePyramidSamplingFactors (at each level)"].empty())
     node["imagePyramidSamplingFactors (at each level)"] >> imagePyramidSamplingFactors;
-    
+
     //Read the scaling factor for each gradient image at each level
     if(!node["imageGradientsScalingFactor (at each level)"].empty())
     node["imageGradientsScalingFactor (at each level)"] >> imageGradientScalingFactors;
@@ -532,7 +532,7 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["nonlinear_conjugate_gradient_type"].empty())
     node["nonlinear_conjugate_gradient_type"] >> nonlinearConjugateGradientType;
-    
+
     if(!node["line_search_interpolation_type"].empty())
     node["line_search_interpolation_type"] >> lineSearchInterpolationType;
 

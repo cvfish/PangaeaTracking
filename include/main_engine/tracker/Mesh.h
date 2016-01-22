@@ -301,7 +301,7 @@ void setupMeshPatchNeighbor(MeshData<FloatType>& currentMesh,
                     int new_neighbor = adjVerticesInd[ patchNeighbors[i][ nbor ]  ][k];
 
                     if(std::find(patchNeighbors[i].begin(), patchNeighbors[i].end(),
-                            new_neighbor) != patchNeighbors[i].end())
+                            new_neighbor) == patchNeighbors[i].end())
                     {
                         patchWeights[i].push_back( 1 );
                         patchNeighbors[i].push_back( new_neighbor );
@@ -325,7 +325,7 @@ void setupPatchNeighbor(MeshPyramid<FloatType>& meshPyramid,
     meshPropagation.patchNeighborsVec.resize( numLevels );
     meshPropagation.patchRadiiVec.resize( numLevels );
 
-    for(int i = 1; i < numLevels; ++i)
+    for(int i = 0; i < numLevels; ++i)
     {
         MeshData< FloatType >& currentMesh = meshPyramid.levels[i];
         setupMeshPatchNeighbor(currentMesh, meshPropagation, i, meshPatchRadius);

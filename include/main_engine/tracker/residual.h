@@ -67,38 +67,51 @@ void BackProjection(const CameraInfo* pCamera, const ImageLevel* pFrame, T* u, T
 template<typename T>
 void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, T* pScore)
 {
-    T neighborMean, projMean, neighborSTD, projSTD;
-    neighborMean = T(0.0); projMean = T(0.0);
-    neighborSTD = T(0.0); projSTD = T(0.0);
 
-    pScore[0] = T(0.0);
+  T neighborMean, projMean, neighborSTD, projSTD;
+  neighborMean = T(0.0); projMean = T(0.0);
+  neighborSTD = T(0.0); projSTD = T(0.0);
 
-    int num = neighborValues.size();
-    for(int i = 0; i < num; ++i)
+  T my_epsilon = T(0.00001);
+
+  pScore[0] = T(0.0);
+
+  int num = neighborValues.size();
+  for(int i = 0; i < num; ++i)
     {
-        neighborMean += neighborValues[ k1*i + k2 ];
-        projMean += projValues[ k1*i+k2 ];
+      neighborMean += neighborValues[ k1*i + k2 ];
+      projMean += projValues[ k1*i+k2 ];
     }
 
-    neighborMean = neighborMean / T(num);
-    projMean = projMean / T(num);
+  neighborMean = neighborMean / T(num);
+  projMean = projMean / T(num);
 
-    for(int i = 0; i < num; ++i)
+
+  //// pScore[0] = neighborMean - projMean;
+
+  for(int i = 0; i < num; ++i)
     {
-        neighborSTD += (neighborValues[k1*i + k2] - neighborMean) *
-            (neighborValues[k1*i + k2] - neighborMean);
-        projSTD += (projValues[k1*i + k2] - projMean) *
-            (projValues[k1*i + k2] - projMean);
+      neighborSTD += (neighborValues[k1*i + k2] - neighborMean) *
+        (neighborValues[k1*i + k2] - neighborMean);
+      projSTD += (projValues[k1*i + k2] - projMean) *
+        (projValues[k1*i + k2] - projMean);
     }
 
-    neighborSTD = sqrt(neighborSTD);
-    projSTD = sqrt(projSTD);
+  //pScore[0] = neighborSTD - projSTD;
 
-    for(int i = 0; i < num; ++i)
+  neighborSTD = sqrt(neighborSTD + my_epsilon);
+  projSTD = sqrt(projSTD + my_epsilon);
+
+  //////  pScore[0] = neighborSTD - projSTD;
+
+  for(int i = 0; i < num; ++i)
     {
-        pScore[0] += (neighborValues[k1*i + k2] - neighborMean) / neighborSTD *
-            (projValues[k1*i + k2] - projMean) / projSTD;
+      pScore[0] += (neighborValues[k1*i + k2] - neighborMean) / neighborSTD *
+        (projValues[k1*i + k2] - projMean) / projSTD;
     }
+
+  // pScore[0] = T(0.0);
+
 }
 
 template<typename T>
@@ -145,6 +158,7 @@ void getValue(const CameraInfo* pCamera, const ImageLevel* pFrame,
             {
                 value[0] = SampleWithDerivative< T, InternalIntensityImageType > (pFrame->grayImage,
                     pFrame->gradXImage, pFrame->gradYImage, transformed_c, transformed_r );
+
                 break;
             }
             case PE_COLOR:
@@ -279,7 +293,7 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const ImageLevel
             for(int i = 0; i < numNeighbors; ++i)
             {
                 getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_INTENSITY);
-                neighborValues.push_back( T(pMesh->grays[ neighbors[i] ]) );
+                neighborValues[i] = T(pMesh->grays[ neighbors[i] ]);
             }
 
             T gray_score;
@@ -298,9 +312,9 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const ImageLevel
 
             for(int i = 0; i < numNeighbors; ++i)
             {
-                getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_COLOR);
+                getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[3*i], PE_COLOR);
                 for(int k = 0; k < 3; ++k)
-                neighborValues.push_back( T(pMesh->colors[ neighbors[i] ][k]) );
+                neighborValues[ 3*i + k] = T(pMesh->colors[ neighbors[i] ][k]);
             }
 
             T color_score[3];
