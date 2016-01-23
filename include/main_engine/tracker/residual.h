@@ -20,10 +20,12 @@ enum dataTermErrorType{
     PE_DEPTH_PLANE,
     PE_NCC,
     PE_COLOR_NCC,
+    PE_NCC_ALL,
+    PE_COLOR_NCC_ALL,
     NUM_DATA_TERM_ERROR
 };
 
-static int PE_RESIDUAL_NUM_ARRAY[NUM_DATA_TERM_ERROR] = {1,3,3,1,1,3};
+static int PE_RESIDUAL_NUM_ARRAY[NUM_DATA_TERM_ERROR] = {1,3,3,1,1,3,1,3};
 
 //
 template<typename T>
@@ -578,6 +580,8 @@ ResidualImageProjectionPatch(double weight, const PangaeaMeshData* pMesh,
 
         getPatchResidual(weight, pCamera, pFrame, pMesh, neighborVertices, numNeighbors, neighbors, residuals, PE_TYPE);
 
+        //residuals[0] = T(0.0);
+
         return true;
 
     }
@@ -598,7 +602,7 @@ private:
     vector<double> neighborWeights;
 
     vector<double> neighborVertexPositions;
-    
+
     dataTermErrorType PE_TYPE;
 
 };
@@ -714,6 +718,180 @@ private:
     vector<double> coarseNeighborWeights;
 
     dataTermErrorType PE_TYPE;
+
+};
+
+// ResidualImageProjectionPatchAll, put all the points together in a single cost function
+class ResidualImageProjectionPatchAll
+{
+public:
+
+  ResidualImageProjectionPatchAll(double weight, const PangaeaMeshData* pMesh,
+                                  const CameraInfo* pCamera, const ImageLevel* pFrame,
+                                  const MeshNeighbors* pNeighbors, const MeshWeights* pWeights,
+                                  const MeshNeighbors* pRadii, vector<bool>& visibilityMask,
+                                  dataTermErrorType PE_TYPE=PE_NCC):
+    weight(weight),
+    pMesh(pMesh),
+    pCamera(pCamera),
+    pFrame(pFrame),
+    pNeighbors(pNeighbors),
+    pWeights(pWeights),
+    pRadii(pRadii),
+    visibilityMask(visibilityMask),
+    PE_TYPE(PE_TYPE)
+  {
+
+    // check the consistency between camera and images
+    assert(pCamera->width == pFrame->grayImage.cols);
+    assert(pCamera->height == pFrame->grayImage.rows);
+
+  }
+
+  template<typename T>
+  bool operator()(const T* const* const parameters, T* residuals) const
+  {
+
+    int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
+    for(int i = 0; i < residual_num; ++i)
+      residuals[i] = T(0.0);
+
+    const T* const* const trans = parameters;
+
+    int numVertices = pMesh->numVertices;
+
+    const T* const rigid_rot = parameters[ numVertices ];
+    const T* const rigid_trans = parameters[ numVertices+1 ];
+
+    // get all the points that need to be projected to images first
+    vector<bool> computeMask;
+    computeMask.resize(numVertices); //default value will be false
+
+    for(int i = 0; i < numVertices; ++i)
+      {
+        if(visibilityMask[i]  )
+          {
+            computeMask[i] = true;
+            int numNeighbors = (*pNeighbors)[i].size();
+            for(int j = 0; j < numNeighbors; ++j)
+              computeMask[(*pNeighbors)[i][j] ] = true;
+          }
+      }
+
+    vector<T> values;
+    values.resize( residual_num*numVertices );
+
+    T p[3], transP[3];
+    for(int i = 0; i < numVertices; ++i)
+      {
+        if(computeMask[i])
+          {
+            for(int k = 0; k < 3; ++k)
+              p[k] = trans[i][k] + T(pMesh->vertices[i][k]);
+
+            ceres::AngleAxisRotatePoint( rigid_rot, p, transP );
+
+            for(int k = 0; k < 3; ++k)
+              transP[k] += rigid_trans[k];
+
+            getValue(pCamera, pFrame, transP, &values[residual_num*i], residual_num == 1 ? PE_INTENSITY : PE_COLOR);
+          }
+
+      }
+
+    vector<T> neighborValues;
+    vector<T> projValues;
+
+    if( residual_num == 1 ){
+
+      T score;
+      T residual;
+
+      for(int i = 0; i < numVertices; ++i){
+
+        if(visibilityMask[i]){
+
+          int numNeighbors = (*pNeighbors)[i].size();
+          neighborValues.resize(numNeighbors);
+          projValues.resize(numNeighbors);
+
+          for(int j = 0; j < numNeighbors; ++j){
+            neighborValues[j] = T(pMesh->grays[ (*pNeighbors)[i][j] ]);
+            projValues[j] = values[ (*pNeighbors)[i][j] ];
+          }
+
+          getPatchScore(neighborValues, projValues, &score, PE_NCC);
+
+          residual = T(weight) * (T(1.0) - score);
+          residuals[0] += residual * residual;
+
+        }
+
+      }
+
+      residuals[0] = sqrt(residuals[0]);
+
+    }
+    else{
+
+      T score[3];
+      T residual[3];
+
+      for(int i = 0; i < numVertices; ++i){
+
+        if(visibilityMask[i]){
+
+          int numNeighbors = (*pNeighbors)[i].size();
+          neighborValues.resize( 3*numNeighbors );
+          projValues.resize( 3*numNeighbors );
+
+          for(int j = 0; j < numNeighbors; ++j){
+            for(int k = 0; k < 3; ++k){
+              neighborValues[ 3*j + k ] = T(pMesh->colors[ (*pNeighbors)[i][j] ][k]);
+              projValues[ 3*j + k ] = values[ 3 * (*pNeighbors)[i][j] + k ];
+            }
+          }
+
+          getPatchScore(neighborValues, projValues, score, PE_COLOR_NCC);
+
+          for(int k = 0; k < 3; ++k)
+            {
+              residual[k] = T(weight) * (T(1.0) - score[k]);
+              residuals[k] += residual[k] * residual[k];
+            }
+
+        }
+
+      }
+
+      for(int k = 0; k < 3; ++k)
+        residuals[k] = sqrt(residuals[k]);
+
+    }
+
+    // residuals[0] = T(0.0);
+
+    return true;
+
+  }
+
+private:
+
+  double weight;
+
+  const PangaeaMeshData* pMesh;
+  const CameraInfo* pCamera;
+
+  const ImageLevel* pFrame;
+
+  const MeshNeighbors* pNeighbors;
+  const MeshWeights* pWeights;
+  const MeshNeighbors* pRadii;
+
+
+  vector<bool> visibilityMask;
+
+  dataTermErrorType PE_TYPE;
 
 };
 
@@ -971,3 +1149,9 @@ public:
     }
 
 };
+
+// class ResidualPhotometricCallback: public ceres::IterationCallback
+// {
+  
+
+// }
