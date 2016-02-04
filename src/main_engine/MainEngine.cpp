@@ -199,27 +199,31 @@ bool MainEngine::ProcessOneFrame(int nFrame)
 
     TICK("timePerFrame");
 
+    // TICK("getInput");
+    // if(pInputThread == NULL)
+    // {
+    //     pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
+    //     pInputThread->join();
+    //     memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+    // }
+    // else
+    // {
+    //     pInputThread->join();
+    //     memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+    //     delete pInputThread;
+    //     pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
+    // }
+    // TOCK("getInput");
+
     TICK("getInput");
-    if(pInputThread == NULL)
-    {
-        pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
-        pInputThread->join();
-        memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
-    }
-    else
-    {
-        pInputThread->join();
-        memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
-        delete pInputThread;
-        pInputThread = new boost::thread(boost::bind(&MainEngine::GetInput, this, nFrame));
-    }
+    GetInput(nFrame);
     TOCK("getInput");
 
     if(!inputFlag)
-    {
+      {
         cout << "getting input failure" << endl;
         return false;
-    }
+      }
 
     // do tracking
     TICK("tracking");

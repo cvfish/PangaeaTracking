@@ -11,20 +11,22 @@ ImagePyramid& ImagePyramid::operator=(const ImagePyramid& imagePyramid)
     // ignore the pCurrentColorImageBGR, pCurrentColorImageRGB, pCurrentGrayImage
     // copy over the data in each ImageLevel
     levels.resize(imagePyramid.levels.size());
+    levelsBuffer.resize(imagePyramid.levelsBuffer.size());
+
     camInfoLevels.resize(imagePyramid.camInfoLevels.size());
-    
+
     for(int i = 0; i < imagePyramid.levels.size(); ++i)
     {
         imagePyramid.levels[i].grayImage.copyTo( levels[i].grayImage );
         imagePyramid.levels[i].gradXImage.copyTo( levels[i].gradXImage );
         imagePyramid.levels[i].gradYImage.copyTo( levels[i].gradYImage );
-        
+
         imagePyramid.levels[i].colorImage.copyTo( levels[i].colorImage );
 
         imagePyramid.levels[i].depthImage.copyTo( levels[i].depthImage );
         imagePyramid.levels[i].depthGradXImage.copyTo( levels[i].depthGradXImage );
         imagePyramid.levels[i].depthGradYImage.copyTo( levels[i].depthGradYImage );
-        
+
         for(int j = 0; j < 3; ++j)
         {
             imagePyramid.levels[i].colorImageSplit[j].copyTo( levels[i].colorImageSplit[j] );
@@ -34,11 +36,11 @@ ImagePyramid& ImagePyramid::operator=(const ImagePyramid& imagePyramid)
             imagePyramid.levels[i].depthNormalImageSplit[j].copyTo( levels[i].depthNormalImageSplit[j] );
             imagePyramid.levels[i].depthNormalImageGradXSplit[j].copyTo( levels[i].depthNormalImageGradXSplit[j] );
             imagePyramid.levels[i].depthNormalImageGradYSplit[j].copyTo( levels[i].depthNormalImageGradYSplit[j] );
-            
+
         }
-        
+
     }
-    
+
 	return *this;
 }
 
@@ -105,7 +107,7 @@ void ImagePyramid::deallocateMemory()
 
 void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 {
-    levels.resize(numLevels);
+    levelsBuffer.resize(numLevels);
 
     // copy over new data
     memcpy(pCurrentColorImageRGB, pColorImageRGB, 3*m_nWidth*m_nHeight);
@@ -121,59 +123,60 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
             0.114*pCurrentColorImageRGB[ 3*i+2 ];
     }
 
-    IntensityImageType grayImageBYTE;
-    InternalIntensityImageType& grayImage = levels[0].grayImage;
-    InternalColorImageType& colorImage = levels[0].colorImage;
-
     // all the memory with be allocated only during the first frame
     cv::Mat tempColorImageBGR(m_nHeight, m_nWidth, CV_8UC3, pCurrentColorImageBGR);
     cv::cvtColor( tempColorImageBGR, grayImageBYTE, CV_BGR2GRAY );
-    grayImageBYTE.convertTo( grayImage, cv::DataType<CoordinateType>::type, 1./255 );
+    grayImageBYTE.convertTo( grayBufferImage, cv::DataType<CoordinateType>::type, 1./255 );
 
     cv::Mat tempColorImageRGB(m_nHeight, m_nWidth, CV_8UC3, pCurrentColorImageRGB);
-    tempColorImageRGB.convertTo(colorImage, cv::DataType<Vec3d>::type, 1./255);
+    tempColorImageRGB.convertTo(colorBufferImage, cv::DataType<Vec3d>::type, 1./255);
 
-    // there is memory allocation only for the first time
-    for(int i = 1; i < numLevels; ++i)
-    {
-        grayImage.copyTo(levels[i].grayImage);
-        colorImage.copyTo(levels[i].colorImage);
-    }
-
-    InternalIntensityImageType grayTempImage;
-    InternalColorImageType colorTempImage;
-    int factor=1;
+    int factor = 1;
+    double blurSigma;
 
     cout << "number of sampling factors specified " <<
-        trackerSettings.imagePyramidSamplingFactors.size() << endl;
+      trackerSettings.imagePyramidSamplingFactors.size() << endl;
 
     // starts doing smoothing and gets gradients
     for(int i = 0; i < numLevels; ++i)
     {
         // the standard deviation of gaussian blur is fixed as 3
         int blurSize = trackerSettings.blurFilterSizes[i];
+        if(trackerSettings.blurSigmaSizes.size() > 0)
+          blurSigma = trackerSettings.blurSigmaSizes[i];
+        else
+          blurSigma = 3;
+
         if(blurSize > 0)
         {
-            cv::GaussianBlur(levels[i].grayImage,
-                levels[i].grayImage,
+            cv::GaussianBlur(grayBufferImage,
+                blurGrayBufferImage,
                 cv::Size(blurSize, blurSize),
-                3);
+                blurSigma);
 
-            cv::GaussianBlur(levels[i].colorImage,
-                levels[i].colorImage,
+            cv::GaussianBlur(colorBufferImage,
+                blurColorBufferImage,
                 cv::Size(blurSize, blurSize),
-                3);
+                blurSigma);
         }
+
         // do some proper downsampling at this point
         if(trackerSettings.imagePyramidSamplingFactors.size() > 0)
         {
             factor = trackerSettings.imagePyramidSamplingFactors[i];
-            resize(levels[i].grayImage, grayTempImage, cv::Size(), 1.0/factor, 1.0/factor);
-            grayTempImage.copyTo(levels[i].grayImage);
-            resize(levels[i].colorImage, colorTempImage, cv::Size(), 1.0/factor, 1.0/factor);
-            colorTempImage.copyTo(levels[i].colorImage);
-        }
 
+            resize(blurGrayBufferImage,
+                   levelsBuffer[i].grayImage,
+                   cv::Size(),
+                   1.0/factor,
+                   1.0/factor);
+
+            resize(blurColorBufferImage,
+                   levelsBuffer[i].colorImage,
+                   cv::Size(),
+                   1.0/factor,
+                   1.0/factor);
+        }
     }
 
     // have to check gradient scale properly
@@ -181,30 +184,30 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
     {
         double gradScale = trackerSettings.imageGradientScalingFactors[i];
 
-        cv::Scharr(levels[i].grayImage,
-            levels[i].gradXImage,
-            grayImage.depth(),
+        cv::Scharr(levelsBuffer[i].grayImage,
+            levelsBuffer[i].gradXImage,
+            -1,
             1,0,
             gradScale);
-        cv::Scharr(levels[i].grayImage,
-            levels[i].gradYImage,
-            grayImage.depth(),
+        cv::Scharr(levelsBuffer[i].grayImage,
+            levelsBuffer[i].gradYImage,
+            -1,
             0,1,
             gradScale);
 
-        cv::split(levels[i].colorImage, levels[i].colorImageSplit);
+        cv::split(levelsBuffer[i].colorImage, levelsBuffer[i].colorImageSplit);
 
         for(int j = 0; j < 3; ++j)
         {
-            cv::Scharr(levels[i].colorImageSplit[j],
-                levels[i].colorImageGradXSplit[j],
-                grayImage.depth(),
+            cv::Scharr(levelsBuffer[i].colorImageSplit[j],
+                levelsBuffer[i].colorImageGradXSplit[j],
+                -1,
                 1,0,
                 gradScale);
 
-            cv::Scharr(levels[i].colorImageSplit[j],
-                levels[i].colorImageGradYSplit[j],
-                grayImage.depth(),
+            cv::Scharr(levelsBuffer[i].colorImageSplit[j],
+                levelsBuffer[i].colorImageGradYSplit[j],
+                -1,
                 0,1,
                 gradScale);
         }
@@ -212,6 +215,12 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 
     // support for depth image will be added here
 
+}
+
+void ImagePyramid::updateData()
+{
+  //exchange levels and levelsBuffer
+  levels.swap( levelsBuffer );
 }
 
 CameraInfo& ImagePyramid::getCameraInfo(int nLevel)

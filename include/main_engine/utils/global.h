@@ -57,11 +57,13 @@ typedef cv::Vec<CoordinateType,3> Vec3d;
 
 typedef cv::Mat_< PixelType > IntensityImageType;
 typedef cv::Mat_< CoordinateType > DepthImageType;
+typedef cv::Mat_< CoordinateType > FeatureImageType;
 typedef DepthImageType InternalIntensityImageType;
 typedef cv::Mat_<Vec3b> ColorImageType;
 typedef cv::Mat_<Vec3d> InternalColorImageType;
 
 typedef std::vector<ColorImageType> ColorImageContainerType;
+typedef std::vector< FeatureImageType > FeatureImageContainerType;
 
 typedef Matrix<CoordinateType, Dynamic, Dynamic, RowMajor> MatrixXCordRow;
 typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixXfRow;
@@ -91,6 +93,10 @@ enum TrackingType{
 ImageSourceType mapImageSourceType(std::string const& inString);
 
 TrackingType mapTrackingType(std::string const& inString);
+
+int typeConvert(string dataType);
+
+int typeSize(string dataType);
 
 #define SafeAllocArray(x,size) x = new unsigned char[size]; memset(x, 0, size);
 #define SafeAllocArrayType(x,size,tp) x = new tp[size]; memset(x, 0, size*sizeof(tp));
@@ -130,7 +136,7 @@ void flipnorm(FloatType* normals, int num)
 }
 
 template<typename FloatType>
-void compnorm(FloatType* ver1,  FloatType* ver2, FloatType* ver3, FloatType* location, 
+void compnorm(FloatType* ver1,  FloatType* ver2, FloatType* ver3, FloatType* location,
 	bool clockwise)
 {
     // compute normals assume that the normal at each point
@@ -243,7 +249,7 @@ void SampleLinear( const TImage & intensityImage,
 
   sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
            (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
-  
+
 }
 
 /// Linear interpolation.

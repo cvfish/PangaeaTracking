@@ -318,6 +318,8 @@ TrackerSettings::TrackerSettings()
     // patch optimization stuff
     // by default we do not do any patch based stuff
     neighborPatchRadius = 0;
+
+    useFeatureImages = false;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -410,7 +412,10 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     //Read the blur filter size at every pyramid level
     if(!node["blurFilterSize (at each level)"].empty())
-    node["blurFilterSize (at each level)"] >> blurFilterSizes;
+      node["blurFilterSize (at each level)"] >> blurFilterSizes;
+
+    if(!node["blurSigmaSize (at each level)"].empty())
+      node["blurSigmaSize (at each level)"] >> blurSigmaSizes;
 
     if(!node["imagePyramidSamplingFactors (at each level)"].empty())
     node["imagePyramidSamplingFactors (at each level)"] >> imagePyramidSamplingFactors;
@@ -542,6 +547,77 @@ void TrackerSettings::read(const cv::FileNode& node)
 
     if(!node["neighbor_patch_radius"].empty())
     node["neighbor_patch_radius"] >> neighborPatchRadius;
+
+    if(!node["use_feature_images"].empty())
+      node["use_feature_images"] >> useFeatureImages;
+}
+
+void FeatureSettings::FeatureSettings()
+{
+
+  channels = 3;
+  scalingFactor = 1.0;
+
+  hasGradient = False;
+
+  dataType = 'double';
+  gradType = 'dobule';
+
+  fileName = '/home/cvfish/Work/code/github/PangaeaTracking/data/Yiwan/feature_images/sift/binSize2_jpg_lmdb';
+  keyNameFormat = 'sift%04d';
+
+  featureTermWeight = 0;
+  featureHuberWidth = 0.1;
+
+}
+
+void FeatureSettings::read(const cv::FileNode& node)
+{
+
+  if(!node["channels"])
+    node["channels"] >> channels;
+
+  if(!node["scaling_factor"])
+    node["scaling_factor"] >> scalingFactor;
+
+  if(!node["has_gradient"])
+    node["has_gradient"] >> hasGradient;
+
+  if(!node["data_type"])
+    node["data_type"] >> dataType;
+
+  if(!node["grad_type"])
+    node["grad_type"] >> gradType;
+
+  if(!node["db_path"])
+    node["db_path"] >> dbPath;
+
+  if(!node["key_name_format"])
+    node["key_name_format"] >> keyNameFormat;
+
+  if(!node["blurFeatureFilterSize (at each level)"])
+    node["blurFeatureFilterSize (at each level)"] >> blurFeatureFilterSizes;
+
+  if(!node["blurFeatureSigmaSize (at each level)"])
+    node["blurFeatureSigmaSize (at each level)"] >> blurFeatureSigmaSizes;
+
+  if(!node["featurePyramidSamplingFactors (at each level)"])
+    node["featurePyramidSamplingFactors (at each level)"] >> featurePyramidSamplingFactors;
+
+  if(!node["featureGradientScalingFactors (at each level)"])
+    node["featureGradientScalingFactors (at each level)"] >> featureGradientScalingFactors;
+
+  if(!node["feature_term_weight"])
+    node["feature_term_weight"] >> featureTermWeight;
+
+  if(!node["feature_huber_width"])
+    node["feature_huber_width"] >> featureHuberWidth;
+
+  // convert dataType and gradType from string to int
+  dataTypeINT = typeConvert(dataType);
+  gradTypeINT = typeConvert(gradType);
+  dataElemSize = typeSize(dataType);
+
 }
 
 ImageSourceType imageSourceType = IMAGESEQUENCE;
@@ -551,3 +627,4 @@ ImageSourceSettings imageSourceSettings;
 ShapeLoadingSettings shapeLoadingSettings;
 MeshLoadingSettings meshLoadingSettings;
 TrackerSettings trackerSettings;
+FeatureSettings featureSettings;

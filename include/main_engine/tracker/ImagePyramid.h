@@ -14,7 +14,11 @@ struct CameraInfo
     double invKK[3][3];
 };
 
-struct ImageLevel
+struct Level
+{
+};
+
+struct ImageLevel: public Level
 {
     InternalIntensityImageType grayImage;
     InternalIntensityImageType gradXImage;
@@ -47,12 +51,14 @@ public:
     ImagePyramid& operator=(const ImagePyramid&);
 
     void create(int width, int height);
-    
+
     void allocateMemory(int width, int height); // allocate memory based on the size
     void deallocateMemory();
 
     void setupPyramid(unsigned char* pColorImageRGB, int numLevels);
     void setupCameraPyramid(int numLevels, CameraInfo& camInfo);
+
+  void updateData();
 
     CameraInfo& getCameraInfo(int nLevel);
     ImageLevel& getImageLevel(int nLevel);
@@ -66,8 +72,19 @@ private:
     unsigned char* pCurrentGrayImage;
 
     vector<ImageLevel> levels;
+  vector<ImageLevel> levelsBuffer;
+
     vector<CameraInfo> camInfoLevels;
 
     int m_nWidth;
     int m_nHeight;
+
+  InternalIntensityImageType grayBufferImage;
+  InternalIntensityImageType blurGrayBufferImage;
+
+  InternalColorImageType colorBufferImage;
+  InternalColorImageType blurColorBufferImage;
+
+  IntensityImageType grayImageBYTE;
+
 };

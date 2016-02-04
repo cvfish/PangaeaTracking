@@ -3,6 +3,7 @@
 
 #include "./TrackingEngine.h"
 #include "./ImagePyramid.h"
+#include "./FeaturePyramid.h"
 #include "./OptimizationStrategy.h"
 #include "./residual.h"
 #include "./ProblemWrapper.h"
@@ -21,124 +22,142 @@ class DeformNRSFMTracker : public TrackingEngine
 
 public:
 
-    DeformNRSFMTracker(TrackerSettings& settings, int width, int height, double K[3][3],
-        int startFrame, int numTrackingFrames);
+  DeformNRSFMTracker(TrackerSettings& settings, int width, int height, double K[3][3],
+                     int startFrame, int numTrackingFrames);
 
-    virtual ~DeformNRSFMTracker();
+  virtual ~DeformNRSFMTracker();
 
-    bool setCurrentFrame(int curFrame);  // only useful when loading stuff
-    void setIntrinsicMatrix(double K[3][3]); // set camera parameters
-    void initializeCamera();
+  bool setCurrentFrame(int curFrame);  // only useful when loading stuff
+  void setIntrinsicMatrix(double K[3][3]); // set camera parameters
+  void initializeCamera();
 
-    void setInitialMesh(PangaeaMeshData& mesh){};
-    void setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyramid);
+  void setInitialMesh(PangaeaMeshData& mesh){};
+  void setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyramid);
 
-    //void trackerInitSetup(TrackerOutputInfo& outputInfo);
-    bool trackFrame(int nFrame, unsigned char* pColorImageRGB,
-        TrackerOutputInfo** pOutputInfo);
-    void updateRenderingLevel(TrackerOutputInfo** pOutputInfo,
-        int nRenderLevel, bool renderType = false);
+  //void trackerInitSetup(TrackerOutputInfo& outputInfo);
+  bool trackFrame(int nFrame, unsigned char* pColorImageRGB,
+                  TrackerOutputInfo** pOutputInfo);
+  void updateRenderingLevel(TrackerOutputInfo** pOutputInfo,
+                            int nRenderLevel, bool renderType = false);
 
-    void AddPhotometricCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function, dataTermErrorType errorType);
-    void AddTotalVariationCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function);
-    void AddRotTotalVariationCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function);
+  void AddPhotometricCost(ceres::Problem& problem,
+                          ceres::LossFunction* loss_function, dataTermErrorType errorType);
+  void AddFeatureCost(ceres::Problem& problem,
+                      ceres::LossFunction* loss_function);
 
-    void AddARAPCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function);
-    void AddInextentCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function);
-    void AddDeformationCost(ceres::Problem& problem,
-        ceres::LossFunction* loss_function);
-    void AddTemporalMotionCost(ceres::Problem& problem,
-        double rotWeight, double transWeight);
+  void AddTotalVariationCost(ceres::Problem& problem,
+                             ceres::LossFunction* loss_function);
+  void AddRotTotalVariationCost(ceres::Problem& problem,
+                                ceres::LossFunction* loss_function);
 
-    void AddVariableMask(ceres::Problem& problem, baType BA);
-    void AddConstantMask(ceres::Problem& problem, baType BA);
+  void AddARAPCost(ceres::Problem& problem,
+                   ceres::LossFunction* loss_function);
+  void AddInextentCost(ceres::Problem& problem,
+                       ceres::LossFunction* loss_function);
+  void AddDeformationCost(ceres::Problem& problem,
+                          ceres::LossFunction* loss_function);
+  void AddTemporalMotionCost(ceres::Problem& problem,
+                             double rotWeight, double transWeight);
 
-    //
-    void EnergySetup(ceres::Problem& problem);
-    void EnergyMinimization(ceres::Problem& problem);
-    void RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel);
+  void AddVariableMask(ceres::Problem& problem, baType BA);
+  void AddConstantMask(ceres::Problem& problem, baType BA);
 
-    //
-    bool SaveData();
-    bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
-    bool SaveMeshPyramid();
-    void SaveThread(TrackerOutputInfo** pOutputInfoRendering);
+  //
+  void EnergySetup(ceres::Problem& problem);
+  void EnergyMinimization(ceres::Problem& problem);
+  void RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel);
 
-    void UpdateResults();
-    void UpdateResultsLevel(int level);
-    void PropagateMesh();
-    void PropagateMeshCoarseToFine(int coarse_level, int fine_level);
+  //
+  bool SaveData();
+  bool SaveMeshToFile(TrackerOutputInfo& outputInfo);
+  bool SaveMeshPyramid();
+  void SaveThread(TrackerOutputInfo** pOutputInfoRendering);
+
+  void UpdateResults();
+  void UpdateResultsLevel(int level);
+  void PropagateMesh();
+  void PropagateMeshCoarseToFine(int coarse_level, int fine_level);
+
+  // attach features to the meshes
+  void AttachFeaturesToMeshPyramid();
+  void AttachFeatureToMesh(PangaeaMeshData* pMesh,
+                           FeatureLevel* pFeatureLevel,
+                           CameraInfo* pCamera,
+                           vector<bool>& visibilityMask,
+                           PangaeaMeshData* pOutputMesh);
 
 private:
 
-    // Siggraph14 or DynamicFusion
-    OptimizationStrategy* pStrategy;
-    int currLevel;  // current optimization level
+  // Siggraph14 or DynamicFusion
+  OptimizationStrategy* pStrategy;
+  int currLevel;  // current optimization level
 
-    int startFrameNo;
-    int currentFrameNo;
+  int startFrameNo;
+  int currentFrameNo;
 
-    int m_nWidth;
-    int m_nHeight;
-    int m_nMeshLevels;
+  int m_nWidth;
+  int m_nHeight;
+  int m_nMeshLevels;
 
-    baType BAType;
-    dataTermErrorType PEType;
+  baType BAType;
+  dataTermErrorType PEType;
 
-    double prevCamPose[6];
-    double camPose[6];
-    double KK[3][3];
+  double prevCamPose[6];
+  double camPose[6];
+  double KK[3][3];
 
-    //
-    CameraInfo camInfo;
-    bool trackerInitialized;
+  //
+  CameraInfo camInfo;
+  bool trackerInitialized;
 
-    PangaeaMeshPyramid templateMeshPyramid;
+  PangaeaMeshPyramid templateMeshPyramid;
 
-    // containes the neighbor & weight information between pairs of meshes
-    MeshPropagation meshPropagation;
+  // containes the neighbor & weight information between pairs of meshes
+  MeshPropagation meshPropagation;
 
-    // ImagePyramid
-    ImagePyramid* pImagePyramid;
-    ImagePyramid* pImagePyramidBuffer;
-    bool dataInBuffer;
+  // ImagePyramid
+  ImagePyramid* pImagePyramid;
 
-    // visibilityMask Pyramid
-    vector<vector<bool> > visibilityMaskPyramid;
+  // FeaturePyramid
+  FeaturePyramid* pFeaturePyramid;
 
-    // tracker output Pyramid
-    vector< TrackerOutputInfo > outputInfoPyramid;
-    // keep the mesh just after propagation
-    // should think a way to save memory
-    vector< TrackerOutputInfo > outputPropPyramid;
+  // visibilityMask Pyramid
+  vector<vector<bool> > visibilityMaskPyramid;
 
-    // transformation Pyramid
-    vector< MeshDeformation > meshTransPyramid;
-    vector< MeshDeformation > meshRotPyramid;
+  // tracker output Pyramid
+  vector< TrackerOutputInfo > outputInfoPyramid;
+  // keep the mesh just after propagation
+  // should think a way to save memory
+  vector< TrackerOutputInfo > outputPropPyramid;
 
-    vector< MeshDeformation > prevMeshTransPyramid;
-    vector< MeshDeformation > prevMeshRotPyramid;
+  // transformation Pyramid
+  vector< MeshDeformation > meshTransPyramid;
+  vector< MeshDeformation > meshRotPyramid;
 
-    // what about if we use dual quarternion representation?
-    // In that case, we will need a dual quarternion
-    // field transformation
+  vector< MeshDeformation > prevMeshTransPyramid;
+  vector< MeshDeformation > prevMeshRotPyramid;
 
-    // ceres output
-    std::ofstream ceresOutput;
+  // what about if we use dual quarternion representation?
+  // In that case, we will need a dual quarternion
+  // field transformation
 
-    boost::thread* preProcessingThread;
-    boost::thread* savingThread;
+  // ceres output
+  std::ofstream ceresOutput;
 
-    //problem wrapper
-    ProblemWrapper problemWrapper;
-    bool useProblemWrapper;  // for debug
+  boost::thread* preProcessingThread;
+  boost::thread* savingThread;
 
-    vector<ceres::ResidualBlockId> dataTermResidualBlocks;
+  boost::thread* featureThread;
+
+  // attach features to the mesh
+  boost::thread* attachFeatureThread;
+
+  //problem wrapper
+  ProblemWrapper problemWrapper;
+  bool useProblemWrapper;  // for debug
+
+  vector<ceres::ResidualBlockId> dataTermResidualBlocks;
+  vector<ceres::ResidualBlockId> featureTermResidualBlocks;
 
 };
 

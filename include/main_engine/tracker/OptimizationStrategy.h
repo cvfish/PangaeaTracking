@@ -15,7 +15,7 @@ struct OptimizationLevel
     // otherwise we interpolate the position based on its neighbors
     vector<std::pair<int, int> > dataTermPairs;
     vector<std::pair<int, int> > regTermPairs;
-    
+
     // propagation to be done after optimization
     vector<std::pair<int, int> > propPairs;
 
@@ -43,6 +43,10 @@ struct WeightPara
     double tvHuberWidth;
     double tvRotHuberWidth;
 
+  // feature weighting parameters
+  double featureTermWeight;
+  double featureHuberWidth;
+
 };
 
 struct WeightScale
@@ -58,6 +62,8 @@ struct WeightScale
     // change over different levels of the pyramid
     vector<double> rotScale;
     vector<double> transScale;
+
+  vector<double> featureTermScale;
 };
 
 class OptimizationStrategy
@@ -85,7 +91,7 @@ public:
 
     // weightPara
     vector< WeightPara > weightParaVec;
-    
+
     vector< pair<int, int> > propPairsFinal;
 };
 
@@ -102,5 +108,5 @@ public:
     void AddPropPairs(vector<std::pair<int, int> >& propPairs,
         vector<std::pair<int, int> >& nextPairs,
         vector<int>& updatedLevels);
-    
+
 };

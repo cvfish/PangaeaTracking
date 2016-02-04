@@ -2,12 +2,12 @@
 #define _MAINEngine_H
 
 #include "./utils/settings.h"
-          
+
 #include "./image_source/ImageSourceEngine.h"
-          
+
 #include "./tracker/Mesh.h"
 #include "./tracker/ImagePyramid.h"
-          
+
 #include "./tracker/TrackingEngine.h"
 
 #ifndef VIS_ONLY
@@ -21,7 +21,7 @@ public:
 
     MainEngine();
     virtual ~MainEngine();
-    
+
     void LoadInitialMeshUVD();
     void LoadInitialMeshFromFile();
     void SetIntrinsicMatrix(double K[3][3]);
@@ -29,7 +29,7 @@ public:
 
     // void ReadConfigurationFile(int argc, wxChar* argv[]);
     void ReadConfigurationFile(int argc, char* argv[]);
-    
+
     void GetInput(int nFrame);
 
     void Run();

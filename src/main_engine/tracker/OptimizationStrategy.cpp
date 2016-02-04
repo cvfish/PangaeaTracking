@@ -30,6 +30,8 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
 
     weightScale.transScale.resize(numOptimizationLevels, 1);
 
+    weightScale.featureTermScale.resize(numOptimizationLevels, 1);
+
     // // all the 0th level have scale 1
     // weightScale.dataTermScale[0] = 1;
     // weightScale.tvTermScale[0] = 1;
@@ -61,6 +63,8 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
         weightScale.rotScale[i] = decreaseFactor *  weightScale.rotScale[0];
 
         weightScale.transScale[i] = decreaseFactor * weightScale.transScale[0];
+
+        weightScale.featureTermScale[i] = 1;
     }
 
 }
@@ -99,6 +103,9 @@ void OptimizationStrategy::setWeightParametersVec()
             weightScale.rotScale[currLevel];
         weightParaLevel.transWeight = weightPara.transWeight *
             weightScale.transScale[currLevel];
+
+        weightParaLevel.featureTermWeight = weightPara.featureTermWeight * weightScale.featureTermScale[currLevel];
+        weightParaLevel.featureHuberWidth = weightPara.featureHuberWidth;
 
         weightParaVec.push_back( weightParaLevel );
     }

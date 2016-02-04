@@ -8,7 +8,7 @@ bool existenceTest(string meshPath, string meshLevelFormat, int frame,
     {
         std::stringstream meshFile;
         sprintf(buffer, meshLevelFormat.c_str(), frame, meshLevelList[i]);
-        meshFile << meshPath << buffer;     
+        meshFile << meshPath << buffer;
         if(!bfs::exists(meshFile.str())){
             cout << "File not existing: " << meshFile.str() << endl;
             return false;
@@ -111,6 +111,20 @@ TrackingType mapTrackingType(std::string const& inString)
     if (inString == "MeshBuffer") return MESHBUFFER;
 }
 
+int typeConvert(string dataType)
+{
+  if(dataType == 'unsigned char') return CV_8U;
+  if(dataType == 'float') return CV_32F;
+  if(dataType == 'double') return CV_64F;
+}
+
+int typeSize(string dataType)
+{
+  if(dataType == 'unsigned char') return 1;
+  if(dataType == 'float') return 4;
+  if(dataType == 'double') return 8;
+}
+
 // points1, points2,
 void computeRot(vector<double>& template_vextex, vector<double>& vertex,
     vector<vector<double> >& template_nbor_vertices, vector<vector<double > >& nbor_vertices,
@@ -128,7 +142,7 @@ void computeRot(vector<double>& template_vextex, vector<double>& vertex,
 
             X(j,i) = weights[i] * (
                 vertex[j] - nbor_vertices[ neighbors[i] ][j]);
-            
+
             if(deform)
             X(j,i) += Xt(j,i);
         }

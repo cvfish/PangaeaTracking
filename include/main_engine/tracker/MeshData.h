@@ -42,6 +42,8 @@ public:
         center[i] = d.center[i];
 
 		clockwise = d.clockwise;
+    features = d.features;
+
     }
 
     MeshData& operator=(const MeshData& d)
@@ -62,6 +64,8 @@ public:
         center[i] = d.center[i];
 
 		clockwise = d.clockwise;
+
+    features = d.features;
 
         return *this;
     }
@@ -84,6 +88,9 @@ public:
         center[i] = d.center[i];
 
 		clockwise = d.clockwise;
+
+    features = std::move(d.features);
+
 	};
 	MeshData& operator=(MeshData&& d) {
         vertices = std::move(d.vertices);
@@ -101,6 +108,8 @@ public:
         center[i] = d.center[i];
 
 		clockwise = d.clockwise;
+
+    features = std::move(d.features);
 
         return *this;
 	};
@@ -124,6 +133,10 @@ public:
     double center[3];
 
 	bool clockwise;
+
+  // attach features to the mesh
+  vector<vector<FloatType> > features;
+  vector<vector<FloatType> > featuresBuffer;
 };
 
 template<typename FloatType>
@@ -137,6 +150,8 @@ void MeshData<FloatType>::clear()
     adjVerticesInd.clear();
     modelColors.clear();
     modelLabels.clear();
+
+    features.clear();
 }
 
 template<typename FloatType>
@@ -191,7 +206,7 @@ void MeshData<FloatType>::computeNormals()
                 else
                 ind2 = adjVerticesInd[i][0];
 
-				compnorm(&vertices[i][0], &vertices[ind2][0], &vertices[ind1][0], testNorm, 
+				compnorm(&vertices[i][0], &vertices[ind2][0], &vertices[ind1][0], testNorm,
 					clockwise);
                 normal[0] += testNorm[0];
                 normal[1] += testNorm[1];
