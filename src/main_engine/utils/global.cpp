@@ -113,16 +113,16 @@ TrackingType mapTrackingType(std::string const& inString)
 
 int typeConvert(string dataType)
 {
-  if(dataType == 'unsigned char') return CV_8U;
-  if(dataType == 'float') return CV_32F;
-  if(dataType == 'double') return CV_64F;
+  if(dataType == "unsigned char") return CV_8U;
+  if(dataType == "float") return CV_32F;
+  if(dataType == "double") return CV_64F;
 }
 
 int typeSize(string dataType)
 {
-  if(dataType == 'unsigned char') return 1;
-  if(dataType == 'float') return 4;
-  if(dataType == 'double') return 8;
+  if(dataType == "unsigned char") return 1;
+  if(dataType == "float") return 4;
+  if(dataType == "double") return 8;
 }
 
 // points1, points2,

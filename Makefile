@@ -54,8 +54,10 @@ OPENCV_LIB := -lopencv_core -lopencv_highgui -lopencv_imgproc
 CERES_LIB := -lceres -lglog -ltbb -ltbbmalloc -lcholmod -lccolamd \
 	-lcamd -lcolamd -lamd -lsuitesparseconfig -llapack -lf77blas -latlas
 
+LMDB_LIB := -llmdb
+
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
-LDFLAGS := $(WX_LIB) $(BOOST_LIB) $(OPENCV_LIB) $(CERES_LIB) $(GL_LIB)
+LDFLAGS := $(WX_LIB) $(BOOST_LIB) $(OPENCV_LIB) $(CERES_LIB) $(GL_LIB) $(LMDB_LIB)
 LDFLAGS += $(foreach library_dir, $(LIBRARY_DIRS), -L$(library_dir))
 
 # Setting compiler and building flags

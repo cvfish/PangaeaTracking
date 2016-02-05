@@ -41,7 +41,13 @@ public:
                             int nRenderLevel, bool renderType = false);
 
   void AddPhotometricCost(ceres::Problem& problem,
-                          ceres::LossFunction* loss_function, dataTermErrorType errorType);
+                          ceres::LossFunction* loss_function,
+                          dataTermErrorType errorType);
+
+  void AddPhotometricCostNew(ceres::Problem& problem,
+                          ceres::LossFunction* loss_function,
+                          dataTermErrorType errorType);
+
   void AddFeatureCost(ceres::Problem& problem,
                       ceres::LossFunction* loss_function);
 
@@ -86,6 +92,57 @@ public:
                            vector<bool>& visibilityMask,
                            PangaeaMeshData* pOutputMesh);
 
+  // helper functions for data term
+  void AddCostImageProjection(ceres::Problem& problem,
+                              ceres::LossFunction* loss_function,
+                              dataTermErrorType errorType,
+                              PangaeaMeshData& templateMesh,
+                              MeshDeformation& meshTrans,
+                              vector<bool>& visibilityMask,
+                              CameraInfo* pCamera,
+                              Level* pFrame);
+
+  void AddCostImageProjectionPatch(ceres::Problem& problem,
+                                   ceres::LossFunction* loss_function,
+                                   dataTermErrorType errorType,
+                                   PangaeaMeshData& templateMesh,
+                                   MeshDeformation& meshTrans,
+                                   vector<bool>& visibilityMask,
+                                   MeshNeighbors& patchNeighbors,
+                                   MeshNeighbors& patchRadii,
+                                   MeshWeights& patchWeights,
+                                   CameraInfo* pCamera,
+                                   Level* pFrame);
+
+  void AddCostImageProjectionCoarse(ceres::Problem& problem,
+                                    ceres::LossFunction* loss_function,
+                                    dataTermErrorType errorType,
+                                    PangaeaMeshData& templateMesh,
+                                    vector<bool>& visibilityMask,
+                                    PangaeaMeshData& templateNeighborMesh,
+                                    MeshDeformation& neighborMeshTrans,
+                                    MeshDeformation& neighborMeshRot,
+                                    MeshNeighbors& neighbors,
+                                    MeshWeights& weights,
+                                    CameraInfo* pCamera,
+                                    Level* pFrame);
+
+  void AddCostImageProjectionPatchCoarse(ceres::Problem& problem,
+                                         ceres::LossFunction* loss_function,
+                                         dataTermErrorType& errorType,
+                                         PangaeaMeshData& templateMesh,
+                                         vector<bool>& visibilityMask,
+                                         MeshNeighbors& patchNeighbors,
+                                         MeshNeighbors& patchRadii,
+                                         MeshWeights& patchWeights,
+                                         PangaeaMeshData& templateNeighborMesh,
+                                         MeshDeformation& neighborMeshTrans,
+                                         MeshDeformation& neighborMeshRot,
+                                         MeshNeighbors& neighbors,
+                                         MeshWeights& weights,
+                                         CameraInfo* pCamera,
+                                         Level* pFrame);
+
 private:
 
   // Siggraph14 or DynamicFusion
@@ -117,6 +174,8 @@ private:
 
   // ImagePyramid
   ImagePyramid* pImagePyramid;
+
+  bool dataInBuffer;
 
   // FeaturePyramid
   FeaturePyramid* pFeaturePyramid;

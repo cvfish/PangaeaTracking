@@ -20,15 +20,33 @@ enum dataTermErrorType{
   PE_DEPTH_PLANE,
   PE_NCC,
   PE_COLOR_NCC,
-  PE_NCC_ALL,
-  PE_COLOR_NCC_ALL,
   PE_FEATURE, // number of residuals depend on the number of channels
+  PE_FEATURE_NCC,
   COST_TYPE_NUM
 };
 
-static int PE_RESIDUAL_NUM_ARRAY[COST_TYPE_NUM] = {1,3,3,1,1,3,1,3,-1};
+static int PE_RESIDUAL_NUM_ARRAY[COST_TYPE_NUM] = {1,3,3,1,1,3,-1,-1};
 
-//
+template<typename T>
+void getValueFromMesh(const PangaeaMeshData* pMeshData, dataTermErrorType errorType, int pntInd, T* pValue)
+{
+  switch(errorType)
+    {
+    case PE_INTENSITY:
+    case PE_NCC:
+      pValue = (T*)(&pMeshData->grays[ pntInd ]);
+      break;
+    case PE_COLOR:
+    case PE_COLOR_NCC:
+      pValue = (T*)(&pMeshData->colors[ pntInd ][0]);
+      break;
+    case PE_FEATURE:
+    case PE_FEATURE_NCC:
+      pValue = (T*)(&pMeshData->features[ pntInd ][0]);
+      break;
+    }
+}
+
 template<typename T>
 void IntrinsicProjection(const CameraInfo* pCamera, T* p, T* u, T* v)
 {
@@ -176,6 +194,9 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
             BackProjection(pCamera, pImageLevel, &transformed_c, &transformed_r, value);
 
+            for(int i = 0; i < 3; ++i)
+              value[i] = value[i] - p[i];
+
             break;
           }
         case PE_DEPTH_PLANE: // point-to-plane error
@@ -186,7 +207,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
 
             // normals at back projection point
             T normals_at_bp[3];
-            for(int  i = 0; i < 3; ++i)
+            for(int i = 0; i < 3; ++i)
               {
                 normals_at_bp[i] = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
                                                                                           pImageLevel->depthNormalImageGradXSplit[i],
@@ -223,65 +244,30 @@ void getResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
   static vector<T> projValues;
   int numChannels;
 
+  numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
+
+  projValues.resize( numChannels );
+
+  getValue(pCamera, pFrame, p, &projValues[0], PE_TYPE);
+
   switch(PE_TYPE)
     {
     case PE_INTENSITY:
-      {
-        numChannels = 1;
-        projValues.resize(numChannels);
-        getValue(pCamera, pFrame, p, &projValues[0], PE_INTENSITY);
-        residuals[0] = T(weight) * (pValue[0] - projValues[0]);
-      }
-      break;
-
     case PE_COLOR:
+    case PE_FEATURE:
       {
-        numChannels = 3;
-        projValues.resize(numChannels);
-        getValue(pCamera, pFrame, p, &projValues[0], PE_COLOR);
-
         for(int i = 0; i < numChannels; ++i)
           residuals[i] = T(weight) * (pValue[i] - projValues[i]);
       }
       break;
-
-    case PE_DEPTH:  // point-to-point error
-      {
-        numChannels = 3;
-        projValues.resize(numChannels);
-        getValue(pCamera, pFrame, p, &projValues[0], PE_DEPTH);
-
-        for(int i = 0; i < numChannels; ++i)
-          residuals[i] = T(weight) * (pValue[i] - projValues[i]);
-      }
-      break;
-
+    case PE_DEPTH:
     case PE_DEPTH_PLANE:
       {
-        numChannels = 3;
-        projValues.resize(numChannels);
-
-        // in this case, projValues are already the point-to-plance residuals
-        getValue(pCamera, pFrame, p, &projValues[0], PE_DEPTH_PLANE);
         for(int i = 0; i < numChannels; ++i)
           residuals[i] = T(weight) * projValues[i];
       }
       break;
-
-    case PE_FEATURE:
-      {
-        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
-        numChannels = pFeatureLevel->featureImageVec.size();
-
-        projValues.resize(numChannels);
-        getValue(pCamera, pFrame, p, &projValues[0], PE_FEATURE);
-
-        for(int i = 0; i < numChannels; ++i)
-          residuals[i] = T(weight) * (pValue[i] - projValues[i]);
-      }
-      break;
     }
-
 }
 
 template<typename T>
@@ -297,56 +283,18 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
   T my_epsilon = T(0.00001);
   int numChannels;
 
-  switch(PE_TYPE)
+  numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
+  T* pValue = NULL;
+
+  neighborValues.resize( numChannels * numNeighbors );
+  projValues.resize( numChannels * numNeighbors );
+
+  for(int i = 0; i < numNeighbors; ++i)
     {
-    case PE_INTENSITY:
-    case PE_NCC:
-      {
-        numChannels = 1;
-        neighborValues.resize(numNeighbors);
-        projValues.resize(numNeighbors);
-
-        for(int i = 0; i < numNeighbors; ++i)
-          {
-            getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[i], PE_INTENSITY);
-            neighborValues[i] = T(pMesh->grays[ neighbors[i] ]);
-          }
-      }
-      break;
-    case PE_COLOR:
-    case PE_COLOR_NCC:
-      {
-
-        numChannels = 3;
-        neighborValues.resize( numChannels*numNeighbors );
-        projValues.resize( numChannels*numNeighbors );
-
-        for(int i = 0; i < numNeighbors; ++i)
-          {
-            getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_COLOR);
-            for(int k = 0; k < numChannels; ++k)
-              neighborValues[ numChannels*i + k] = T(pMesh->colors[ neighbors[i] ][k]);
-          }
-      }
-      break;
-    case PE_FEATURE:
-    case PE_FEATURE_NCC:
-      {
-        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
-        numChannels = pFeatureLevel->featureImageVec.size();
-
-        neighborValues.resize( numChannels*numNeighbors );
-        projValues.resize( numChannels*numNeighbors );
-
-        for(int i = 0; i < numNeighbors; ++i)
-          {
-            getValue(pCamera, pFeatureLevel, &neighborVertices[3*i], &projValues[numChannels*i], PE_FEATURE);
-            for(int k = 0; k < numChannels; ++k)
-              neighborValues[ numChannels*i + k ] = T(pMesh->features[ neighbors[i] ][k]);
-          }
-
-      }
-      break;
+      getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_TYPE);
+      getValueFromMesh( pMesh, PE_TYPE, i, pValue );
+      for(int k = 0; k < numChannels; ++k)
+        neighborValues[ numChannels*i + k] = T( pValue[k] );
     }
 
   // get the residual for two different cases, with or without NCC
@@ -360,7 +308,8 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
         residuals[i] = T(0.0);
         for(int j = 0; j < numNeighbors; ++j)
           {
-            residuals[i] += square( T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] ) );
+            residuals[i] += T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] ) *
+              T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] );
           }
         residuals[i] = sqrt( residuals[i] + my_epsilon );
       }
@@ -810,7 +759,8 @@ public:
 
             for(int index = 0; index < 3; ++index)
               p[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ]
-                                                      + pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ] + trans[ parameterIndices[j] ][ index] );
+                                                      + pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ]
+                                                      + trans[ parameterIndices[j] ][ index] );
           }
 
         startPos = endPos;
@@ -848,180 +798,6 @@ private:
   vector<unsigned int> coarseNeighborIndices;
   vector<unsigned int> coarseNeighborBiases;
   vector<double> coarseNeighborWeights;
-
-  dataTermErrorType PE_TYPE;
-
-};
-
-// ResidualImageProjectionPatchAll, put all the points together in a single cost function
-class ResidualImageProjectionPatchAll
-{
-public:
-
-  ResidualImageProjectionPatchAll(double weight, const PangaeaMeshData* pMesh,
-                                  const CameraInfo* pCamera, const Level* pFrame,
-                                  const MeshNeighbors* pNeighbors, const MeshWeights* pWeights,
-                                  const MeshNeighbors* pRadii, vector<bool>& visibilityMask,
-                                  dataTermErrorType PE_TYPE=PE_NCC):
-    weight(weight),
-    pMesh(pMesh),
-    pCamera(pCamera),
-    pFrame(pFrame),
-    pNeighbors(pNeighbors),
-    pWeights(pWeights),
-    pRadii(pRadii),
-    visibilityMask(visibilityMask),
-    PE_TYPE(PE_TYPE)
-  {
-
-    // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
-
-  }
-
-  template<typename T>
-  bool operator()(const T* const* const parameters, T* residuals) const
-  {
-
-    int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
-    for(int i = 0; i < residual_num; ++i)
-      residuals[i] = T(0.0);
-
-    const T* const* const trans = parameters;
-
-    int numVertices = pMesh->numVertices;
-
-    const T* const rigid_rot = parameters[ numVertices ];
-    const T* const rigid_trans = parameters[ numVertices+1 ];
-
-    // get all the points that need to be projected to images first
-    vector<bool> computeMask;
-    computeMask.resize(numVertices); //default value will be false
-
-    for(int i = 0; i < numVertices; ++i)
-      {
-        if(visibilityMask[i]  )
-          {
-            computeMask[i] = true;
-            int numNeighbors = (*pNeighbors)[i].size();
-            for(int j = 0; j < numNeighbors; ++j)
-              computeMask[(*pNeighbors)[i][j] ] = true;
-          }
-      }
-
-    vector<T> values;
-    values.resize( residual_num*numVertices );
-
-    T p[3], transP[3];
-    for(int i = 0; i < numVertices; ++i)
-      {
-        if(computeMask[i])
-          {
-            for(int k = 0; k < 3; ++k)
-              p[k] = trans[i][k] + T(pMesh->vertices[i][k]);
-
-            ceres::AngleAxisRotatePoint( rigid_rot, p, transP );
-
-            for(int k = 0; k < 3; ++k)
-              transP[k] += rigid_trans[k];
-
-            getValue(pCamera, pFrame, transP, &values[residual_num*i], residual_num == 1 ? PE_INTENSITY : PE_COLOR);
-          }
-
-      }
-
-    vector<T> neighborValues;
-    vector<T> projValues;
-
-    if( residual_num == 1 ){
-
-      T score;
-      T residual;
-
-      for(int i = 0; i < numVertices; ++i){
-
-        if(visibilityMask[i]){
-
-          int numNeighbors = (*pNeighbors)[i].size();
-          neighborValues.resize(numNeighbors);
-          projValues.resize(numNeighbors);
-
-          for(int j = 0; j < numNeighbors; ++j){
-            neighborValues[j] = T(pMesh->grays[ (*pNeighbors)[i][j] ]);
-            projValues[j] = values[ (*pNeighbors)[i][j] ];
-          }
-
-          getPatchScore(neighborValues, projValues, &score, 1);
-
-          residual = T(weight) * (T(1.0) - score);
-          residuals[0] += residual * residual;
-
-        }
-
-      }
-
-      residuals[0] = sqrt(residuals[0]);
-
-    }
-    else{
-
-      T score[3];
-      T residual[3];
-
-      for(int i = 0; i < numVertices; ++i){
-
-        if(visibilityMask[i]){
-
-          int numNeighbors = (*pNeighbors)[i].size();
-          neighborValues.resize( 3*numNeighbors );
-          projValues.resize( 3*numNeighbors );
-
-          for(int j = 0; j < numNeighbors; ++j){
-            for(int k = 0; k < 3; ++k){
-              neighborValues[ 3*j + k ] = T(pMesh->colors[ (*pNeighbors)[i][j] ][k]);
-              projValues[ 3*j + k ] = values[ 3 * (*pNeighbors)[i][j] + k ];
-            }
-          }
-
-          getPatchScore(neighborValues, projValues, score, 3);
-
-          for(int k = 0; k < 3; ++k)
-            {
-              residual[k] = T(weight) * (T(1.0) - score[k]);
-              residuals[k] += residual[k] * residual[k];
-            }
-
-        }
-
-      }
-
-      for(int k = 0; k < 3; ++k)
-        residuals[k] = sqrt(residuals[k]);
-
-    }
-
-    // residuals[0] = T(0.0);
-
-    return true;
-
-  }
-
-private:
-
-  double weight;
-
-  const PangaeaMeshData* pMesh;
-  const CameraInfo* pCamera;
-
-  const Level* pFrame;
-
-  const MeshNeighbors* pNeighbors;
-  const MeshWeights* pWeights;
-  const MeshNeighbors* pRadii;
-
-
-  vector<bool> visibilityMask;
 
   dataTermErrorType PE_TYPE;
 
