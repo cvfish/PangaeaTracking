@@ -329,6 +329,7 @@ TrackerSettings::TrackerSettings()
   neighborPatchRadius = 0;
 
   useFeatureImages = false;
+  useRGBImages = true;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -559,6 +560,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 
   if(!node["use_feature_images"].empty())
     node["use_feature_images"] >> useFeatureImages;
+
+  if(!node["use_rgb_images"].empty())
+    node["use_rgb_images"] >> useRGBImages;
 }
 
 FeatureSettings::FeatureSettings()
@@ -613,8 +617,8 @@ void FeatureSettings::read(const cv::FileNode& node)
   if(!node["featurePyramidSamplingFactors (at each level)"].empty())
     node["featurePyramidSamplingFactors (at each level)"] >> featurePyramidSamplingFactors;
 
-  if(!node["featureGradientScalingFactors (at each level)"].empty())
-    node["featureGradientScalingFactors (at each level)"] >> featureGradientScalingFactors;
+  if(!node["featureGradientScalingFactor (at each level)"].empty())
+    node["featureGradientScalingFactor (at each level)"] >> featureGradientScalingFactors;
 
   if(!node["feature_term_weight"].empty())
     node["feature_term_weight"] >> featureTermWeight;

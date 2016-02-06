@@ -95,6 +95,8 @@ bool visibilityTest(double* vertex, double* center, double* normal,
 
 ImageSourceType mapImageSourceType(std::string const& inString)
 {
+  cout << inString << endl;
+
     if (inString == "ImagesBuffer") return ALLIMAGESBUFFER;
     if (inString == "ImageSequence") return IMAGESEQUENCE;
     if (inString == "Video") return VIDEO;
@@ -103,6 +105,8 @@ ImageSourceType mapImageSourceType(std::string const& inString)
 
 TrackingType mapTrackingType(std::string const& inString)
 {
+  cout << inString << endl;
+
     if (inString == "ShapesBuffer") return ALLSHAPESBUFFER;
     if (inString == "ShapeSequence") return SHAPESEQUENCE;
     if (inString == "DeformNRSFMTracker") return DEFORMNRSFM;

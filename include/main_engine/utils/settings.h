@@ -195,6 +195,7 @@ public:
 
   // use featureImages
   bool useFeatureImages;
+  bool useRGBImages;
 };
 
 class FeatureSettings

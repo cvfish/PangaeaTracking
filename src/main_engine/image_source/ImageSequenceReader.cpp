@@ -19,6 +19,8 @@ ImageSequenceReader::ImageSequenceReader(ImageSourceSettings& settings)
 
     m_curImage = cv::imread(imagePath.str().c_str(),1); // read in color image
 
+    cout << imagePath.str() << endl;
+
     // read the calibration information
     std::stringstream intrinsicsFileName;
     intrinsicsFileName << inputPath << settings.intrinsicsFile;
@@ -81,7 +83,7 @@ void ImageSequenceReader::setCurrentFrame(int curFrame)
             cerr << "ERROR: cv::imread failed." << endl;
             cerr << "(Exception = " << e.what() << ")" << endl;
         }
-        
+
     }
 }
 
@@ -112,7 +114,7 @@ void ImageSequenceReader::readUVDImage(DepthImageType& uImage, DepthImageType& v
                 uImage(i,j) = j+1;
                 vImage(i,j) = i+1;
             }
-        }        
+        }
     }
     ReadRawDepth(data_path,"depth0001.raw",m_nWidth,m_nHeight,dImage);
 
@@ -121,7 +123,7 @@ void ImageSequenceReader::readUVDImage(DepthImageType& uImage, DepthImageType& v
     imagePath << data_path.str() << "mask.png";
     IntensityImageType maskImage = cv::imread(imagePath.str().c_str(),0);
     maskImage.convertTo( maskImageAux, cv::DataType<CoordinateType>::type);
-    
+
 }
 
 void ImageSequenceReader::ReadRawDepth(std::stringstream& data_path, std::string filename,
@@ -146,5 +148,5 @@ void ImageSequenceReader::ReadRawDepth(std::stringstream& data_path, std::string
     else
     {
         cerr << imagePath.str() << " does not exist! " << endl;
-    }    
+    }
 }

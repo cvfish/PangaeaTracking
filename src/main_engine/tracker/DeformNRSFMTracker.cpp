@@ -462,12 +462,15 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       EnergyMinimization(problem);
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
 
-      TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
-      //remove dataTermResidualBlocks from previous frame
-      for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
-        problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
-      dataTermResidualBlocks.resize(0);
-      TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
+      if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
+        {
+          TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
+          //remove dataTermResidualBlocks from previous frame
+          for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
+            problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
+          dataTermResidualBlocks.resize(0);
+          TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
+        }
 
       if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
         {
@@ -527,7 +530,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   // // simply return true;
 
   SaveThread(pOutputInfoRendering);
-
 
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     pFeaturePyramid->updatePrev();
@@ -1935,7 +1937,7 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
   long long int ii = currLevel;
 
-  if(weightParaLevel.dataTermWeight)
+  if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
     {
       TICK( "SetupDataTermCost" + std::to_string(ii) );
 

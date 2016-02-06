@@ -101,13 +101,17 @@ void FeaturePyramid::setupPyramid(string key)
   // setup the 0th level of current feature image pyramid
 
   int data_size = mdb_data.mv_size;
-  int channel_size = m_nHeight * m_nWidth * featureSettings.dataElemSize;
+  int channel_num = m_nHeight * m_nWidth;
+  int channel_size = channel_num * featureSettings.dataElemSize;
   int real_size =  m_nNumChannels * channel_size;
   int shift = (data_size - real_size) / featureSettings.dataElemSize;
 
-  currLevelsBuffer[0].featureImageVec.resize(m_nNumChannels);
-  currLevelsBuffer[0].featureImageGradXVec.resize(m_nNumChannels);
-  currLevelsBuffer[0].featureImageGradYVec.resize(m_nNumChannels);
+  for(int i = 0; i < m_nNumLevels; ++i)
+    {
+      currLevelsBuffer[i].featureImageVec.resize(m_nNumChannels);
+      currLevelsBuffer[i].featureImageGradXVec.resize(m_nNumChannels);
+      currLevelsBuffer[i].featureImageGradYVec.resize(m_nNumChannels);
+    }
 
   int factor = 1;
   double blurSigma;
@@ -116,8 +120,11 @@ void FeaturePyramid::setupPyramid(string key)
     {
       for(int i = 0; i < m_nNumLevels; ++i)
         {
-          if(i == 0)
-            {
+          // FeatureImageType featureBufferImage;
+          // FeatureImageType blurBufferImage;
+
+          // if(i == 0)
+          //   {
               switch(featureSettings.dataElemSize)
                 {
                 case 1:
@@ -126,7 +133,7 @@ void FeaturePyramid::setupPyramid(string key)
                     featureBufferImage = cv::Mat(m_nHeight,
                                                  m_nWidth,
                                                  featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_size);
+                                                 data_pointer + shift + j * channel_num);
                   }
                   break;
                 case 4:
@@ -135,7 +142,7 @@ void FeaturePyramid::setupPyramid(string key)
                     featureBufferImage = cv::Mat(m_nHeight,
                                                  m_nWidth,
                                                  featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_size);
+                                                 data_pointer + shift + j * channel_num);
                   }
                   break;
                 case 8:
@@ -144,17 +151,26 @@ void FeaturePyramid::setupPyramid(string key)
                     featureBufferImage = cv::Mat(m_nHeight,
                                                  m_nWidth,
                                                  featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_size);
+                                                 data_pointer + shift + j * channel_num);
+                    // cv::namedWindow("featureBufferImage", cv::WINDOW_AUTOSIZE);
+                    // cv::imshow("featureBufferImage", featureBufferImage);
+                    // cv::waitKey(0);
+
                   }
                   break;
                 }
-            }
+            // }
 
           int blurSize = featureSettings.blurFeatureFilterSizes[i];
           if(featureSettings.blurFeatureSigmaSizes.size() > 0)
             blurSigma = featureSettings.blurFeatureSigmaSizes[i];
           else
             blurSigma = 3;
+
+          cout << "channel " << j << " " << "level " << i << endl;
+          cout << "feature buffer: " << featureBufferImage.rows << " " << featureBufferImage.cols << endl;
+          cout << "blur size: " << blurSize << endl;
+          cout << "blur sigma: " << blurSigma << endl;
 
           if(blurSize > 0){
             cv::GaussianBlur(featureBufferImage,
@@ -163,6 +179,8 @@ void FeaturePyramid::setupPyramid(string key)
                              blurSigma);
           }else
             featureBufferImage.copyTo(blurBufferImage);
+
+          cout << "blur buffer: " << blurBufferImage.rows << " " << blurBufferImage.cols << endl;
 
           // do some proper downsampling at this point
           if(featureSettings.featurePyramidSamplingFactors.size() > 0){
@@ -177,17 +195,20 @@ void FeaturePyramid::setupPyramid(string key)
             blurBufferImage.copyTo(currLevelsBuffer[i].featureImageVec[j]);
           }
 
+          cout << "currLevelsBuffer: " << currLevelsBuffer[i].featureImageVec[j].rows << " "
+               << currLevelsBuffer[i].featureImageVec[j].cols << endl;
+
           // setup gradient
           double gradScale = featureSettings.featureGradientScalingFactors[i];
 
-          cv::Scharr(currLevelsBuffer[i].featureImageVec[i],
-                     currLevelsBuffer[i].featureImageGradXVec[i],
+          cv::Scharr(currLevelsBuffer[i].featureImageVec[j],
+                     currLevelsBuffer[i].featureImageGradXVec[j],
                      featureSettings.gradTypeINT,
                      1,0,
                      gradScale);
 
-          cv::Scharr(currLevelsBuffer[i].featureImageVec[i],
-                     currLevelsBuffer[i].featureImageGradYVec[i],
+          cv::Scharr(currLevelsBuffer[i].featureImageVec[j],
+                     currLevelsBuffer[i].featureImageGradYVec[j],
                      featureSettings.gradTypeINT,
                      0,1,
                      gradScale);
@@ -198,12 +219,11 @@ void FeaturePyramid::setupPyramid(string key)
   // setup feature pyramid for previous frame
   if(!m_bInitialized)
     {
-      prevLevels[0].featureImageVec.resize(m_nNumChannels);
-      prevLevels[0].featureImageGradXVec.resize(m_nNumChannels);
-      prevLevels[0].featureImageGradYVec.resize(m_nNumChannels);
-
       // copy over the data from currLevelsBuffer
       for(int i = 0; i < m_nNumLevels; ++i){
+        prevLevels[i].featureImageVec.resize(m_nNumChannels);
+        prevLevels[i].featureImageGradXVec.resize(m_nNumChannels);
+        prevLevels[i].featureImageGradYVec.resize(m_nNumChannels);
         for(int j = 0; j < m_nNumChannels; ++j){
           currLevelsBuffer[i].featureImageVec[j].copyTo( prevLevels[i].featureImageVec[j] );
           currLevelsBuffer[i].featureImageGradXVec[j].copyTo( prevLevels[i].featureImageGradXVec[j] );

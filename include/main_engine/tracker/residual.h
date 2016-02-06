@@ -241,7 +241,7 @@ template<typename T>
 void getResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
                  double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
 {
-  static vector<T> projValues;
+  vector<T> projValues;
   int numChannels;
 
   numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
@@ -276,9 +276,9 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
                       int numNeighbors, const vector<unsigned int>& neighbors, T* residuals,
                       const dataTermErrorType& PE_TYPE=PE_NCC)
 {
-  static vector<T> neighborValues;
-  static vector<T> projValues;
-  static vector<T> score;
+  vector<T> neighborValues;
+  vector<T> projValues;
+  vector<T> score;
 
   T my_epsilon = T(0.00001);
   int numChannels;
@@ -355,24 +355,51 @@ public:
     optimizeDeformation(true)
   {
     // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
+
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
+
+
   }
 
-  ResidualImageProjection(double weight, double* pTemplateVertex,
-                          const CameraInfo* pCamera, const Level* pFrame,
-                          dataTermErrorType PE_TYPE=PE_INTENSITY):
-    weight(weight),
-    pVertex(pVertex),
-    pCamera(pCamera),
-    pFrame(pFrame),
-    PE_TYPE(PE_TYPE),
-    optimizeDeformation(true)
-  {
-    // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
-  }
+  // ResidualImageProjection(double weight, double* pTemplateVertex,
+  //                         const CameraInfo* pCamera, const Level* pFrame,
+  //                         dataTermErrorType PE_TYPE=PE_INTENSITY):
+  //   weight(weight),
+  //   pVertex(pVertex),
+  //   pCamera(pCamera),
+  //   pFrame(pFrame),
+  //   PE_TYPE(PE_TYPE),
+  //   optimizeDeformation(true)
+  // {
+  //   // check the consistency between camera and images
+  //   // assert(pCamera->width == pFrame->grayImage.cols);
+  //   // assert(pCamera->height == pFrame->grayImage.rows);
+
+  //   if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+  //     {
+  //       FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+  //       assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+  //       assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+  //     }
+  //   else
+  //     {
+  //       ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+  //       assert(pCamera->width == pImageLevel->grayImage.cols);
+  //       assert(pCamera->height == pImageLevel->grayImage.rows);
+  //     }
+
+  // }
 
   template<typename T>
   bool operator()(const T* const rotation,
@@ -450,24 +477,51 @@ public:
     optimizeDeformation(true)
   {
     // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
+    // assert(pCamera->width == pFrame->grayImage.cols);
+    // assert(pCamera->height == pFrame->grayImage.rows);
+
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
+
   }
 
-  ResidualImageProjectionDynamic(double weight, double* pTemplateVertex,
-                          const CameraInfo* pCamera, const Level* pFrame,
-                          dataTermErrorType PE_TYPE=PE_INTENSITY):
-    weight(weight),
-    pVertex(pVertex),
-    pCamera(pCamera),
-    pFrame(pFrame),
-    PE_TYPE(PE_TYPE),
-    optimizeDeformation(true)
-  {
-    // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
-  }
+  // ResidualImageProjectionDynamic(double weight, double* pTemplateVertex,
+  //                         const CameraInfo* pCamera, const Level* pFrame,
+  //                         dataTermErrorType PE_TYPE=PE_INTENSITY):
+  //   weight(weight),
+  //   pVertex(pVertex),
+  //   pCamera(pCamera),
+  //   pFrame(pFrame),
+  //   PE_TYPE(PE_TYPE),
+  //   optimizeDeformation(true)
+  // {
+  //   // check the consistency between camera and images
+  //   // assert(pCamera->width == pFrame->grayImage.cols);
+  //   // assert(pCamera->height == pFrame->grayImage.rows);
+
+  //   if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+  //     {
+  //       FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+  //       assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+  //       assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+  //     }
+  //   else
+  //     {
+  //       ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+  //       assert(pCamera->width == pImageLevel->grayImage.cols);
+  //       assert(pCamera->height == pImageLevel->grayImage.rows);
+  //     }
+  // }
 
   template<typename T>
   bool operator()(const T* const* const parameters, T* residuals) const
@@ -544,8 +598,22 @@ public:
     PE_TYPE(PE_TYPE)
   {
     // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
+    // assert(pCamera->width == pFrame->grayImage.cols);
+    // assert(pCamera->height == pFrame->grayImage.rows);
+
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
+
   }
 
   template<typename T>
@@ -628,8 +696,21 @@ public:
     PE_TYPE(PE_TYPE)
   {
     // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
+    // assert(pCamera->width == pFrame->grayImage.cols);
+    // assert(pCamera->height == pFrame->grayImage.rows);
+
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
   }
 
   template<typename T>
@@ -717,8 +798,22 @@ public:
     PE_TYPE(PE_TYPE)
   {
     // check the consistency between camera and images
-    assert(pCamera->width == pFrame->grayImage.cols);
-    assert(pCamera->height == pFrame->grayImage.rows);
+    // assert(pCamera->width == pFrame->grayImage.cols);
+    // assert(pCamera->height == pFrame->grayImage.rows);
+
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
+
   }
 
   template<typename T>
