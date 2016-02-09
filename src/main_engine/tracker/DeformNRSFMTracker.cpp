@@ -428,7 +428,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       AttachFeaturesToMeshPyramid();
       templateMeshPyramid.swapFeatures();
-
       TOCK("featurePreprocessing");
 
     }
@@ -527,7 +526,36 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   // }
 
   // TOCK("SavingTime");
-  // // simply return true;
+
+  for(int level = 0; level < numOptimizationLevels; ++level)
+    {
+
+      long long int ii = level;
+      vector<bool>& visibility_mask = visibilityMaskPyramid[level];
+
+      TrackerOutputInfo& output_info = outputInfoPyramid[level];
+
+      // update visibility mask if necessary
+      if(trackerSettings.useVisibilityMask)
+        {
+
+          TICK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
+
+          if(trackerSettings.useOpenGLMask)
+            {
+              double tempCamPose[6] = {0,0,0,0,0,0};
+              cout << "opengl visibility test" << endl;
+              UpdateVisibilityMaskGL(output_info, visibility_mask, KK, tempCamPose, m_nWidth, m_nHeight);
+            }
+          else
+            {
+              UpdateVisibilityMask(output_info, visibility_mask, m_nWidth, m_nHeight);
+            }
+
+          TOCK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
+        }
+
+    }
 
   SaveThread(pOutputInfoRendering);
 
@@ -621,26 +649,6 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
   TOCK( "updateRenderingLevel" + std::to_string( ii ) );
 
   vector<bool>& visibility_mask = visibilityMaskPyramid[level];
-  // update visibility mask if necessary
-  if(trackerSettings.useVisibilityMask)
-    {
-
-      TICK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
-
-      if(trackerSettings.useOpenGLMask)
-        {
-          double tempCamPose[6] = {0,0,0,0,0,0};
-          cout << "opengl visibility test" << endl;
-          UpdateVisibilityMaskGL(output_info, visibility_mask, KK, tempCamPose, m_nWidth, m_nHeight);
-        }
-      else
-        {
-          UpdateVisibilityMask(output_info, visibility_mask, m_nWidth, m_nHeight);
-        }
-
-      TOCK( "updateVisbilityMaskLevel" + std::to_string( ii ) );
-    }
-
 
   // need to update the color diff
   InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
@@ -1972,7 +1980,7 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
                                                                    pFeatureLossFunction,
                                                                    weightParaLevel.featureTermWeight,
                                                                    ceres::TAKE_OWNERSHIP);
-      AddPhotometricCostNew(problem, featureScaledLoss, PEType);
+      AddPhotometricCostNew(problem, featureScaledLoss, featureSettings.useNCC ? PE_FEATURE_NCC : PE_FEATURE );
 
       TOCK("SetupFeatureTermCost" + std::to_string(ii));
 

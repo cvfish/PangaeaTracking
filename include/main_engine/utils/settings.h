@@ -208,6 +208,8 @@ public:
   // parameters
   int channels;
 
+  bool useNCC;
+
   // 0th level feature image could be smaller than input image
   // downsampling scale factor
   double scalingFactor;

@@ -217,6 +217,7 @@ bool MainEngine::ProcessOneFrame(int nFrame)
 
   TICK("getInput");
   GetInput(nFrame);
+  memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
   TOCK("getInput");
 
   if(!inputFlag)

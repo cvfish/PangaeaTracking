@@ -571,6 +571,8 @@ FeatureSettings::FeatureSettings()
   channels = 3;
   scalingFactor = 1.0;
 
+  useNCC = false;
+
   hasGradient = false;
 
   dataType = "double";
@@ -592,6 +594,9 @@ void FeatureSettings::read(const cv::FileNode& node)
 
   if(!node["scaling_factor"].empty())
     node["scaling_factor"] >> scalingFactor;
+
+  if(!node["use_ncc"].empty())
+    node["use_ncc"] >> useNCC;
 
   if(!node["has_gradient"].empty())
     node["has_gradient"] >> hasGradient;
