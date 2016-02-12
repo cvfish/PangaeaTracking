@@ -50,7 +50,7 @@ private:
 	/* Read Functions													    */
 	/************************************************************************/
 
-  static void loadFromPLY(const std::string& filename, MeshData<FloatType>& meshData) {};
+  static void loadFromPLY(const std::string& filename, MeshData<FloatType>& meshData);
 
 	static void loadFromOFF(const std::string& filename, MeshData<FloatType>& meshData);
 
@@ -125,6 +125,11 @@ void MeshIO<FloatType>::updateFromFile(const std::string& filename, MeshData<Flo
 }
 
 template<class FloatType>
+void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
+                                    MeshData<FloatType>& meshData)
+{}
+
+template<class FloatType>
 void MeshIO<FloatType>::loadFromOFF(const std::string& filename,
                                     MeshData<FloatType>& meshData)
 {
@@ -151,7 +156,7 @@ void MeshIO<FloatType>::loadFromOFF(const std::string& filename,
   meshData.facesVerticesInd.resize(numP);
   if(numE == 0)
     cout << "no color info in this mesh!" << endl;
-  meshData.colors.resize(numE);
+  meshData.colors.resize(numV);
 
   if(std::string(string1).compare("OFF") == 0)
     {
@@ -913,19 +918,26 @@ void MeshIO<FloatType>::setupMeshFromFile(MeshData<FloatType>& meshData)
   meshData.numVertices = meshData.vertices.size();
   meshData.numFaces = meshData.facesVerticesInd.size();
 
+  if(meshData.colors.size() > 0)
+    {
+      meshData.grays.resize(meshData.numVertices);
+      for(int i = 0; i < meshData.numVertices; ++i)
+        {
+          // color2gray
+          meshData.grays[i] = 0.299*meshData.colors[i][0] +
+            0.587*meshData.colors[i][1] +
+            0.114*meshData.colors[i][2];
+        }
+    }
+
   FloatType center[3] = {0, 0, 0};
-  meshData.grays.resize(meshData.numVertices);
   for(int i = 0; i < meshData.numVertices; ++i)
     {
       center[0] = center[0] + meshData.vertices[i][0];
       center[1] = center[1] + meshData.vertices[i][1];
       center[2] = center[2] + meshData.vertices[i][2];
-
-      // color2gray
-      meshData.grays[i] = 0.299*meshData.colors[i][0] +
-        0.587*meshData.colors[i][1] +
-        0.114*meshData.colors[i][2];
     }
+
   for(int i = 0; i < 3; ++i)
     meshData.center[i] = center[i]/meshData.numVertices;
 

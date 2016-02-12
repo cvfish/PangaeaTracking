@@ -282,7 +282,6 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
         }
 
       outputInfoPyramid[i].meshData = templateMeshPyramid.levels[i];
-      outputInfoPyramid[i].meshDataGT = templateMeshPyramid.levels[i];
       outputInfoPyramid[i].meshDataColorDiff = templateMeshPyramid.levels[i];
 
       outputInfoPyramid[i].nRenderLevel = i;
@@ -291,6 +290,8 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
       proj2D.resize(2); proj2D[0] = 0; proj2D[1] = 0;
 
       outputInfoPyramid[i].meshProj.resize(numVertices, proj2D);
+
+      outputInfoPyramid[i].meshDataGT = outputInfoPyramid[i].meshData;
       outputInfoPyramid[i].meshProjGT = outputInfoPyramid[i].meshProj;
 
       outputInfoPyramid[i].visibilityMask.resize(numVertices, true);
@@ -449,9 +450,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       // should make problem a member of DeformNRSFMTracker to
       // avoid the same memory allocation every frame, could take
       // seconds to allocate memory for each frame
-      ceres::Problem problem;
-      // ceres::Problem& problem = problemWrapper.getProblem(i);
-      // useProblemWrapper = true;
+      //ceres::Problem problem;
+      useProblemWrapper = true;
+      ceres::Problem& problem = problemWrapper.getProblem(i);
 
       TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
       EnergySetup(problem);
@@ -465,9 +466,13 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         {
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
           //remove dataTermResidualBlocks from previous frame
-          for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
-            problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
-          dataTermResidualBlocks.resize(0);
+
+          // for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
+          //   problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
+          // dataTermResidualBlocks.resize(0);
+
+          problemWrapper.clearDataTerm(currLevel);
+
           TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
         }
 
@@ -477,9 +482,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           // remove featureTermResidualBlocks from previous frame
           // be careful if we want to use multi-threading
 
-          for(int residualID = 0; residualID < featureTermResidualBlocks.size(); ++residualID)
-            problem.RemoveResidualBlock(featureTermResidualBlocks[ residualID ]);
-          featureTermResidualBlocks.resize(0);
+          // for(int residualID = 0; residualID < featureTermResidualBlocks.size(); ++residualID)
+          //   problem.RemoveResidualBlock(featureTermResidualBlocks[ residualID ]);
+          // featureTermResidualBlocks.resize(0);
+
+          problemWrapper.clearFeatureTerm(currLevel);
+
           TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveFeatureTermResidual");
         }
 
@@ -499,6 +507,30 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::PropagateMesh");
 
       TOCK( "trackingTimeLevel" + std::to_string(ii) );
+
+    }
+
+  if(trackerSettings.hasGT)
+    {
+      // update ground truth
+
+      char buffer[BUFFER_SIZE];
+
+      for(int i = 0; i < m_nMeshLevels; ++i)
+        {
+          std::stringstream meshFileGT;
+          sprintf(buffer, trackerSettings.meshLevelFormatGT.c_str(), currentFrameNo,
+                  trackerSettings.meshLevelListGT[i]);
+
+          meshFileGT << trackerSettings.meshPathGT << buffer;
+
+          PangaeaMeshIO::loadfromFile(meshFileGT.str(),
+                                      outputInfoPyramid[i].meshDataGT,
+                                      trackerSettings.clockwise);
+
+          UpdateRenderingDataFast(outputInfoPyramid[i], KK, outputInfoPyramid[i].meshDataGT, true);
+
+        }
 
     }
 
@@ -526,6 +558,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   // }
 
   // TOCK("SavingTime");
+
+  // compute the energy before updating visibilityMasks
+  if(trackerSettings.printEnergy)
+    {
+
+    }
 
   for(int level = 0; level < numOptimizationLevels; ++level)
     {
@@ -559,6 +597,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   SaveThread(pOutputInfoRendering);
 
+  // update previous feature channels to current one
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     pFeaturePyramid->updatePrev();
 
@@ -876,13 +915,23 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>* cost_function =
                 new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>( pResidual );
 
-              dataTermResidualBlocks.push_back(
-                                               problem.AddResidualBlock(
-                                                                        cost_function,
-                                                                        loss_function,
-                                                                        &camPose[0],
-                                                                        &camPose[3],
-                                                                        &meshTrans[i][0]));
+              // add the residualBlockId to problemWrapper
+              ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                               cost_function,
+                                                               loss_function,
+                                                               &camPose[0],
+                                                               &camPose[3],
+                                                               &meshTrans[i][0]);
+
+              problemWrapper.addDataTerm(currLevel, residualBlockId);
+
+              // dataTermResidualBlocks.push_back(
+              //                                  problem.AddResidualBlock(
+              //                                                           cost_function,
+              //                                                           loss_function,
+              //                                                           &camPose[0],
+              //                                                           &camPose[3],
+              //                                                           &meshTrans[i][0]));
             }
 
             break;
@@ -902,13 +951,22 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>* cost_function =
                 new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>( pResidual );
 
-              dataTermResidualBlocks.push_back(
-                                               problem.AddResidualBlock(
-                                                                        cost_function,
-                                                                        loss_function,
-                                                                        &camPose[0],
-                                                                        &camPose[3],
-                                                                        &meshTrans[i][0]));
+              ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                                cost_function,
+                                                                                loss_function,
+                                                                                &camPose[0],
+                                                                                &camPose[3],
+                                                                                &meshTrans[i][0]);
+
+              problemWrapper.addDataTerm(currLevel, residualBlockId);
+
+              // dataTermResidualBlocks.push_back(
+              //                                  problem.AddResidualBlock(
+              //                                                           cost_function,
+              //                                                           loss_function,
+              //                                                           &camPose[0],
+              //                                                           &camPose[3],
+              //                                                           &meshTrans[i][0]));
 
             }
 
@@ -940,11 +998,18 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
 
               cost_function->SetNumResiduals( PE_RESIDUAL_NUM_ARRAY[errorType] );
 
-              dataTermResidualBlocks.push_back(
-                                               problem.AddResidualBlock(
-                                                                        cost_function,
-                                                                        loss_function,
-                                                                        parameter_blocks));
+              ceres::ResidualBlockId residualBlockId =  problem.AddResidualBlock(
+                                                                                 cost_function,
+                                                                                 loss_function,
+                                                                                 parameter_blocks);
+
+              problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+
+              // dataTermResidualBlocks.push_back(
+              //                                  problem.AddResidualBlock(
+              //                                                           cost_function,
+              //                                                           loss_function,
+              //                                                           parameter_blocks));
 
               break;
 
@@ -1008,11 +1073,21 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
 
           cost_function->SetNumResiduals( PE_RESIDUAL_NUM_ARRAY[errorType] );
 
-          dataTermResidualBlocks.push_back(
-                                           problem.AddResidualBlock(
-                                                                    cost_function,
-                                                                    loss_function,
-                                                                    parameter_blocks));
+          ceres::ResidualBlockId residualBlockId =  problem.AddResidualBlock(
+                                                                             cost_function,
+                                                                             loss_function,
+                                                                             parameter_blocks);
+
+          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          else
+            problemWrapper.addDataTerm(currLevel, residualBlockId);
+
+          // dataTermResidualBlocks.push_back(
+          //                                  problem.AddResidualBlock(
+          //                                                           cost_function,
+          //                                                           loss_function,
+          //                                                           parameter_blocks));
 
           // // I would like to compute residuals myself
           // (*pResidualPatch)(&(parameter_blocks[0]),  &Residuals[ per_residual_num * i ] );
@@ -1086,11 +1161,21 @@ void DeformNRSFMTracker::AddCostImageProjectionCoarse(ceres::Problem& problem,
 
           cost_function->SetNumResiduals( PE_RESIDUAL_NUM_ARRAY[errorType] );
 
-          dataTermResidualBlocks.push_back(
-                                           problem.AddResidualBlock(
-                                                                    cost_function,
-                                                                    loss_function,
-                                                                    parameter_blocks));
+          ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                            cost_function,
+                                                                            loss_function,
+                                                                            parameter_blocks);
+
+          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          else
+            problemWrapper.addDataTerm(currLevel, residualBlockId);
+
+          // dataTermResidualBlocks.push_back(
+          //                                  problem.AddResidualBlock(
+          //                                                           cost_function,
+          //                                                           loss_function,
+          //                                                           parameter_blocks));
 
         }
     }
@@ -1200,11 +1285,21 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
 
           cost_function->SetNumResiduals( PE_RESIDUAL_NUM_ARRAY[errorType] );
 
-          dataTermResidualBlocks.push_back(
-                                           problem.AddResidualBlock(
-                                                                    cost_function,
-                                                                    loss_function,
-                                                                    parameter_blocks));
+          ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                            cost_function,
+                                                                            loss_function,
+                                                                            parameter_blocks);
+
+          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          else
+            problemWrapper.addDataTerm(currLevel, residualBlockId);
+
+          // dataTermResidualBlocks.push_back(
+          //                                  problem.AddResidualBlock(
+          //                                                           cost_function,
+          //                                                           loss_function,
+          //                                                           parameter_blocks));
 
         }
 
@@ -1406,13 +1501,13 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                           ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>* cost_function =
                             new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>( pResidual );
 
-                          dataTermResidualBlocks.push_back(
-                                                           problem.AddResidualBlock(
-                                                                                    cost_function,
-                                                                                    loss_function,
-                                                                                    &camPose[0],
-                                                                                    &camPose[3],
-                                                                                    &meshTrans[i][0]));
+                          // dataTermResidualBlocks.push_back(
+                          //                                  problem.AddResidualBlock(
+                          //                                                           cost_function,
+                          //                                                           loss_function,
+                          //                                                           &camPose[0],
+                          //                                                           &camPose[3],
+                          //                                                           &meshTrans[i][0]));
                         }
 
                         break;
@@ -1429,13 +1524,13 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                           ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>* cost_function =
                             new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>( pResidual );
 
-                          dataTermResidualBlocks.push_back(
-                                                           problem.AddResidualBlock(
-                                                                                    cost_function,
-                                                                                    loss_function,
-                                                                                    &camPose[0],
-                                                                                    &camPose[3],
-                                                                                    &meshTrans[i][0]));
+                          // dataTermResidualBlocks.push_back(
+                          //                                  problem.AddResidualBlock(
+                          //                                                           cost_function,
+                          //                                                           loss_function,
+                          //                                                           &camPose[0],
+                          //                                                           &camPose[3],
+                          //                                                           &meshTrans[i][0]));
 
                         }
 
@@ -1476,11 +1571,11 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                           cost_function->SetNumResiduals( per_residual_num  );
 
-                          dataTermResidualBlocks.push_back(
-                                                           problem.AddResidualBlock(
-                                                                                    cost_function,
-                                                                                    loss_function,
-                                                                                    parameter_blocks));
+                          // dataTermResidualBlocks.push_back(
+                          //                                  problem.AddResidualBlock(
+                          //                                                           cost_function,
+                          //                                                           loss_function,
+                          //                                                           parameter_blocks));
 
                           // I would like to compute residuals myself
                           (*pResidualPatch)(&(parameter_blocks[0]),  &Residuals[ per_residual_num * i ] );
@@ -1550,18 +1645,21 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                         parameter_blocks.push_back( &camPose[0] );
                         parameter_blocks.push_back( &camPose[3] );
 
+                        ResidualImageProjectionCoarse* pResidual = new ResidualImageProjectionCoarse(1,
+                                                                                                     errorType == PE_INTENSITY ?
+                                                                                                     &templateMesh.grays[i] :
+                                                                                                     &templateMesh.colors[i][0],
+                                                                                                     &templateMesh.vertices[i][0],
+                                                                                                     pCamera,
+                                                                                                     pFrame,
+                                                                                                     numNeighbors,
+                                                                                                     neighborWeights,
+                                                                                                     neighborVertices,
+                                                                                                     errorType );
+
+
                         ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionCoarse, 5>* cost_function =
-                          new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionCoarse, 5 >(
-                                                                                                     new ResidualImageProjectionCoarse(
-                                                                                                                                       1,
-                                                                                                                                       errorType == PE_INTENSITY ? &templateMesh.grays[i] : &templateMesh.colors[i][0],
-                                                                                                                                       &templateMesh.vertices[i][0],
-                                                                                                                                       pCamera,
-                                                                                                                                       pFrame,
-                                                                                                                                       numNeighbors,
-                                                                                                                                       neighborWeights,
-                                                                                                                                       neighborVertices,
-                                                                                                                                       errorType ) );
+                          new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionCoarse, 5>(pResidual);
 
                         for(int j = 0; j < 2*numNeighbors; ++j)
                           cost_function->AddParameterBlock(3);
@@ -1571,11 +1669,11 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                         cost_function->SetNumResiduals( per_residual_num );
 
-                        dataTermResidualBlocks.push_back(
-                                                         problem.AddResidualBlock(
-                                                                                  cost_function,
-                                                                                  loss_function,
-                                                                                  parameter_blocks));
+                        // dataTermResidualBlocks.push_back(
+                        //                                  problem.AddResidualBlock(
+                        //                                                           cost_function,
+                        //                                                           loss_function,
+                        //                                                           parameter_blocks));
                       }
 
                       break;
@@ -1638,24 +1736,24 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                         parameter_blocks.push_back( &camPose[0] );
                         parameter_blocks.push_back( &camPose[3] );
 
+                        ResidualImageProjectionPatchCoarse* pResidual = new ResidualImageProjectionPatchCoarse(1,
+                                                                                                               &templateMesh,
+                                                                                                               &templateNeighborMesh,
+                                                                                                               pCamera,
+                                                                                                               pFrame,
+                                                                                                               numNeighbors,
+                                                                                                               numCoarseNeighbors,
+                                                                                                               patchWeights[i],
+                                                                                                               patchRadii[i],
+                                                                                                               patchNeighbors[i],
+                                                                                                               parameterIndices,
+                                                                                                               coarseNeighborIndices,
+                                                                                                               coarseNeighborBiases,
+                                                                                                               coarseNeighborWeights,
+                                                                                                               errorType );
+
                         ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatchCoarse, 5>* cost_function =
-                          new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(
-                                                                                                          new ResidualImageProjectionPatchCoarse(
-                                                                                                                                                 1,
-                                                                                                                                                 &templateMesh,
-                                                                                                                                                 &templateNeighborMesh,
-                                                                                                                                                 pCamera,
-                                                                                                                                                 pFrame,
-                                                                                                                                                 numNeighbors,
-                                                                                                                                                 numCoarseNeighbors,
-                                                                                                                                                 patchWeights[i],
-                                                                                                                                                 patchRadii[i],
-                                                                                                                                                 patchNeighbors[i],
-                                                                                                                                                 parameterIndices,
-                                                                                                                                                 coarseNeighborIndices,
-                                                                                                                                                 coarseNeighborBiases,
-                                                                                                                                                 coarseNeighborWeights,
-                                                                                                                                                 errorType ) );
+                          new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(pResidual);
 
                         for(int j = 0; j < 2*numCoarseNeighbors; ++j)
                           cost_function->AddParameterBlock(3);
@@ -1665,11 +1763,11 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                         cost_function->SetNumResiduals( per_residual_num );
 
-                        dataTermResidualBlocks.push_back(
-                                                         problem.AddResidualBlock(
-                                                                                  cost_function,
-                                                                                  loss_function,
-                                                                                  parameter_blocks));
+                        // dataTermResidualBlocks.push_back(
+                        //                                  problem.AddResidualBlock(
+                        //                                                           cost_function,
+                        //                                                           loss_function,
+                        //                                                           parameter_blocks));
 
                       }
 
@@ -1720,12 +1818,19 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
             {
               double weight = same_level ? 1 : meshWeights[vertex][neighbor];
               if(!same_level || vertex < meshNeighbors[vertex][neighbor])
-                problem.AddResidualBlock(
-                                         new ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>(
-                                                                                              new ResidualTV( weight ) ),
-                                         loss_function,
-                                         &meshTrans[ vertex  ][0],
-                                         &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]);
+                {
+                  ResidualTV* pResidual = new ResidualTV( weight );
+
+                  ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>* cost_function =
+                    new ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>(pResidual);
+
+                  problem.AddResidualBlock(cost_function,
+                                           loss_function,
+                                           &meshTrans[ vertex  ][0],
+                                           &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
+                                           );
+
+                }
 
             }
         }
@@ -1766,12 +1871,20 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
             {
               double weight = same_level ? 1 : meshWeights[vertex][neighbor];
               if(!same_level || vertex < meshNeighbors[vertex][neighbor])
-                problem.AddResidualBlock(
-                                         new ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>(
-                                                                                                 new ResidualRotTV( weight )),
-                                         loss_function,
-                                         &meshRot[ vertex  ][0],
-                                         &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]);
+                {
+                  ResidualRotTV* pResidual = new ResidualRotTV( weight );
+                  ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>* cost_function =
+                    new ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>(pResidual);
+
+                  problem.AddResidualBlock(
+                                           cost_function,
+                                           loss_function,
+                                           &meshRot[ vertex  ][0],
+                                           &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
+                                           );
+
+                }
+
             }
         }
     }
@@ -1826,10 +1939,18 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
               // &meshTrans[ vertex  ][0],
               // &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0],
               // &meshRot[ vertex ][0]);
+
+
+              ResidualARAP* pResidual = new ResidualARAP(weight,
+                                                         &templateMesh.vertices[vertex][0],
+                                                         &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0],
+                                                         true);
+
+              ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>* cost_function =
+                new ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>(pResidual);
+
               problem.AddResidualBlock(
-                                       new ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>(
-                                                                                                 new ResidualARAP( weight, &templateMesh.vertices[vertex][0],
-                                                                                                                   &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0], true) ),
+                                       cost_function,
                                        loss_function,
                                        &meshTrans[ vertex  ][0],
                                        &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0],
@@ -1873,13 +1994,17 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
           for(int neighbor = 0; neighbor < meshNeighbors[vertex].size(); ++neighbor)
             {
               double weight = same_level ? 1 : meshWeights[vertex][neighbor];
-              //if(!same_level || vertex < meshNeighbors[vertex][neighbor])
+
+              ResidualINEXTENT* pResidual = new ResidualINEXTENT( weight );
+              ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>* cost_function =
+                new ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>(pResidual);
+
               problem.AddResidualBlock(
-                                       new ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>(
-                                                                                                  new ResidualINEXTENT( weight )),
+                                       cost_function,
                                        loss_function,
                                        &meshTrans[ vertex  ][0],
-                                       &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]);
+                                       &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
+                                       );
             }
         }
     }
@@ -1904,11 +2029,16 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
 
       for(int vertex = 0; vertex < meshTrans.size(); ++vertex)
         {
+          ResidualDeform* pResidual = new ResidualDeform(1,  &prevMeshTrans[ vertex ][ 0 ]);
+          ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>* cost_function =
+            new ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>(pResidual);
+
           problem.AddResidualBlock(
-                                   new ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>(
-                                                                                         new ResidualDeform(1,  &prevMeshTrans[ vertex ][ 0 ])),
+                                   cost_function,
                                    loss_function,
-                                   &meshTrans[ vertex ][0]);
+                                   &meshTrans[ vertex ][0]
+                                   );
+
         }
     }
 }
@@ -1924,13 +2054,18 @@ void DeformNRSFMTracker::AddTemporalMotionCost(ceres::Problem& problem,
   //     cout << camPose[i] << endl;
   // }
 
+  ResidualTemporalMotion* pResidual = new ResidualTemporalMotion(prevCamPose, prevCamPose+3,
+                                                                 rotWeight, transWeight);
+
+  ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>* cost_function =
+    new ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>( pResidual );
+
   problem.AddResidualBlock(
-                           new ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>(
-                                                                                            new ResidualTemporalMotion(prevCamPose, prevCamPose+3,
-                                                                                                                       rotWeight, transWeight)),
+                           cost_function,
                            NULL,
                            &camPose[0],
                            &camPose[3]);
+
 }
 
 void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
@@ -1986,18 +2121,15 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
     }
 
-
+  TICK( "SetupRegTermCost" + std::to_string(ii) );
 
   if(!useProblemWrapper || !problemWrapper.getLevelFlag( currLevel ) )
     {
-      TICK( "SetupRegTermCost" + std::to_string(ii) );
-
       RegTermsSetup( problem, weightParaLevel );
       problemWrapper.setLevelFlag( currLevel );
-
-      TOCK( "SetupRegTermCost" + std::to_string(ii) );
     }
 
+  TOCK( "SetupRegTermCost" + std::to_string(ii) );
 
 }
 
@@ -2130,6 +2262,9 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
 
   ceres::Solver::Summary summary;
 
+  ceresOutput << "*********************" << std::endl;
+  ceresOutput << "Frame" << " " << currentFrameNo << "  Level" << " " << currLevel << std::endl;
+
   if(BAType == BA_MOTSTR && trackerSettings.doAlternation)
     {
       // fix the structure and optimize the motion
@@ -2206,6 +2341,17 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
       AddVariableMask(problem, BAType == BA_STR ? BA_MOT : BA_MOTSTR);
 
     }
+
+  // print out the total energy to test if it is correct
+  double totalCost = 0.0;
+  problemWrapper.getTotalEnergy(currLevel, &totalCost);
+  ceresOutput << "total energy from ceres problem evaluation:" << totalCost << endl;
+
+  double dataCost = 0.0;
+  problemWrapper.getDataTermCost(currLevel, &dataCost);
+  ceresOutput << "data cost from ceres problem evaluation:" << dataCost << endl;
+
+  ceresOutput << "*********************" << std::endl;
 
 }
 

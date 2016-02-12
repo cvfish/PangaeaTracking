@@ -226,7 +226,6 @@ MeshPyramid<FloatType>::MeshPyramid(string meshPath, string meshLevelFormat,
     }
 }
 
-
 template<class FloatType>
 void MeshPyramid<FloatType>::swapFeatures()
 {
@@ -251,7 +250,5 @@ void MeshPyramid<FloatType>::updatePyramid(string meshPath,
       PangaeaMeshIO::updateFromFile(meshFile.str(), levels[i]);
     }
 }
-
-
 
 typedef MeshPyramid<CoordinateType> PangaeaMeshPyramid;

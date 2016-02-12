@@ -25,6 +25,12 @@ public:
   bool isOrthoCamera;
   int frameStep;
 
+  bool useMultiImages;
+  std::string dataPathLevelRoot;
+  std::string dataPathLevelFormat;
+  IntegerContainerType dataPathLevelList;
+  std::string imageLevelFormat;
+
 };
 
 class ShapeLoadingSettings
@@ -68,8 +74,13 @@ public:
   std::string propLevelFormat;
   IntegerContainerType meshLevelList;
 
+  bool hasGT;
   bool loadProp;
   bool fastLoading;
+
+  std::string meshPathGT;
+  std::string meshLevelFormatGT;
+  IntegerContainerType meshLevelListGT;
 
   // Faces of the mesh are defined clockwise or not (anti-clockwise)
 	bool clockwise;
@@ -196,6 +207,17 @@ public:
   // use featureImages
   bool useFeatureImages;
   bool useRGBImages;
+
+  // ground truth
+  bool hasGT;
+  std::string meshPathGT;
+  std::string meshLevelFormatGT;
+  IntegerContainerType meshLevelListGT;
+
+  // print energy and error compared with ground truth
+  bool printEnergy;
+  bool printEnergyGT;
+  bool computeError;
 };
 
 class FeatureSettings

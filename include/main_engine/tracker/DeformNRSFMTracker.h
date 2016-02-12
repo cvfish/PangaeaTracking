@@ -167,8 +167,6 @@ private:
   CameraInfo camInfo;
   bool trackerInitialized;
 
-  PangaeaMeshPyramid templateMeshPyramid;
-
   // containes the neighbor & weight information between pairs of meshes
   MeshPropagation meshPropagation;
 
@@ -190,11 +188,18 @@ private:
   vector< TrackerOutputInfo > outputPropPyramid;
 
   // transformation Pyramid
+  PangaeaMeshPyramid templateMeshPyramid;
   vector< MeshDeformation > meshTransPyramid;
   vector< MeshDeformation > meshRotPyramid;
-
   vector< MeshDeformation > prevMeshTransPyramid;
   vector< MeshDeformation > prevMeshRotPyramid;
+
+  // for evaulation on ground truth
+  PangaeaMeshPyramid templateMeshPyramidGT;
+  vector< MeshDeformation > meshTransPyramidGT;
+  vector< MeshDeformation > meshRotPyramidGT;
+  vector< MeshDeformation > prevMeshTransPyramidGT;
+  vector< MeshDeformation > prevMeshRotPyramidGT;
 
   // what about if we use dual quarternion representation?
   // In that case, we will need a dual quarternion
@@ -214,9 +219,6 @@ private:
   //problem wrapper
   ProblemWrapper problemWrapper;
   bool useProblemWrapper;  // for debug
-
-  vector<ceres::ResidualBlockId> dataTermResidualBlocks;
-  vector<ceres::ResidualBlockId> featureTermResidualBlocks;
 
 };
 

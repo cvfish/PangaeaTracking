@@ -9,13 +9,14 @@ class ImageSourceEngine
 
 public:
 
-    ImageSourceEngine(){};
-    virtual ~ImageSourceEngine(){};
+  ImageSourceEngine(){};
+  virtual ~ImageSourceEngine(){};
 
-    virtual void setCurrentFrame(int curFrame) = 0;
-    virtual unsigned char* getColorImage() = 0;
-    virtual void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
-        DepthImageType& dImage, InternalIntensityImageType& maskImage) = 0;
+  virtual void setCurrentFrame(int curFrame) = 0;
+  virtual unsigned char* getColorImage() = 0;
+  virtual unsigned char* getLevelColorImage(int nLevel) = 0;
+  virtual void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
+                            DepthImageType& dImage, InternalIntensityImageType& maskImage) = 0;
 
 };
 
@@ -24,39 +25,40 @@ class ImagesBufferReader : public ImageSourceEngine
 
 public:
 
-    ImagesBufferReader(ImageSourceSettings& settings);
+  ImagesBufferReader(ImageSourceSettings& settings);
 
-    ~ImagesBufferReader();
+  ~ImagesBufferReader();
 
-    void setCurrentFrame(int curFrame);
-    unsigned char* getColorImage();
-    void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
-        DepthImageType& dImage, InternalIntensityImageType& maskImage);
-    void ReadRawDepth(std::stringstream& data_path, std::string filename,
-        int width, int height, DepthImageType& resImage);
+  void setCurrentFrame(int curFrame);
+  unsigned char* getColorImage();
+  unsigned char* getLevelColorImage(int nLevel){};
+  void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
+                    DepthImageType& dImage, InternalIntensityImageType& maskImage);
+  void ReadRawDepth(std::stringstream& data_path, std::string filename,
+                    int width, int height, DepthImageType& resImage);
 
-    int startFrameNo;
-    int currentFrameNo;
-    int totalFrameNo;
+  int startFrameNo;
+  int currentFrameNo;
+  int totalFrameNo;
 
-    int m_nHeight;
-    int m_nWidth;
-    double KK[3][3];
+  int m_nHeight;
+  int m_nWidth;
+  double KK[3][3];
 
-    double m_ShapeScale;
+  double m_ShapeScale;
 
-    std::string inputPath;
-    std::string imgFormat;
+  std::string inputPath;
+  std::string imgFormat;
 
-    ColorImageContainerType m_vImages; // all images
-    
-    // uvd and mask image gives the initial shape to start with
-    DepthImageType uImage;
-    DepthImageType vImage;
-    DepthImageType dImage;
-    InternalIntensityImageType maskImage;
+  ColorImageContainerType m_vImages; // all images
 
-    int nFrameStep;
+  // uvd and mask image gives the initial shape to start with
+  DepthImageType uImage;
+  DepthImageType vImage;
+  DepthImageType dImage;
+  InternalIntensityImageType maskImage;
+
+  int nFrameStep;
 
 };
 
@@ -65,40 +67,42 @@ class ImageSequenceReader : public ImageSourceEngine
 
 public:
 
-    ImageSequenceReader(ImageSourceSettings& settings);
+  ImageSequenceReader(ImageSourceSettings& settings);
 
-    ImageSequenceReader(std::string& inputPath, std::string& imgFormat,
-        int nHeight, int nWidth, int startFrame, int numTrackingFrames, double shapeScale = 1.0);
+  ImageSequenceReader(std::string& inputPath, std::string& imgFormat,
+                      int nHeight, int nWidth, int startFrame, int numTrackingFrames, double shapeScale = 1.0);
 
-    ~ImageSequenceReader();
+  ~ImageSequenceReader();
 
-    void setCurrentFrame(int curFrame);
-    unsigned char* getColorImage();
-    void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
-        DepthImageType& dImage, InternalIntensityImageType& maskImage);
-    void ReadRawDepth(std::stringstream& data_path, std::string filename,
-        int width, int height, DepthImageType& resImage);
+  void setCurrentFrame(int curFrame);
+  unsigned char* getColorImage();
+  unsigned char* getLevelColorImage(int nLevel);
+  void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
+                    DepthImageType& dImage, InternalIntensityImageType& maskImage);
+  void ReadRawDepth(std::stringstream& data_path, std::string filename,
+                    int width, int height, DepthImageType& resImage);
 
-    int startFrameNo;
-    int currentFrameNo;
-    int totalFrameNo;
+  int startFrameNo;
+  int currentFrameNo;
+  int totalFrameNo;
 
-    int m_nHeight;
-    int m_nWidth;
-    double KK[3][3];
+  int m_nHeight;
+  int m_nWidth;
+  double KK[3][3];
 
-    double m_ShapeScale;
+  double m_ShapeScale;
 
-    std::string inputPath;
-    std::string imgFormat;
+  std::string inputPath;
+  std::string imgFormat;
 
-    ColorImageType m_curImage; // current image
+  ColorImageType m_curImage; // current image
+  ColorImageContainerType m_curImages; // all current images
 
-    // uvd and mask image gives the initial shape to start with
-    DepthImageType uImage;
-    DepthImageType vImage;
-    DepthImageType dImage;
-    InternalIntensityImageType maskImage;
+  // uvd and mask image gives the initial shape to start with
+  DepthImageType uImage;
+  DepthImageType vImage;
+  DepthImageType dImage;
+  InternalIntensityImageType maskImage;
 
 };
 

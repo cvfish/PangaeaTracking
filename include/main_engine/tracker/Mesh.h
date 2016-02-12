@@ -400,14 +400,20 @@ void AddMeshToMeshPropagation(MeshPyramid<FloatType>& meshPyramid, vector<pair<i
 }
 
 // update output info, need to be updated
-void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
-    CoordinateType camPose[6], PangaeaMeshData& currentMesh);
+
+void UpdateHelper(MeshData<CoordinateType>& meshData, vector<vector<CoordinateType> >& meshProj, int vertex,
+                  CoordinateType trans_uvd[3], CoordinateType trans_normals[3], double KK[3][3]);
 
 void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
-    CoordinateType camPose[6], PangaeaMeshData& templateMesh, MeshDeformation& meshTrans);
+                         CoordinateType camPose[6], PangaeaMeshData& currentMesh,
+                         bool updateGT = false);
+
+void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
+                         CoordinateType camPose[6], PangaeaMeshData& templateMesh,
+                         MeshDeformation& meshTrans, bool updateGT = false);
 
 void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
-    PangaeaMeshData& currentMesh);
+                             PangaeaMeshData& currentMesh, bool updateGT = false);
 
 void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
     int width, int height);

@@ -28,30 +28,45 @@ void MainEngine::GetInput(int nFrame)
   if(nFrame <= m_NumTrackingFrames)
     {
       m_pImageSourceEngine->setCurrentFrame(nFrame);
-      // m_pImageSourceEngine->setCurrentFrame(m_nStartFrame +
-      //     (nFrame-m_nStartFrame)*m_nFrameStep);
-      unsigned char* m_pColorImage = m_pImageSourceEngine->getColorImage();
 
       //TICK("BGR2RGB");
 
-      for(int i = 0; i < m_nWidth * m_nHeight; ++i)
-        {
-          m_pColorImageRGBBuffer[3*i] = m_pColorImage[3*i+2];
-          m_pColorImageRGBBuffer[3*i+1] = m_pColorImage[3*i+1];
-          m_pColorImageRGBBuffer[3*i+2] = m_pColorImage[3*i];
+      unsigned char* m_pColorImage;
 
+      if(imageSourceSettings.useMultiImages){
+
+        for(int k = 0; k < imageSourceSettings.dataPathLevelList.size(); ++k)
+          {
+            int shift = k * 3 * m_nWidth * m_nHeight;
+            m_pColorImage = m_pImageSourceEngine->getLevelColorImage(k);
+
+            for(int i = 0; i < m_nWidth * m_nHeight; ++i)
+              {
+                m_pColorImageRGBBuffer[shift + 3*i] = m_pColorImage[3*i+2];
+                m_pColorImageRGBBuffer[shift + 3*i+1] = m_pColorImage[3*i+1];
+                m_pColorImageRGBBuffer[shift + 3*i+2] = m_pColorImage[3*i];
+
+              }
+          }
+      }else
+        {
+
+          m_pColorImage = m_pImageSourceEngine->getColorImage();
+
+          for(int i = 0; i < m_nWidth * m_nHeight; ++i)
+            {
+              m_pColorImageRGBBuffer[3*i] = m_pColorImage[3*i+2];
+              m_pColorImageRGBBuffer[3*i+1] = m_pColorImage[3*i+1];
+              m_pColorImageRGBBuffer[3*i+2] = m_pColorImage[3*i];
+            }
         }
 
       //TOCK("BGR2RGB");
 
       inputFlag = true;
-      //        return true;
     }
   else
-    {
-      inputFlag = false;
-      //return false;
-    }
+    inputFlag = false;
 
 }
 
@@ -123,12 +138,18 @@ void MainEngine::SetupInputAndTracker()
 
   // allocate memory
   int nPoints = m_nWidth * m_nHeight;
-  SafeAllocArrayType(m_pColorImageRGB, 3*nPoints, unsigned char);
-  SafeAllocArrayType(m_pColorImageRGBBuffer, 3*nPoints, unsigned char);
+
+  int numLevels = 1;
+  if(imageSourceSettings.useMultiImages)
+    numLevels = imageSourceSettings.dataPathLevelList.size();
+
+  SafeAllocArrayType(m_pColorImageRGB, 3*nPoints*numLevels, unsigned char);
+  SafeAllocArrayType(m_pColorImageRGBBuffer, 3*nPoints*numLevels, unsigned char);
 
   // read input image
   GetInput(m_nCurrentFrame);
-  memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+
+  memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3 * numLevels);
 
   // load initial mesh
   switch(trackingType)
@@ -217,7 +238,11 @@ bool MainEngine::ProcessOneFrame(int nFrame)
 
   TICK("getInput");
   GetInput(nFrame);
-  memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3);
+
+  int numLevels = 1;
+  if(imageSourceSettings.useMultiImages)
+    numLevels = imageSourceSettings.dataPathLevelList.size();
+  memcpy(m_pColorImageRGB, m_pColorImageRGBBuffer, m_nWidth * m_nHeight * 3 *  numLevels);
   TOCK("getInput");
 
   if(!inputFlag)

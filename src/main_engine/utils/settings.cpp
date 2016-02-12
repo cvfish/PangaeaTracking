@@ -85,6 +85,12 @@ ImageSourceSettings::ImageSourceSettings()
   isOrthoCamera = false;
 
   frameStep = 1;
+
+  useMultiImages = false;
+  dataPathLevelRoot = "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/images_render/";
+  dataPathLevelFormat = "%02dk/";
+  imageLevelFormat = "render%04d.png";
+
 }
 
 void ImageSourceSettings::read(const cv::FileNode& node)
@@ -137,6 +143,21 @@ void ImageSourceSettings::read(const cv::FileNode& node)
 
   if(!node["frameStep"].empty())
     node["frameStep"] >> frameStep;
+
+  if(!node["useMultiImages"].empty())
+    node["useMultiImages"] >> useMultiImages;
+
+  if(!node["dataPathLevelRoot"].empty())
+    node["dataPathLevelRoot"] >> dataPathLevelRoot;
+
+  if(!node["dataPathLevelFormat"].empty())
+    node["dataPathLevelFormat"] >> dataPathLevelFormat;
+
+  if(!node["dataPathLevelList"].empty())
+    node["dataPathLevelList"] >> dataPathLevelList;
+
+  if(!node["imageLevelFormat"].empty())
+    node["imageLevelFormat"] >> imageLevelFormat;
 
 }
 
@@ -207,8 +228,12 @@ MeshLoadingSettings::MeshLoadingSettings()
   meshLevelFormat = "mesh%04d_level%02d.obj";
   propLevelFormat = "prop_mesh%04d_level%02d.obj";
 
+  hasGT = false;
   loadProp = true;
   fastLoading = true;
+
+  meshPathGT = "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/cropped_remeshed_color_obj/";
+  meshLevelFormatGT = "cropped_remeshed_color_%04d_%02dk.obj";
 
   // By default, faces are supposed to be defined clockwise to support the
 	// original implementation of Pangaea
@@ -232,14 +257,27 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
   if(!node["propLevelFormat"].empty())
     node["propLevelFormat"] >> propLevelFormat;
 
+
   if(!node["meshLevelList"].empty())
     node["meshLevelList"] >> meshLevelList;
+
+  if(!node["hasGT"].empty())
+    node["hasGT"] >> hasGT;
 
   if(!node["loadProp"].empty())
     node["loadProp"] >> loadProp;
 
   if(!node["fastLoading"].empty())
     node["fastLoading"] >> fastLoading;
+
+  if(!node["meshPathGT"].empty())
+    node["meshPathGT"] >> meshPathGT;
+
+  if(!node["meshLevelFormatGT"].empty())
+    node["meshLevelFormatGT"] >> meshLevelFormatGT;
+
+  if(!node["meshLevelListGT"].empty())
+    node["meshLevelListGT"] >> meshLevelListGT;
 
   // Read if faces are defined clockwise or anti-clockwise
 	if (!node["clockwise"].empty())
@@ -330,6 +368,15 @@ TrackerSettings::TrackerSettings()
 
   useFeatureImages = false;
   useRGBImages = true;
+
+  hasGT = false;
+  meshPathGT = "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/cropped_remeshed_color_obj/";
+  meshLevelFormatGT = "cropped_remeshed_color_%04d_%02dk.obj";
+
+  // print energy
+  printEnergy = false;
+  printEnergyGT = false;
+  computeError = false;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -563,6 +610,29 @@ void TrackerSettings::read(const cv::FileNode& node)
 
   if(!node["use_rgb_images"].empty())
     node["use_rgb_images"] >> useRGBImages;
+
+  if(!node["print_energy"].empty())
+    node["print_energy"] >> printEnergy;
+
+  if(!node["print_energy_gt"].empty())
+    node["print_energy_gt"] >> printEnergyGT;
+
+  if(!node["compute_error"].empty())
+    node["compute_error"] >> computeError;
+
+  // for ground truth
+  if(!node["hasGT"].empty())
+    node["hasGT"] >> hasGT;
+
+  if(!node["meshPathGT"].empty())
+    node["meshPathGT"] >> meshPathGT;
+
+  if(!node["meshLevelFormatGT"].empty())
+    node["meshLevelFormatGT"] >> meshLevelFormatGT;
+
+  if(!node["meshLevelListGT"].empty())
+    node["meshLevelListGT"] >> meshLevelListGT;
+
 }
 
 FeatureSettings::FeatureSettings()

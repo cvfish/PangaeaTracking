@@ -3,6 +3,9 @@
 #include "main_engine/utils/settings.h"
 
 FeaturePyramid::FeaturePyramid()
+  :prevLevels(NULL),
+   currLevels(NULL),
+   currLevelsBuffer(NULL)
 {}
 
 FeaturePyramid::~FeaturePyramid()
