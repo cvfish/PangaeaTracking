@@ -299,6 +299,77 @@ void MeshPyramidReader::setMeshPyramid()
             }
         }
     }
+
+  if(meshLoadingSettings.hasGT)
+    setErrorWithGT();
+
+}
+
+void MeshPyramidReader::setErrorWithGT()
+{
+  for(int i = 0; i < m_nNumMeshLevels; ++i)
+    {
+
+      double diff[3];
+      double diff_range;
+      double sum_square_diff;
+      double normalized_diff;
+      double minError = std::numeric_limits<double>::max();
+      double maxError = std::numeric_limits<double>::min();
+
+      int numVertices = outputInfoPyramid[i].meshData.vertices.size();
+      outputInfoPyramid[i].meshData.diffWithGT.resize(numVertices);
+
+      for(int j = 0; j < numVertices; ++j)
+        {
+          outputInfoPyramid[i].meshData.diffWithGT[j].resize(3);
+
+          for(int k = 0; k < 3; ++k)
+            diff[k] = currentMeshPyramidGT.levels[i].vertices[j][k] - currentMeshPyramid.levels[i].vertices[j][k];
+
+          sum_square_diff = (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
+
+          outputInfoPyramid[i].meshData.diffWithGT[j][0] =  sum_square_diff;
+          outputInfoPyramid[i].meshData.diffWithGT[j][1] =  0;
+          outputInfoPyramid[i].meshData.diffWithGT[j][2] =  0;
+
+          if(minError > sum_square_diff)
+            minError = sum_square_diff;
+          if(maxError < sum_square_diff)
+            maxError = sum_square_diff;
+        }
+
+      diff_range = maxError - minError;
+
+      if(diff_range == 0)
+        {
+          for(int j = 0; j < numVertices; ++j)
+            outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;
+        }
+      else
+        {
+
+          for(int j = 0; j < numVertices; ++j)
+            {
+              normalized_diff = outputInfoPyramid[i].meshData.diffWithGT[j][0] /diff_range;
+              if(normalized_diff <= 1.0/3)
+                {
+                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
+                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = normalized_diff*3;      // set blue channel
+                }
+              else if(normalized_diff > 1.0/3 && normalized_diff <= 2.0/3)
+                {
+                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
+                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*3 - 1;  // set blue channel
+                }
+              else if(normalized_diff > 2.0/3)
+                {
+                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*3 - 2;  // set red channel
+                }
+            }
+          // normalize the diff of vertices over the whole mesh
+        }
+    }
 }
 
 void MeshPyramidReader::updateRenderingLevel(TrackerOutputInfo** pOutputInfoRendering,

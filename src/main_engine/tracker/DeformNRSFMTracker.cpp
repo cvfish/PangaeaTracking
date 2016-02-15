@@ -61,7 +61,8 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
   preProcessingThread(NULL),
   savingThread(NULL),
   dataInBuffer(false),
-  useProblemWrapper(false)
+  useProblemWrapper(false),
+  modeGT(false)
 {
   BAType = mapBA(settings.baType);
   PEType = mapErrorType(settings.errorType);
@@ -83,6 +84,29 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 
   pImagePyramid = new ImagePyramid;
   pFeaturePyramid = new FeaturePyramid;
+
+  if(trackerSettings.printEnergy)
+    {
+      std::stringstream energyOutputPath;
+      energyOutputPath << settings.savePath << settings.energyOutputFile;
+      energyOutput.open(energyOutputPath.str().c_str(), std::ofstream::trunc);
+
+      energyOutput << std::left << setw(15) << "Frame" << std::left << setw(15)  <<  "Level" <<
+        std::left << setw(15)  << "GT" << std::left << setw(15)  << "DataTerm" <<
+        std::left << setw(15)  << "FeatureTerm" << std::left << setw(15)  << "TVTerm" <<
+        std::left << setw(15)  << "RotTVTerm" << std::left << setw(15) << "ARAPTerm" <<
+        std::left << setw(15)  << "INEXTENTTerm" << std::left << setw(15)  << "DeformTerm" <<
+        std::left << setw(15)  << "TemporalTerm" << std::left << setw(15)  << "SumCost" <<
+        std::left << setw(15)  << "TotalCost" << endl;
+
+      std::stringstream energyOutputForRPath;
+      energyOutputForRPath << settings.savePath << "energyOutputForR.txt";
+      energyOutputForR.open(energyOutputForRPath.str().c_str(), std::ofstream::trunc);
+    }
+
+  vector<std::string> temp({"DataTerm", "FeatureTerm", "TVTerm", "RotTVTerm", "ARAPTerm",
+        "INEXTENTTerm", "DeformTerm", "TermporalTerm", "SumCost", "TotalCost"});
+  costNames = std::move(temp);
 
 }
 
@@ -148,9 +172,6 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 
   // set up the optimization strategy
   pStrategy->Initialize();
-
-  // initialize problemWrapper
-  problemWrapper.Initialize( pStrategy->numOptimizationLevels );
 
   // setting parameters
   WeightPara weightPara;
@@ -328,8 +349,97 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 
     }
 
+  // initialize problemWrapper
+  problemWrapper.Initialize( pStrategy->numOptimizationLevels );
+  // problemWrapper.setOptimizationVariables(camPose,
+  //                                         &templateMeshPyramid,
+  //                                         &meshRotPyramid,
+  //                                         &meshTransPyramid,
+  //                                         &prevMeshRotPyramid,
+  //                                         &prevMeshTransPyramid);
+
+  //dummy ground truth variables
+  meshRotPyramidGT = meshRotPyramid;
+  meshTransPyramidGT = meshTransPyramid;
+  prevMeshRotPyramidGT = prevMeshRotPyramid;
+  prevMeshTransPyramidGT = prevMeshTransPyramid;
+  templateMeshPyramidGT = templateMeshPyramid;
+
+  // load ground truth if there is any
+  if(trackerSettings.hasGT)
+    initializeGT();
+
   trackerInitialized = true;
 
+}
+
+void DeformNRSFMTracker::initializeGT()
+{
+  loadGTMeshFromFile(startFrameNo);
+
+  meshRotPyramidGT = meshRotPyramid;
+  meshTransPyramidGT = meshTransPyramid;
+  prevMeshRotPyramidGT = prevMeshRotPyramid;
+  prevMeshTransPyramidGT = prevMeshTransPyramid;
+
+  problemWrapperGT.Initialize( pStrategy->numOptimizationLevels );
+  // problemWrapperGT.setOptimizationVariables(camPoseGT,
+  //                                           &templateMeshPyramidGT,
+  //                                           &meshRotPyramidGT,
+  //                                           &meshTransPyramidGT,
+  //                                           &prevMeshRotPyramidGT,
+  //                                           &prevMeshTransPyramidGT
+  //                                           );
+  memset(camPoseGT, 0, 6*sizeof(double));
+}
+
+void DeformNRSFMTracker::updateGT()
+{
+  // update previous value
+  prevMeshRotPyramidGT = meshRotPyramidGT;
+  prevMeshTransPyramidGT = meshTransPyramidGT;
+
+  memcpy(prevCamPoseGT, camPoseGT, 6*sizeof(double));
+
+  // update current frame
+  loadGTMeshFromFile(currentFrameNo);
+
+  // have to do rigid registeration to get rigid transformation first
+  // e.g. icp with known correspondences
+  // just use the top level is good enough
+
+  PangaeaMeshData& templateMeshGT = templateMeshPyramidGT.levels[0];
+  PangaeaMeshData& currentMeshGT = currentMeshPyramidGT.levels[0];
+
+  // camPoseGT is composed of rotation + translation
+  KnownCorresondencesICP(templateMeshGT, currentMeshGT, camPoseGT);
+
+  // update meshTransPyramidGT to the correct values
+  // and set meshRotPyramidGT to 0
+
+  for(int i = 0; i < m_nMeshLevels; ++i)
+    {
+      int numVertices = meshTransPyramidGT[i].size();
+
+      PangaeaMeshData& templateMesh = templateMeshPyramidGT.levels[i];
+      PangaeaMeshData& currentMesh = currentMeshPyramidGT.levels[i];
+      MeshDeformation& meshTrans = meshTransPyramidGT[i];
+      MeshDeformation& meshRot = meshRotPyramidGT[i];
+
+      GetDeformation(templateMesh, currentMesh, camPoseGT, meshTrans, meshRot);
+    }
+
+}
+
+
+void DeformNRSFMTracker::loadGTMeshFromFile(int nFrame)
+{
+  currentMeshPyramidGT = std::move(
+                                   PangaeaMeshPyramid(trackerSettings.meshPathGT,
+                                                      trackerSettings.meshLevelFormatGT,
+                                                      nFrame,
+                                                      trackerSettings.meshLevelListGT,
+                                                      trackerSettings.clockwise));
 }
 
 bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
@@ -340,12 +450,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   currentFrameNo = nFrame;
 
-  // if(currentFrameNo == 1)
-  // {
-  //     // output initialization
-  //     cout << "intializing outputInfoRending" << endl;
-  //     outputInfoRendering = outputInfoPyramid[0];
-  // }
+  if(trackerSettings.hasGT)
+    updateGT();
 
   // copy over previous camera pose
   memcpy(prevCamPose, camPose, 6*sizeof(double));
@@ -429,8 +535,10 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       AttachFeaturesToMeshPyramid();
       templateMeshPyramid.swapFeatures();
-      TOCK("featurePreprocessing");
+      if(trackerSettings.hasGT)
+        templateMeshPyramidGT.swapFeatures();
 
+      TOCK("featurePreprocessing");
     }
 
 
@@ -453,6 +561,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       //ceres::Problem problem;
       useProblemWrapper = true;
       ceres::Problem& problem = problemWrapper.getProblem(i);
+
+      modeGT = false;
 
       TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
       EnergySetup(problem);
@@ -500,13 +610,29 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       UpdateResults();
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::UpdateResults");
 
-      //*pOutputInfoRendering = &outputInfoPyramid[i];
-      //updateRenderingLevel(pOutputInfoRendering, i);
       TICK( "trackingTimeLevel" + std::to_string(ii)  + "::PropagateMesh");
       PropagateMesh();
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::PropagateMesh");
 
       TOCK( "trackingTimeLevel" + std::to_string(ii) );
+
+      if(trackerSettings.hasGT)
+        {
+          ceres::Problem& problemGT = problemWrapperGT.getProblem(i);
+
+          modeGT = true;
+
+          EnergySetup(problemGT);
+          EnergyMinimizationGT(problemGT);
+
+          if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
+            problemWrapperGT.clearDataTerm(currLevel);
+
+          if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
+            problemWrapperGT.clearFeatureTerm(currLevel);
+
+        }
+
 
     }
 
@@ -560,11 +686,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   // TOCK("SavingTime");
 
   // compute the energy before updating visibilityMasks
-  if(trackerSettings.printEnergy)
-    {
-
-    }
-
   for(int level = 0; level < numOptimizationLevels; ++level)
     {
 
@@ -656,6 +777,89 @@ void DeformNRSFMTracker::AddConstantMask(ceres::Problem& problem, baType BA)
           }
         break;
       }
+    }
+}
+
+void DeformNRSFMTracker::KnownCorresondencesICP(PangaeaMeshData& templateMesh,
+                                                PangaeaMeshData& currentMesh,
+                                                double pose[6])
+{
+
+  int numVertices = templateMesh.numVertices;
+
+  ceres::Problem problemICP;
+
+  // ceresOutput << "initial pose " << endl;
+  // for(int i = 0; i < 6; ++i)
+  //   ceresOutput << pose[i] << " ";
+  // ceresOutput << endl;
+
+  for(int i = 0; i < numVertices; ++i)
+    {
+      ResidualKnownICP* pResidual = new ResidualKnownICP(1,
+                                                         &templateMesh.vertices[i][0],
+                                                         &currentMesh.vertices[i][0]);
+
+      ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>* cost_function =
+        new ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>(pResidual);
+
+      problemICP.AddResidualBlock(
+                                  cost_function,
+                                  NULL,
+                                  &pose[0],
+                                  &pose[3]);
+
+      // ceresOutput << " point " << i << " difference " <<
+      //   templateMesh.vertices[i][0] - currentMesh.vertices[i][0] << " " <<
+      //   templateMesh.vertices[i][1] - currentMesh.vertices[i][1] << " " <<
+      //   templateMesh.vertices[i][2] - currentMesh.vertices[i][2] << endl;
+
+    }
+
+  ceres::Solver::Options options;
+  ceres::Solver::Summary summary;
+
+  options.num_threads = trackerSettings.numThreads;
+  options.max_num_iterations = 10;
+
+  ceres::Solve(options, &problemICP, &summary);
+
+  //
+  ceresOutput << "+++++++++++++++++" << endl;
+  ceresOutput << "ICP Optimization" << endl;
+  ceresOutput << "Frame" << " " << currentFrameNo << std::endl;
+  ceresOutput << summary.FullReport() << std::endl;
+  ceresOutput << "+++++++++++++++++" << endl;
+
+}
+
+
+void DeformNRSFMTracker::GetDeformation(PangaeaMeshData& templateMesh,
+                                        PangaeaMeshData& currentMesh,
+                                        double camPose[6],
+                                        MeshDeformation& meshTrans,
+                                        MeshDeformation& meshRot)
+{
+  // compute the ground truth deformations
+  // deform back the currentMesh to templateMesh
+  // and substract template Mesh
+  int numVertices = templateMesh.numVertices;
+
+  double rotTemp[3];
+  double transTemp[3];
+  double result[3];
+
+  for(int j = 0; j < numVertices; ++j)
+    {
+      for(int k = 0; k < 3; ++k)
+        {
+          meshRot[j][k] = 0;
+          rotTemp[k] = -camPose[k];
+          transTemp[k] = currentMesh.vertices[j][k] - camPose[3+k];
+        }
+      ceres::AngleAxisRotatePoint(rotTemp, transTemp, result);
+      for(int k = 0; k < 3; ++k)
+        meshTrans[j][k] = result[k] - templateMesh.vertices[j][k];
     }
 }
 
@@ -773,6 +977,8 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
       double diff_vertex[3];
       double rot_diff_vertex[3];
 
+      double diff_vertex_bk[3];
+
       //#pragma omp parallel for
       for(int i = 0; i < template_fine_mesh.numVertices; ++i)
         {
@@ -784,7 +990,10 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
           for(int j = 0; j < num_neighbors; ++j)
             {
               for(int index = 0; index < 3; ++index)
-                diff_vertex[index] = template_fine_mesh.vertices[i][index] - template_coarse_mesh.vertices[ neighbors[i][j] ][index];
+                {
+                  diff_vertex[index] = template_fine_mesh.vertices[i][index] - template_coarse_mesh.vertices[ neighbors[i][j] ][index];
+                  diff_vertex_bk[index] = diff_vertex[index];
+                }
 
               ceres::AngleAxisRotatePoint(&mesh_rot[ neighbors[i][j] ][0], diff_vertex, rot_diff_vertex);
 
@@ -793,6 +1002,23 @@ void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_le
                   temp_vertex[index] += weights[i][j] *
                     (rot_diff_vertex[index] + template_coarse_mesh.vertices[ neighbors[i][j] ][index] + mesh_trans[ neighbors[i][j] ][index]);
                 }
+
+              // if(std::isnan(weights[i][j]))
+              //   {
+              //     ceresOutput << "difference " << diff_vertex_bk[0] << " " << diff_vertex_bk[1] << " " << diff_vertex_bk[2] << endl;
+
+              //     ceresOutput << "weights is nan " << j << " " << i << endl;
+              //     ceresOutput << "fine_level " << fine_level << " point " << i << " " <<
+              //       "coarse_level " << coarse_level << " point " << neighbors[i][j] << endl;
+              //     ceresOutput << "fine_level point " << template_fine_mesh.vertices[i][0] << " "
+              //                 << template_fine_mesh.vertices[i][1] << " "
+              //                 << template_fine_mesh.vertices[i][2] << endl;
+              //     ceresOutput << "coarse_level point " << template_coarse_mesh.vertices[ neighbors[i][j]  ][0] << " "
+              //                 << template_coarse_mesh.vertices[ neighbors[i][j] ][1] << " "
+              //                 << template_coarse_mesh.vertices[ neighbors[i][j] ][2] << endl;
+
+              //   }
+
             }
 
           for(int j = 0; j < 3; ++j)
@@ -857,10 +1083,17 @@ void DeformNRSFMTracker::PropagateMesh()
       int coarse_level = prop_pair.first;
       int fine_level = prop_pair.second;
 
+      //
+      // ceresOutput << "before propagation" << endl;
+      // CheckNaN();
+
       PropagateMeshCoarseToFine(coarse_level, fine_level);
 
       // after propagation, we update the correponding mesh
       UpdateResultsLevel(fine_level);
+
+      // ceresOutput << "after propagation" << endl;
+      // CheckNaN();
 
       // copy over the mesh right after propagation to outputPropPyramid
       outputPropPyramid[fine_level] = outputInfoPyramid[fine_level];
@@ -919,11 +1152,14 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
                                                                cost_function,
                                                                loss_function,
-                                                               &camPose[0],
-                                                               &camPose[3],
+                                                               modeGT ? &camPoseGT[0] : &camPose[0],
+                                                               modeGT ? &camPoseGT[3] : &camPose[3],
                                                                &meshTrans[i][0]);
 
-              problemWrapper.addDataTerm(currLevel, residualBlockId);
+              if(modeGT)
+                problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addDataTerm(currLevel, residualBlockId);
 
               // dataTermResidualBlocks.push_back(
               //                                  problem.AddResidualBlock(
@@ -954,11 +1190,14 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
                                                                                 cost_function,
                                                                                 loss_function,
-                                                                                &camPose[0],
-                                                                                &camPose[3],
+                                                                                modeGT ? &camPoseGT[0] : &camPose[0],
+                                                                                modeGT ? &camPoseGT[3] : &camPose[3],
                                                                                 &meshTrans[i][0]);
 
-              problemWrapper.addDataTerm(currLevel, residualBlockId);
+              if(modeGT)
+                problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addDataTerm(currLevel, residualBlockId);
 
               // dataTermResidualBlocks.push_back(
               //                                  problem.AddResidualBlock(
@@ -987,8 +1226,8 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                 new ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionDynamic, 5>( pResidual );
 
               vector<double*> parameter_blocks;
-              parameter_blocks.push_back(&camPose[0]);
-              parameter_blocks.push_back(&camPose[3]);
+              parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0]);
+              parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3]);
               parameter_blocks.push_back( &meshTrans[i][0] );
 
               // add rotation, translation and vertice parameter block
@@ -1003,7 +1242,10 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                                                                                  loss_function,
                                                                                  parameter_blocks);
 
-              problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+              if(modeGT)
+                problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addFeatureTerm(currLevel, residualBlockId);
 
               // dataTermResidualBlocks.push_back(
               //                                  problem.AddResidualBlock(
@@ -1049,8 +1291,8 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
           for(int j = 0; j < numNeighbors; ++j)
             parameter_blocks.push_back( &(meshTrans[ patchNeighbors[i][j] ][0]) );
 
-          parameter_blocks.push_back( &camPose[0] );
-          parameter_blocks.push_back( &camPose[3] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
 
           ResidualImageProjectionPatch* pResidualPatch = new ResidualImageProjectionPatch(1,
                                                                                           &templateMesh,
@@ -1078,10 +1320,20 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
                                                                              loss_function,
                                                                              parameter_blocks);
 
-          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          if(modeGT)
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+            }
           else
-            problemWrapper.addDataTerm(currLevel, residualBlockId);
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addDataTerm(currLevel, residualBlockId);
+            }
 
           // dataTermResidualBlocks.push_back(
           //                                  problem.AddResidualBlock(
@@ -1135,8 +1387,8 @@ void DeformNRSFMTracker::AddCostImageProjectionCoarse(ceres::Problem& problem,
           for(int j = 0; j < numNeighbors; ++j )
             parameter_blocks.push_back( &( neighborMeshRot[ neighbors[i][j] ][0] ) );
 
-          parameter_blocks.push_back( &camPose[0] );
-          parameter_blocks.push_back( &camPose[3] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
 
           getValueFromMesh(&templateMesh, errorType, i, pValue);
 
@@ -1166,10 +1418,20 @@ void DeformNRSFMTracker::AddCostImageProjectionCoarse(ceres::Problem& problem,
                                                                             loss_function,
                                                                             parameter_blocks);
 
-          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          if(modeGT)
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+            }
           else
-            problemWrapper.addDataTerm(currLevel, residualBlockId);
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addDataTerm(currLevel, residualBlockId);
+            }
 
           // dataTermResidualBlocks.push_back(
           //                                  problem.AddResidualBlock(
@@ -1255,8 +1517,8 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
           for(int k = 0; k < parameter_blocks_rot.size(); ++k)
             parameter_blocks.push_back( parameter_blocks_rot[k] );
 
-          parameter_blocks.push_back( &camPose[0] );
-          parameter_blocks.push_back( &camPose[3] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
+          parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
 
           ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatchCoarse, 5>* cost_function =
             new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(
@@ -1290,10 +1552,20 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
                                                                             loss_function,
                                                                             parameter_blocks);
 
-          if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-            problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+          if(modeGT)
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+            }
           else
-            problemWrapper.addDataTerm(currLevel, residualBlockId);
+            {
+              if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
+                problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addDataTerm(currLevel, residualBlockId);
+            }
 
           // dataTermResidualBlocks.push_back(
           //                                  problem.AddResidualBlock(
@@ -1338,8 +1610,12 @@ void DeformNRSFMTracker::AddPhotometricCostNew(ceres::Problem& problem,
       cout << "dataTerm pair" << endl;
       cout << data_pair.first << "->" << data_pair.second << endl;
 
-      PangaeaMeshData& templateMesh = templateMeshPyramid.levels[ data_pair.first ];
-      MeshDeformation& meshTrans = meshTransPyramid[ data_pair.first ];
+      PangaeaMeshData& templateMesh = modeGT ?
+        templateMeshPyramidGT.levels[ data_pair.first ] :
+        templateMeshPyramid.levels[ data_pair.first ];
+      MeshDeformation& meshTrans = modeGT ?
+        meshTransPyramidGT[ data_pair.first ] :
+        meshTransPyramid[ data_pair.first ];
 
       vector<bool>& visibilityMask = visibilityMaskPyramid[ data_pair.first ];
 
@@ -1382,9 +1658,15 @@ void DeformNRSFMTracker::AddPhotometricCostNew(ceres::Problem& problem,
         }
       else{
 
-        PangaeaMeshData& templateNeighborMesh = templateMeshPyramid.levels[ data_pair.second ];
-        MeshDeformation& neighborMeshTrans = meshTransPyramid[ data_pair.second ];
-        MeshDeformation& neighborMeshRot = meshRotPyramid[ data_pair.second ];
+        PangaeaMeshData& templateNeighborMesh = modeGT ?
+          templateMeshPyramidGT.levels[ data_pair.second ] :
+          templateMeshPyramid.levels[ data_pair.second ];
+        MeshDeformation& neighborMeshTrans = modeGT ?
+          meshTransPyramidGT[ data_pair.second ] :
+          meshTransPyramid[ data_pair.second ];
+        MeshDeformation& neighborMeshRot = modeGT ?
+          meshRotPyramid[ data_pair.second ] :
+          meshRotPyramid[ data_pair.second ];
 
         pair<int, int> meshPair( data_pair.first, data_pair.second );
         MeshNeighbors&  neighbors = meshPropagation.getNeighbors( meshPair );
@@ -1808,6 +2090,11 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
       MeshDeformation& neighborMeshTrans = trackerSettings.usePrevForTemplateInTV ?
         prevMeshTransPyramid[tv_pair.second] : meshTransPyramid[tv_pair.second];
 
+      MeshDeformation& meshTransGT = trackerSettings.usePrevForTemplateInTV ?
+        prevMeshTransPyramidGT[tv_pair.first] : meshTransPyramidGT[tv_pair.first];
+      MeshDeformation& neighborMeshTransGT = trackerSettings.usePrevForTemplateInTV ?
+        prevMeshTransPyramidGT[tv_pair.second] : meshTransPyramidGT[tv_pair.second];
+
       vector<vector<unsigned int> >& meshNeighbors = same_level ?
         templateMesh.adjVerticesInd : meshPropagation.getNeighbors( tv_pair );
       vector<vector<double> >& meshWeights = meshPropagation.getWeights( tv_pair );
@@ -1824,11 +2111,18 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
                   ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>* cost_function =
                     new ceres::AutoDiffCostFunction<ResidualTV, 3, 3, 3>(pResidual);
 
-                  problem.AddResidualBlock(cost_function,
-                                           loss_function,
-                                           &meshTrans[ vertex  ][0],
-                                           &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
-                                           );
+                  ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(cost_function,
+                                                                                    loss_function,
+                                                                                    modeGT ? &meshTransGT[ vertex  ][0] :
+                                                                                    &meshTrans[ vertex  ][0],
+                                                                                    modeGT ? &neighborMeshTransGT[ meshNeighbors[vertex][neighbor] ][0] :
+                                                                                    &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
+                                                                                    );
+
+                  if(modeGT)
+                    problemWrapperGT.addTVTerm(currLevel, residualBlockId);
+                  else
+                    problemWrapper.addTVTerm(currLevel, residualBlockId);
 
                 }
 
@@ -1861,6 +2155,11 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
       vector<vector<double> >& neighborMeshRot = trackerSettings.usePrevForTemplateInTV ?
         prevMeshRotPyramid[tv_pair.second] : meshRotPyramid[tv_pair.second];
 
+      vector<vector<double> >& meshRotGT = trackerSettings.usePrevForTemplateInTV ?
+        prevMeshRotPyramidGT[tv_pair.first] : meshRotPyramidGT[tv_pair.first];
+      vector<vector<double> >& neighborMeshRotGT = trackerSettings.usePrevForTemplateInTV ?
+        prevMeshRotPyramidGT[tv_pair.second] : meshRotPyramidGT[tv_pair.second];
+
       vector<vector<unsigned int> >& meshNeighbors = same_level ?
         templateMesh.adjVerticesInd : meshPropagation.getNeighbors( tv_pair );
       vector<vector<double> >& meshWeights = meshPropagation.getWeights( tv_pair );
@@ -1876,12 +2175,18 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
                   ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>* cost_function =
                     new ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>(pResidual);
 
-                  problem.AddResidualBlock(
-                                           cost_function,
-                                           loss_function,
-                                           &meshRot[ vertex  ][0],
-                                           &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
-                                           );
+                  ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                                  cost_function,
+                                                                                  loss_function,
+                                                                                  modeGT ? &meshRotGT[ vertex  ][0] :
+                                                                                  &meshRot[ vertex  ][0],
+                                                                                  modeGT ? &neighborMeshRotGT[ meshNeighbors[vertex][neighbor] ][0] :
+                                                                                  &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
+                                                                                  );
+                  if(modeGT)
+                    problemWrapperGT.addRotTVTerm(currLevel, residualBlockId);
+                  else
+                    problemWrapper.addRotTVTerm(currLevel, residualBlockId);
 
                 }
 
@@ -1912,8 +2217,14 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
 
       MeshDeformation& meshTrans = meshTransPyramid[arap_pair.first];
       MeshDeformation& neighborMeshTrans = meshTransPyramid[arap_pair.second];
-
       vector<vector<double> >& meshRot = meshRotPyramid[arap_pair.first];
+
+      PangaeaMeshData& templateMeshGT = templateMeshPyramidGT.levels[arap_pair.first];
+      PangaeaMeshData& templateNeighborMeshGT = templateMeshPyramidGT.levels[arap_pair.second];
+
+      MeshDeformation& meshTransGT = meshTransPyramidGT[arap_pair.first];
+      MeshDeformation& neighborMeshTransGT = meshTransPyramidGT[arap_pair.second];
+      vector<vector<double> >& meshRotGT = meshRotPyramidGT[arap_pair.first];
 
       vector<vector<unsigned int> >& meshNeighbors = same_level ?
         templateMesh.adjVerticesInd : meshPropagation.getNeighbors( arap_pair );
@@ -1942,19 +2253,30 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
 
 
               ResidualARAP* pResidual = new ResidualARAP(weight,
+                                                         modeGT ? &templateMeshGT.vertices[vertex][0] :
                                                          &templateMesh.vertices[vertex][0],
+                                                         modeGT ? &templateNeighborMeshGT.vertices[ meshNeighbors[vertex][neighbor] ][0] :
                                                          &templateNeighborMesh.vertices[ meshNeighbors[vertex][neighbor] ][0],
                                                          true);
 
               ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>* cost_function =
                 new ceres::AutoDiffCostFunction<ResidualARAP, 3, 3, 3, 3>(pResidual);
 
-              problem.AddResidualBlock(
-                                       cost_function,
-                                       loss_function,
-                                       &meshTrans[ vertex  ][0],
-                                       &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0],
-                                       &meshRot[ vertex ][0]);
+              ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                                cost_function,
+                                                                                loss_function,
+                                                                                modeGT ? &meshTransGT[ vertex  ][0] :
+                                                                                &meshTrans[ vertex  ][0],
+                                                                                modeGT ? &neighborMeshTransGT[ meshNeighbors[vertex][neighbor] ][0] :
+                                                                                &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0],
+                                                                                modeGT ? &meshRotGT[ vertex ][0] :
+                                                                                &meshRot[ vertex ][0]);
+
+          if(modeGT)
+            problemWrapperGT.addARAPTerm(currLevel, residualBlockId);
+          else
+            problemWrapper.addARAPTerm(currLevel, residualBlockId);
+
             }
         }
 
@@ -1985,6 +2307,9 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
       MeshDeformation& meshTrans = meshTransPyramid[inextent_pair.first];
       MeshDeformation& neighborMeshTrans = meshTransPyramid[inextent_pair.second];
 
+      MeshDeformation& meshTransGT = meshTransPyramidGT[inextent_pair.first];
+      MeshDeformation& neighborMeshTransGT = meshTransPyramidGT[inextent_pair.second];
+
       vector<vector<unsigned int> >& meshNeighbors = same_level ?
         templateMesh.adjVerticesInd : meshPropagation.getNeighbors( inextent_pair );
       vector<vector<double> >& meshWeights = meshPropagation.getWeights( inextent_pair );
@@ -1999,12 +2324,20 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
               ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>* cost_function =
                 new ceres::AutoDiffCostFunction<ResidualINEXTENT, 1, 3, 3>(pResidual);
 
-              problem.AddResidualBlock(
-                                       cost_function,
-                                       loss_function,
-                                       &meshTrans[ vertex  ][0],
-                                       &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
-                                       );
+              ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                                cost_function,
+                                                                                loss_function,
+                                                                                modeGT ? &meshTransGT[ vertex  ][0] :
+                                                                                &meshTrans[ vertex  ][0],
+                                                                                modeGT ? &neighborMeshTransGT[ meshNeighbors[vertex][neighbor] ][0] :
+                                                                                &neighborMeshTrans[ meshNeighbors[vertex][neighbor] ][0]
+                                                                                );
+
+              if(modeGT)
+                problemWrapperGT.addINEXTENTTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addINEXTENTTerm(currLevel, residualBlockId);
+
             }
         }
     }
@@ -2027,18 +2360,29 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
       MeshDeformation& meshTrans = meshTransPyramid[deform_level];
       MeshDeformation& prevMeshTrans = prevMeshTransPyramid[deform_level];
 
+      MeshDeformation& meshTransGT = meshTransPyramidGT[deform_level];
+      MeshDeformation& prevMeshTransGT = prevMeshTransPyramidGT[deform_level];
+
       for(int vertex = 0; vertex < meshTrans.size(); ++vertex)
         {
-          ResidualDeform* pResidual = new ResidualDeform(1,  &prevMeshTrans[ vertex ][ 0 ]);
+          ResidualDeform* pResidual = new ResidualDeform(1,
+                                                         modeGT ? &prevMeshTransGT[ vertex ][ 0 ] :
+                                                         &prevMeshTrans[ vertex ][ 0 ]);
+
           ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>* cost_function =
             new ceres::AutoDiffCostFunction<ResidualDeform, 3, 3>(pResidual);
 
-          problem.AddResidualBlock(
-                                   cost_function,
-                                   loss_function,
-                                   &meshTrans[ vertex ][0]
-                                   );
+          ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                            cost_function,
+                                                                            loss_function,
+                                                                            modeGT ? &meshTransGT[ vertex ][0] :
+                                                                            &meshTrans[ vertex ][0]
+                                                                            );
 
+          if(modeGT)
+            problemWrapperGT.addDeformTerm(currLevel, residualBlockId);
+          else
+            problemWrapper.addDeformTerm(currLevel, residualBlockId);
         }
     }
 }
@@ -2054,17 +2398,24 @@ void DeformNRSFMTracker::AddTemporalMotionCost(ceres::Problem& problem,
   //     cout << camPose[i] << endl;
   // }
 
-  ResidualTemporalMotion* pResidual = new ResidualTemporalMotion(prevCamPose, prevCamPose+3,
-                                                                 rotWeight, transWeight);
+  ResidualTemporalMotion* pResidual = new ResidualTemporalMotion(modeGT ? prevCamPoseGT : prevCamPose,
+                                                                 modeGT ? prevCamPoseGT + 3 :  prevCamPose+3,
+                                                                 rotWeight,
+                                                                 transWeight);
 
   ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>* cost_function =
     new ceres::AutoDiffCostFunction<ResidualTemporalMotion, 6, 3, 3>( pResidual );
 
-  problem.AddResidualBlock(
-                           cost_function,
-                           NULL,
-                           &camPose[0],
-                           &camPose[3]);
+  ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
+                                                                    cost_function,
+                                                                    NULL,
+                                                                    modeGT ? &camPoseGT[0] : &camPose[0],
+                                                                    modeGT ? &camPoseGT[3] : &camPose[3]);
+
+  if(modeGT)
+    problemWrapperGT.addTemporalTerm(currLevel, residualBlockId);
+  else
+    problemWrapper.addTemporalTerm(currLevel, residualBlockId);
 
 }
 
@@ -2123,16 +2474,30 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
   TICK( "SetupRegTermCost" + std::to_string(ii) );
 
-  if(!useProblemWrapper || !problemWrapper.getLevelFlag( currLevel ) )
+  if(modeGT)
     {
-      RegTermsSetup( problem, weightParaLevel );
-      problemWrapper.setLevelFlag( currLevel );
+      if(!useProblemWrapper || !problemWrapperGT.getLevelFlag( currLevel ) )
+        {
+          RegTermsSetup( problem, weightParaLevel );
+          problemWrapperGT.setLevelFlag( currLevel );
+        }
+    }
+  else
+    {
+      if(!useProblemWrapper || !problemWrapper.getLevelFlag( currLevel ) )
+        {
+          RegTermsSetup( problem, weightParaLevel );
+          problemWrapper.setLevelFlag( currLevel );
+        }
     }
 
   TOCK( "SetupRegTermCost" + std::to_string(ii) );
 
-}
 
+  // check whether the parameter blocks has nan values
+  // CheckNaN();
+
+}
 
 void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel)
 {
@@ -2151,7 +2516,9 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
           pTVLossFunction = new ceres::HuberLoss(trackerSettings.tvHuberWidth);
         }
       ceres::ScaledLoss* tvScaledLoss = new ceres::ScaledLoss(
-                                                              pTVLossFunction, weightParaLevel.tvTermWeight, ceres::TAKE_OWNERSHIP);
+                                                              pTVLossFunction,
+                                                              weightParaLevel.tvTermWeight,
+                                                              ceres::TAKE_OWNERSHIP);
 
       AddTotalVariationCost(problem, tvScaledLoss);
       //AddTotalVariationCost(problem, NULL);
@@ -2172,7 +2539,9 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
           pRotTVLossFunction = new ceres::HuberLoss(trackerSettings.tvRotHuberWidth);
         }
       ceres::ScaledLoss* tvRotScaledLoss = new ceres::ScaledLoss(
-                                                                 pRotTVLossFunction , weightParaLevel.tvRotTermWeight, ceres::TAKE_OWNERSHIP);
+                                                                 pRotTVLossFunction,
+                                                                 weightParaLevel.tvRotTermWeight,
+                                                                 ceres::TAKE_OWNERSHIP);
 
       AddRotTotalVariationCost(problem, tvRotScaledLoss);
 
@@ -2185,8 +2554,10 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     {
       //TICK("SetupARAPCost"  + std::to_string( currLevel ) );
 
-      ceres::ScaledLoss* arapScaledLoss = new ceres::ScaledLoss(NULL,
-                                                                weightParaLevel.arapTermWeight, ceres::TAKE_OWNERSHIP);
+      ceres::ScaledLoss* arapScaledLoss = new ceres::ScaledLoss(
+                                                                NULL,
+                                                                weightParaLevel.arapTermWeight,
+                                                                ceres::TAKE_OWNERSHIP);
       AddARAPCost(problem, arapScaledLoss);
 
       //TOCK("SetupARAPCost"  + std::to_string( currLevel ) );
@@ -2198,8 +2569,10 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     {
       //TICK("SetupInextentCost"  + std::to_string( currLevel ) );
 
-      ceres::ScaledLoss* inextentScaledLoss = new ceres::ScaledLoss(NULL,
-                                                                    weightParaLevel.inextentTermWeight, ceres::TAKE_OWNERSHIP);
+      ceres::ScaledLoss* inextentScaledLoss = new ceres::ScaledLoss(
+                                                                    NULL,
+                                                                    weightParaLevel.inextentTermWeight,
+                                                                    ceres::TAKE_OWNERSHIP);
       AddInextentCost(problem, inextentScaledLoss);
 
       //TOCK("SetupInextentCost"  + std::to_string( currLevel ) );
@@ -2211,8 +2584,10 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
     {
       //TICK("SetupDeformationCost"  + std::to_string( currLevel ) );
 
-      ceres::ScaledLoss* deformScaledLoss = new ceres::ScaledLoss(NULL,
-                                                                  weightParaLevel.deformWeight, ceres::TAKE_OWNERSHIP);
+      ceres::ScaledLoss* deformScaledLoss = new ceres::ScaledLoss(
+                                                                  NULL,
+                                                                  weightParaLevel.deformWeight,
+                                                                  ceres::TAKE_OWNERSHIP);
       AddDeformationCost(problem, deformScaledLoss);
 
       //TOCK("SetupDeformationCost" + std::to_string( currLevel ) );
@@ -2342,16 +2717,198 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
 
     }
 
-  // print out the total energy to test if it is correct
-  double totalCost = 0.0;
-  problemWrapper.getTotalEnergy(currLevel, &totalCost);
-  ceresOutput << "total energy from ceres problem evaluation:" << totalCost << endl;
+  // // print energy
+  // if(trackerSettings.printEnergy)
+  //   {
+  //     double cost[8];
+  //     double total_cost, sum_cost;
 
-  double dataCost = 0.0;
-  problemWrapper.getDataTermCost(currLevel, &dataCost);
-  ceresOutput << "data cost from ceres problem evaluation:" << dataCost << endl;
+  //     problemWrapper.getAllCost(currLevel, cost, &total_cost, &sum_cost);
+
+  //     energyOutput << currentFrameNo << '\t' << currLevel << '\t';
+
+  //     for(int i = 0; i < 8; ++i)
+  //       energyOutput << cost[i] << '\t';
+
+  //     energyOutput << sum_cost << '\t' << total_cost << endl;
+
+  //   }
+
+  // print energy
+  if(trackerSettings.printEnergy)
+    {
+      double cost[10];
+
+      problemWrapper.getAllCost(currLevel, cost, &cost[9], &cost[8]);
+
+      energyOutput << std::left << setw(15) << currentFrameNo << std::left << setw(15) << currLevel
+                   << std::left << setw(15) << 0;
+
+      for(int i = 0; i < 10; ++i)
+        energyOutput << std::left << setw(15) << cost[i];
+
+      energyOutput << endl;
+
+      for(int i = 0; i < 10; ++i)
+        energyOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << currLevel
+                         << std::left << setw(15) << cost[i] << std::left << setw(15) << "NotGT"
+                         << std::left << setw(15) << costNames[i] << endl;
+
+    }
+
+}
+
+// do optimization on ground truth shapes
+void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
+{
+
+  ceres::Solver::Options options;
+
+  // solve the term and get solution
+  options.max_num_iterations = trackerSettings.maxNumIterations[currLevel];
+  options.linear_solver_type = mapLinearSolver(trackerSettings.linearSolver);
+  options.minimizer_progress_to_stdout = trackerSettings.isMinimizerProgressToStdout;
+
+  options.function_tolerance = trackerSettings.functionTolerances[currLevel];
+  options.gradient_tolerance = trackerSettings.gradientTolerances[currLevel];
+  options.parameter_tolerance = trackerSettings.parameterTolerances[currLevel];
+  options.min_relative_decrease = trackerSettings.minRelativeDecreases[currLevel];
+
+  options.initial_trust_region_radius = trackerSettings.initialTrustRegionRadiuses[0];
+  options.max_trust_region_radius = trackerSettings.maxTrustRegionRadiuses[currLevel];
+  options.min_trust_region_radius = trackerSettings.minTrustRegionRadiuses[currLevel];
+
+  options.num_linear_solver_threads = trackerSettings.numLinearSolverThreads;
+  options.num_threads = trackerSettings.numThreads;
+  options.max_num_consecutive_invalid_steps = 0;
+
+  options.minimizer_type = mapMinimizerType(trackerSettings.minimizerType);
+  options.line_search_direction_type = mapLineSearchDirectionType(trackerSettings.lineSearchDirectionType);
+  options.line_search_type = mapLineSearchType(trackerSettings.lineSearchType);
+  options.nonlinear_conjugate_gradient_type = mapNonLinearCGType(trackerSettings.nonlinearConjugateGradientType);
+  options.line_search_interpolation_type = mapLineSearchInterpType(trackerSettings.lineSearchInterpolationType);
+
+  EnergyCallback energy_callback = EnergyCallback();
+
+  options.update_state_every_iteration = true;
+  options.callbacks.push_back(&energy_callback);
+
+  ceres::Solver::Summary summary;
 
   ceresOutput << "*********************" << std::endl;
+  ceresOutput << "Ground Truth Optimization" << std::endl;
+  ceresOutput << "Frame" << " " << currentFrameNo << "  Level" << " " << currLevel << std::endl;
+
+  AddGroundTruthMask(problem);
+
+  ceres::Solve(options, &problem, &summary);
+  ceresOutput << summary.FullReport() << endl;
+
+  // print energy
+  if(trackerSettings.printEnergy)
+    {
+      double cost[10];
+
+      problemWrapperGT.getAllCost(currLevel, cost, &cost[9], &cost[8]);
+
+      energyOutput << std::left << setw(15) << currentFrameNo << std::left << setw(15) << currLevel
+                   << std::left << setw(15) << 1;
+
+      for(int i = 0; i < 10; ++i)
+        energyOutput << std::left << setw(15) << cost[i];
+
+      energyOutput << endl;
+
+      for(int i = 0; i < 10; ++i)
+        energyOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << currLevel
+                         << std::left << setw(15) << cost[i] << std::left << setw(15) << "GT"
+                         << std::left << setw(15) << costNames[i] << endl;
+
+    }
+
+}
+
+void DeformNRSFMTracker::AddGroundTruthMask(ceres::Problem& problem)
+{
+  // set all the stuff to constant except for arap local rotations
+  // loop over all the parameter blocks
+
+  // count the number of constant blocks
+  int numConstantBlocks = 0;
+
+  // set all rigid transformation variables to constant
+  problem.SetParameterBlockConstant(&camPoseGT[0]);
+  problem.SetParameterBlockConstant(&camPoseGT[3]);
+
+  numConstantBlocks = 2;
+
+  // set all translation variables to constant
+  for(int i = 0; i < m_nMeshLevels; ++i)
+    {
+      int numVertices = meshTransPyramidGT[i].size();
+      for(int j = 0; j < numVertices; ++j)
+        {
+          if(problem.HasParameterBlock( &meshTransPyramidGT[i][j][0] ))
+            {
+              problem.SetParameterBlockConstant( &meshTransPyramidGT[i][j][0] );
+              numConstantBlocks++;
+            }
+        }
+    }
+
+  ceresOutput << "number of constant parameter blocks for ground truth optimization " <<
+    numConstantBlocks << endl;
+
+}
+
+void DeformNRSFMTracker::CheckNaN()
+{
+
+  ceresOutput << "starting checking optimization variables" << endl;
+  ceresOutput << "Frame" << " " << currentFrameNo << endl;
+
+  if(modeGT)
+    {
+
+
+    }
+  else
+    {
+      // check rigid transformation values
+      for(int i = 0; i < 6; ++i)
+        if(std::isnan(camPose[i]))
+          ceresOutput << "camPose " << i << " is NaN " << endl;
+
+      // check all other variables
+      for(int i = 0; i < m_nMeshLevels; ++i)
+        {
+          int numVertices = meshTransPyramid[i].size();
+          for(int j = 0; j < numVertices; ++j)
+            {
+              for(int k = 0; k < 3; ++k)
+                {
+                  if(std::isnan(meshTransPyramid[i][j][k]))
+                    ceresOutput << "meshTransPyramid " << i << " " << j << " " << k << " is NaN " << endl;
+
+                  if(std::isnan(prevMeshTransPyramid[i][j][k]))
+                    ceresOutput << "previous meshTransPyramid " << i << " " << j << " " << k << " is NaN " << endl;
+
+                  if(std::isnan(meshRotPyramid[i][j][k]))
+                    ceresOutput << "meshRotPyramid " << i << " " << j << " " << k << " is NaN " << endl;
+
+                  if(std::isnan(prevMeshRotPyramid[i][j][k]))
+                    ceresOutput << "previous meshRotPyramid " << i << " " << j << " " << k << " is NaN " << endl;
+
+                  if(std::isnan(templateMeshPyramid.levels[i].vertices[j][k]))
+                    ceresOutput << "templateMeshPyramid " << i << " " << j << " " << k << " is NaN " << endl;
+
+                }
+
+            }
+
+        }
+
+    }
 
 }
 
@@ -2526,6 +3083,14 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
       // update the features in template mesh
       PangaeaMeshData& templateMesh = templateMeshPyramid.levels[i];
       AttachFeatureToMesh(&prevMesh, &featureLevel, &camInfo, visibilityMask, &templateMesh);
+
+      // update the features in ground truth template mesh
+      if(trackerSettings.hasGT)
+        {
+          PangaeaMeshData& templateMeshGT =  templateMeshPyramidGT.levels[i];
+          PangaeaMeshData& prevMeshGT = currentMeshPyramidGT.levels[i];
+          AttachFeatureToMesh(&prevMeshGT, &featureLevel, &camInfo, visibilityMask, &templateMeshGT);
+        }
 
     }
 }

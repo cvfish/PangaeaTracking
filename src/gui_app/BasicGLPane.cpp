@@ -423,6 +423,15 @@ void BasicGLPane::renderHelper(PangaeaMeshData& mesh, int faceID, bool showTextu
                             );
                 }
 
+              if(!isGT && m_pControlPanel->m_bShowErrorHeatMap && mesh.diffWithGT.size() > 0)
+                {
+                  glColor3f(
+                            mesh.diffWithGT[offset][0],
+                            mesh.diffWithGT[offset][1],
+                            mesh.diffWithGT[offset][2]
+                            );
+                }
+
               // // show the gray edges
               // glColor3f( 0, 0, 0);
 

@@ -88,7 +88,7 @@ void ProblemWrapper::addDeformTerm(int nLevel, ceres::ResidualBlockId& residualB
   deformTermResidualBlocks[nLevel].push_back(residualBlockId);
 }
 
-void ProblemWrapper::addTermporalTerm(int nLevel, ceres::ResidualBlockId& residualBlockId)
+void ProblemWrapper::addTemporalTerm(int nLevel, ceres::ResidualBlockId& residualBlockId)
 {
   temporalTermResidualBlocks[nLevel].push_back(residualBlockId);
 }
@@ -96,14 +96,22 @@ void ProblemWrapper::addTermporalTerm(int nLevel, ceres::ResidualBlockId& residu
 // clear terms
 void ProblemWrapper::clearDataTerm(int nLevel)
 {
+
+  // also need to remove correponding residualBlocks from problem
+  for(int i = 0; i < dataTermResidualBlocks[nLevel].size(); ++i)
+    problems[nLevel]->RemoveResidualBlock(dataTermResidualBlocks[nLevel][ i ]);
+
   dataTermResidualBlocks[nLevel].clear();
 }
 
 void ProblemWrapper::clearFeatureTerm(int nLevel)
 {
+  // also need to remove correponding residualBlocks from problem
+  for(int i = 0; i < featureTermResidualBlocks[nLevel].size(); ++i)
+    problems[nLevel]->RemoveResidualBlock(featureTermResidualBlocks[nLevel][ i ]);
+
   featureTermResidualBlocks[nLevel].clear();
 }
-
 
 // get energy
 void ProblemWrapper::getTotalEnergy(int nLevel, double* cost)
@@ -112,16 +120,215 @@ void ProblemWrapper::getTotalEnergy(int nLevel, double* cost)
                         cost, NULL, NULL, NULL);
 }
 
-
 void ProblemWrapper::getDataTermCost(int nLevel, double* cost)
 {
 
-  ceres::Problem::EvaluateOptions evaluateOptions;
+  if(dataTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
 
-  evaluateOptions.residual_blocks = std::move(dataTermResidualBlocks[nLevel]);
+      evaluateOptions.residual_blocks = std::move(dataTermResidualBlocks[nLevel]);
 
-  problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
 
-  dataTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+      dataTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
 
 }
+
+void ProblemWrapper::getFeatureTermCost(int nLevel, double* cost)
+{
+  if(featureTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(featureTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      featureTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+void ProblemWrapper::getTVTermCost(int nLevel, double* cost)
+{
+  if(tvTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+  {
+    ceres::Problem::EvaluateOptions evaluateOptions;
+
+    evaluateOptions.residual_blocks = std::move(tvTermResidualBlocks[nLevel]);
+
+    problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+    tvTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+  }
+
+}
+
+void ProblemWrapper::getRotTVTermCost(int nLevel, double* cost)
+{
+  if(rotTVTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(rotTVTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      rotTVTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+void ProblemWrapper::getARAPTermCost(int nLevel, double* cost)
+{
+  if(arapTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(arapTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      arapTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+void ProblemWrapper::getINEXTENTTermCost(int nLevel, double* cost)
+{
+
+  if(inextentTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(inextentTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      inextentTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+
+void ProblemWrapper::getDeformTermCost(int nLevel, double* cost)
+{
+
+  if(deformTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(deformTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      deformTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+void ProblemWrapper::getTemporalTermCost(int nLevel, double* cost)
+{
+
+  if(temporalTermResidualBlocks[nLevel].empty())
+    cost[0] = 0;
+  else
+    {
+      ceres::Problem::EvaluateOptions evaluateOptions;
+
+      evaluateOptions.residual_blocks = std::move(temporalTermResidualBlocks[nLevel]);
+
+      problems[nLevel]->Evaluate(evaluateOptions, cost, NULL, NULL, NULL);
+
+      temporalTermResidualBlocks[nLevel] = std::move(evaluateOptions.residual_blocks);
+    }
+
+}
+
+void ProblemWrapper::getAllCost(int nLevel, double cost[7], double* total_cost, double* sum_cost)
+{
+  sum_cost[0] = 0;
+  total_cost[0] = 0;
+
+  getDataTermCost(nLevel, &cost[0]);
+  getFeatureTermCost(nLevel, &cost[1]);
+  getTVTermCost(nLevel, &cost[2]);
+  getRotTVTermCost(nLevel, &cost[3]);
+
+  getARAPTermCost(nLevel, &cost[4]);
+  getINEXTENTTermCost(nLevel, &cost[5]);
+  getDeformTermCost(nLevel, &cost[6]);
+  getTemporalTermCost(nLevel, &cost[7]);
+
+  for(int i = 0; i < 8; ++i)
+    sum_cost[0] += cost[i];
+
+  getTotalEnergy(nLevel, total_cost);
+
+}
+
+// double* ProblemWrapper::getRigidTransformation()
+// {
+//   return pRigidTransform_;
+// }
+
+// PangaeaMeshData& ProblemWrapper::getMeshData(int nLevel)
+// {
+//   return (*pMeshPyr_).levels[nLevel];
+// }
+
+// MeshDeformation& ProblemWrapper::getMeshRotation(int nLevel)
+// {
+//   return (*pMeshRotPyr_)[nLevel];
+// }
+
+// MeshDeformation& ProblemWrapper::getMeshTranslation(int nLevel)
+// {
+//   return (*pMeshTransPyr_)[nLevel];
+// }
+
+// MeshDeformation& ProblemWrapper::getPrevMeshRotation(int nLevel)
+// {
+//   return (*pPrevMeshRotPyr_)[nLevel];
+// }
+
+// MeshDeformation& ProblemWrapper::getPrevMeshTranslation(int nLevel)
+// {
+//   return (*pPrevMeshTransPyr_)[nLevel];
+// }
+
+// void ProblemWrapper::setOptimizationVariables(double* pRigidTransform,
+//                                               PangaeaMeshPyramid* pMeshPyr,
+//                                               vector<MeshDeformation>* pMeshRotPyr;
+//                                               vector<MeshDeformation>* pMeshTransPyr;
+//                                               vector<MeshDeformation>* pPrevMeshRotPyr;
+//                                               vector<MeshDeformation>* pPrevMeshTransPyr)
+// {
+//   pRigidTransform_ = pRigidTransform;
+
+//   pMeshPyr_ = pMeshPyr;
+
+//   pMeshRotPyr_ = pMeshRotPyr;
+
+//   pMeshTransPyr_ = pMeshTransPyr;
+
+//   pPrevMeshRotPyr_ = pPrevMeshRotPyr;
+
+//   pPrevMeshTransPyr_ = pPrevMeshTransPyr;
+// }

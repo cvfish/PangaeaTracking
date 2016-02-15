@@ -330,6 +330,8 @@ TrackerSettings::TrackerSettings()
   diffFileFormat = "diff%04d.png";
   savePath = "/home/cvfish/Work/data/pangaea_tracking_data/test/tracker/";
 
+  energyOutputFile = "energy_output.txt";
+
   saveMesh = false;
   meshFormat = "mesh%04d.obj";
 

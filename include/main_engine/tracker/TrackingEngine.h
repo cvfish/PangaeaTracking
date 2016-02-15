@@ -286,6 +286,7 @@ public:
                             int nRenderLevel, bool renderType = false);
 
   void setMeshPyramid();
+  void setErrorWithGT();
 
 private:
 

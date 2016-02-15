@@ -35,6 +35,11 @@ public:
   void setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyramid);
 
   //void trackerInitSetup(TrackerOutputInfo& outputInfo);
+
+  void loadGTMeshFromFile(int nFrame);
+  void initializeGT();
+  void updateGT();
+
   bool trackFrame(int nFrame, unsigned char* pColorImageRGB,
                   TrackerOutputInfo** pOutputInfo);
   void updateRenderingLevel(TrackerOutputInfo** pOutputInfo,
@@ -68,10 +73,25 @@ public:
   void AddVariableMask(ceres::Problem& problem, baType BA);
   void AddConstantMask(ceres::Problem& problem, baType BA);
 
+  void KnownCorresondencesICP(PangaeaMeshData& templateMesh,
+                              PangaeaMeshData& currentMesh,
+                              double camPose[6]);
+
+  void GetDeformation(PangaeaMeshData& templateMesh,
+                      PangaeaMeshData& currentMesh,
+                      double camPose[6],
+                      MeshDeformation& meshTrans,
+                      MeshDeformation& meshRot);
+
   //
   void EnergySetup(ceres::Problem& problem);
   void EnergyMinimization(ceres::Problem& problem);
   void RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel);
+
+  void EnergyMinimizationGT(ceres::Problem& problem);
+
+  void AddGroundTruthMask(ceres::Problem& problem);
+  void CheckNaN();
 
   //
   bool SaveData();
@@ -194,19 +214,16 @@ private:
   vector< MeshDeformation > prevMeshTransPyramid;
   vector< MeshDeformation > prevMeshRotPyramid;
 
-  // for evaulation on ground truth
-  PangaeaMeshPyramid templateMeshPyramidGT;
-  vector< MeshDeformation > meshTransPyramidGT;
-  vector< MeshDeformation > meshRotPyramidGT;
-  vector< MeshDeformation > prevMeshTransPyramidGT;
-  vector< MeshDeformation > prevMeshRotPyramidGT;
-
   // what about if we use dual quarternion representation?
   // In that case, we will need a dual quarternion
   // field transformation
 
   // ceres output
   std::ofstream ceresOutput;
+  std::ofstream energyOutput;
+  std::ofstream energyOutputForR;
+
+  vector<std::string> costNames;
 
   boost::thread* preProcessingThread;
   boost::thread* savingThread;
@@ -219,6 +236,22 @@ private:
   //problem wrapper
   ProblemWrapper problemWrapper;
   bool useProblemWrapper;  // for debug
+
+  // for evaulation on ground truth
+  PangaeaMeshPyramid templateMeshPyramidGT;
+  PangaeaMeshPyramid currentMeshPyramidGT;
+  vector< MeshDeformation > meshTransPyramidGT;
+  vector< MeshDeformation > meshRotPyramidGT;
+  vector< MeshDeformation > prevMeshTransPyramidGT;
+  vector< MeshDeformation > prevMeshRotPyramidGT;
+
+  ProblemWrapper problemWrapperGT;
+
+  double prevCamPoseGT[3];
+  double camPoseGT[3];
+
+  // set this to true when doing optimization on ground truth data
+  bool modeGT;
 
 };
 

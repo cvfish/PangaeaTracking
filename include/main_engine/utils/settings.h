@@ -157,6 +157,8 @@ public:
   std::string diffFileFormat;
   std::string savePath;
 
+  std::string energyOutputFile;
+
   bool saveMesh;
   std::string meshFormat;
 

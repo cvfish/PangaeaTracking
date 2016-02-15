@@ -137,6 +137,9 @@ public:
   // attach features to the mesh
   vector<vector<FloatType> > features;
   vector<vector<FloatType> > featuresBuffer;
+
+  // error with ground truth
+  vector<vector<FloatType> > diffWithGT;
 };
 
 template<typename FloatType>
