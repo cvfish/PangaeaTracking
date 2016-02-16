@@ -91,6 +91,7 @@ public:
   void EnergyMinimizationGT(ceres::Problem& problem);
 
   void AddGroundTruthMask(ceres::Problem& problem);
+  double ComputeRMSError(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
   void CheckNaN();
 
   //
@@ -222,6 +223,7 @@ private:
   std::ofstream ceresOutput;
   std::ofstream energyOutput;
   std::ofstream energyOutputForR;
+  std::ofstream errorOutputForR;
 
   vector<std::string> costNames;
 
@@ -247,8 +249,8 @@ private:
 
   ProblemWrapper problemWrapperGT;
 
-  double prevCamPoseGT[3];
-  double camPoseGT[3];
+  double prevCamPoseGT[6];
+  double camPoseGT[6];
 
   // set this to true when doing optimization on ground truth data
   bool modeGT;

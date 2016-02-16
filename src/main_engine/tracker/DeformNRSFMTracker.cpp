@@ -100,8 +100,13 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
         std::left << setw(15)  << "TotalCost" << endl;
 
       std::stringstream energyOutputForRPath;
-      energyOutputForRPath << settings.savePath << "energyOutputForR.txt";
+      energyOutputForRPath << settings.savePath << "energy_output_for_R.txt";
       energyOutputForR.open(energyOutputForRPath.str().c_str(), std::ofstream::trunc);
+
+      std::stringstream errorOutputForRPath;
+      errorOutputForRPath << settings.savePath << "error_output_for_R.txt";
+      errorOutputForR.open(errorOutputForRPath.str().c_str(), std::ofstream::trunc);
+
     }
 
   vector<std::string> temp({"DataTerm", "FeatureTerm", "TVTerm", "RotTVTerm", "ARAPTerm",
@@ -656,6 +661,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
           UpdateRenderingDataFast(outputInfoPyramid[i], KK, outputInfoPyramid[i].meshDataGT, true);
 
+          double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
+
+          // print error to errorOutputForR
+          if(trackerSettings.hasGT)
+            errorOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << i
+                            << std::left << setw(15) << error << endl;
         }
 
     }
@@ -2753,7 +2764,6 @@ void DeformNRSFMTracker::EnergyMinimization(ceres::Problem& problem)
         energyOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << currLevel
                          << std::left << setw(15) << cost[i] << std::left << setw(15) << "NotGT"
                          << std::left << setw(15) << costNames[i] << endl;
-
     }
 
 }
@@ -2858,6 +2868,28 @@ void DeformNRSFMTracker::AddGroundTruthMask(ceres::Problem& problem)
 
   ceresOutput << "number of constant parameter blocks for ground truth optimization " <<
     numConstantBlocks << endl;
+
+}
+
+double DeformNRSFMTracker::ComputeRMSError(PangaeaMeshData& results,
+                                         PangaeaMeshData& resultsGT)
+{
+  int numVertices = results.numVertices;
+  double gt_norm = 0;
+  double diff_norm = 0;
+  double diff;
+  for(int i = 0; i < numVertices; ++i)
+    {
+      for(int k = 0; k < 3; ++k)
+        {
+          diff = resultsGT.vertices[i][k] - results.vertices[i][k];
+          diff_norm += diff * diff;
+
+          gt_norm += resultsGT.vertices[i][k] * resultsGT.vertices[i][k];
+        }
+    }
+
+  return sqrt(diff_norm) / sqrt(gt_norm);
 
 }
 
