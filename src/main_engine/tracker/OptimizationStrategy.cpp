@@ -15,7 +15,7 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
     // setting up the proper scale according to the number of vertices
     // of each level, starting from the 0th level
     weightScale.dataTermScale.resize(numOptimizationLevels, 1);
-        
+
     weightScale.tvTermScale.resize(numOptimizationLevels, 1);
 
     weightScale.rotTVTermScale.resize(numOptimizationLevels,1);
@@ -30,6 +30,8 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
 
     weightScale.transScale.resize(numOptimizationLevels, 1);
 
+    weightScale.featureTermScale.resize(numOptimizationLevels, 1);
+
     // // all the 0th level have scale 1
     // weightScale.dataTermScale[0] = 1;
     // weightScale.tvTermScale[0] = 1;
@@ -43,7 +45,7 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
     for(int i = 1; i < numOptimizationLevels; ++i)
     {
         double decreaseFactor = double(meshVertexNum[i]) / meshVertexNum[0];
-            
+
         weightScale.dataTermScale[i] = 1;
 
         weightScale.tvTermScale[i] = decreaseFactor * weightScale.tvTermScale[0];
@@ -61,6 +63,8 @@ void OptimizationStrategy::setWeightScale(IntegerContainerType& meshVertexNum)
         weightScale.rotScale[i] = decreaseFactor *  weightScale.rotScale[0];
 
         weightScale.transScale[i] = decreaseFactor * weightScale.transScale[0];
+
+        weightScale.featureTermScale[i] = 1;
     }
 
 }
@@ -74,7 +78,7 @@ void OptimizationStrategy::setWeightParametersVec()
 {
 
     WeightPara weightParaLevel;
-    
+
     for(int currLevel = 0; currLevel < numOptimizationLevels; ++currLevel)
     {
         weightParaLevel.dataTermWeight = weightPara.dataTermWeight * weightScale.dataTermScale[currLevel];
@@ -99,10 +103,13 @@ void OptimizationStrategy::setWeightParametersVec()
             weightScale.rotScale[currLevel];
         weightParaLevel.transWeight = weightPara.transWeight *
             weightScale.transScale[currLevel];
-        
+
+        weightParaLevel.featureTermWeight = weightPara.featureTermWeight * weightScale.featureTermScale[currLevel];
+        weightParaLevel.featureHuberWidth = weightPara.featureHuberWidth;
+
         weightParaVec.push_back( weightParaLevel );
     }
-    
+
 }
 
 // free neighbor
@@ -144,7 +151,7 @@ void FreeNeighborStrategy::Initialize()
         else
         optimizationSettings[i].regTermPairs = dataTermPairs;
     }
-        
+
     for(int i = 0; i < numOptimizationLevels; ++i)
     {
         // // what should we propagate, we should do the pairs whose first item
@@ -185,7 +192,7 @@ void FreeNeighborStrategy::Initialize()
             nextOptimizationLevels.push_back( nextRegTermPairs[j].first );
             nextOptimizationLevels.push_back( nextRegTermPairs[j].second );
         }
-        
+
         // remove duplicate items
         sort( nextOptimizationLevels.begin(), nextOptimizationLevels.end() );
         nextOptimizationLevels.erase( unique( nextOptimizationLevels.begin(), nextOptimizationLevels.end() ),
@@ -207,18 +214,18 @@ void FreeNeighborStrategy::Initialize()
 
                 for(int k = *up; k > nextOptimizationLevels[j]; --k)
                 optimizationSettings[ i ].propPairs.push_back( pair<int, int>(k, k-1) );
-                
+
             }
         }
-        
+
         if(i == 0)
         {
             for(int j = updatedLevels[0]; j > 0 ; --j)
             propPairsFinal.push_back( pair<int, int>(j, j-1) );
         }
-        
+
     }
-    
+
 }
 
 void FreeNeighborStrategy::AddPropPairs(vector<std::pair<int, int> >& propPairs,
@@ -231,7 +238,7 @@ void FreeNeighborStrategy::AddPropPairs(vector<std::pair<int, int> >& propPairs,
 
         std::vector<int>::iterator second_position = std::find(
             updatedLevels.begin(), updatedLevels.end(), nextPairs[ j ].second );
-        
+
         vector<pair<int, int> >::iterator position = std::find(
             propPairs.begin(), propPairs.end(), nextPairs[ j ]);
 

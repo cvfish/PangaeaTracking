@@ -30,6 +30,6 @@ int PangaeaTracking::OnExit()
     SafeDeleteArray(argv_char[i]);
 
     SafeDeleteArray(argv_char);
-    
+
     return 0;
 }

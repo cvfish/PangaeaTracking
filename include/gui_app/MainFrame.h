@@ -21,13 +21,13 @@ public:
     // MainFrame(const wxString& title, int argc, wxChar* argv[]);
     //MainFrame(const wxString& title, int argc, char** argv);
     MainFrame(const wxString& title, int argc, char* argv[]);
-    
+
 
     ~MainFrame();
-    
+
     void OnTimer(wxTimerEvent& event);
     void OnIdle(wxIdleEvent& event);
-    
+
     bool ProcessOneFrame(int nFrame);
 
     void UpdateVisibilityMask(double toleranceRatio);
@@ -43,7 +43,7 @@ public:
 
     wxImagePanel* m_pOverlayPane;
     wxImagePanel* m_pImagePane;
-    
+
     // Image sequence, timer callback
     wxTimer m_nTimer;
 

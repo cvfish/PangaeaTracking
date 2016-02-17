@@ -1,14 +1,5 @@
-#include "Mesh.h"
-#include "global.h"
-#include "residual.h"
-
-#include "global.cpp"
-#include "Mesh.cpp"
-
-#include "CCamera.cpp"
-#include "DepthBuffer.cpp"
-#include "NcvGlXContext.cpp"
-#include "OptimizationStrategy.cpp"
+#include "main_engine/tracker/Mesh.h"
+#include "main_engine/utils/global.h"
 
 class ParameterReader
 {
@@ -29,14 +20,14 @@ public:
             {
                 continue;
             }
- 
+
             int pos = str.find("=");
             if (pos == -1)
             continue;
             string key = str.substr( 0, pos );
             string value = str.substr( pos+1, str.length() );
             data[key] = value;
- 
+
             if ( !fin.good() )
             break;
         }
@@ -61,6 +52,10 @@ int main(int argc, char** args)
     ParameterReader pd;
     bool use_mesh_file = atof(pd.getData("use_mesh_file").c_str());
 
+    bool clockwise = true;
+    if(pd.getData("clockwise").compare("NOT_FOUND") != 0)
+    clockwise = atof(pd.getData("clockwise").c_str());
+
     if(use_mesh_file)
     {
         // this works for a single mesh
@@ -69,10 +64,10 @@ int main(int argc, char** args)
         std::string input_file = pd.getData("input_mesh_file");
         std::string output_file = pd.getData("output_mesh_file");
 
-        PangaeaMeshIO::loadfromFile(input_file, inputMesh);
+        PangaeaMeshIO::loadfromFile(input_file, inputMesh, clockwise);
         vector<vector<double> > bbox;
         getMeshBoundingBox(inputMesh, bbox);
-        
+
         double xrange = bbox[0][1] - bbox[0][0];
         double yrange = bbox[1][1] - bbox[1][0];
         double zrange = bbox[2][1] - bbox[2][0];
@@ -88,7 +83,7 @@ int main(int argc, char** args)
 
         scaleMeshUp(inputMesh, factor);
         PangaeaMeshIO::writeToFile(output_file, inputMesh);
-        
+
     }else
     {
         // this works for a heirachy of meshes
@@ -122,7 +117,7 @@ int main(int argc, char** args)
             output_file << buffer;
             //memset(&buffer[0], 0, sizeof(buffer));
 
-            PangaeaMeshIO::loadfromFile(input_file.str(), inputMesh);
+            PangaeaMeshIO::loadfromFile(input_file.str(), inputMesh, clockwise);
 
             if(factor == 0) // if this is the first frame
             {
@@ -137,12 +132,12 @@ int main(int argc, char** args)
                 factor = 400.0 / zrange;
                 cout << "scaling factor is: " << factor << endl;
             }
-            
+
             // scale the mesh up
             scaleMeshUp(inputMesh, factor);
             PangaeaMeshIO::writeToFile(output_file.str(), inputMesh);
         }
-        
+
     }
 
 

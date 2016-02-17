@@ -89,7 +89,7 @@ void ShapeSequenceReader::Initialization()
         maskImagePath << shapePath << shapeMaskFile;
 
         if(bfs::exists(maskImagePath.str()))
-        {         
+        {
             ifstream maskFileFID(maskImagePath.str().c_str(), std::ios::binary);
             double temp;
             for(unsigned int j = 0; j < numPnts; ++j)
@@ -181,9 +181,9 @@ bool ShapeSequenceReader::loadShape(bool isGT, std::string& shapePath,
         cout << shapeFilePath.str() << " does not exist" << endl;
         return false;
     }
-    
+
     std::ifstream shapeFile(shapeFilePath.str().c_str());
-        
+
     int frame = curFrame - startFrameNo;
     int pntsInd = 0;
     int saveInd = 0;
@@ -291,7 +291,7 @@ void ShapeSequenceReader::projShape()
                 {
                     u = KK[0][0] * X + KK[0][1] * Y + KK[0][2] * Z;
                     v = KK[1][0] * X + KK[1][1] * Y + KK[1][2] * Z;
-                    w = KK[2][0] * X + KK[2][1] * Y + KK[2][2] * Z;   
+                    w = KK[2][0] * X + KK[2][1] * Y + KK[2][2] * Z;
                     if(w != 0)
                     {
                         m_pCurProjResult[ 2*saveInd ] = u/w;
@@ -304,7 +304,7 @@ void ShapeSequenceReader::projShape()
                     X = m_pCurTrackingResultGT[ 3*saveInd ];
                     Y = m_pCurTrackingResultGT[ 3*saveInd + 1];
                     Z = m_pCurTrackingResultGT[ 3*saveInd + 2];
-                    
+
                     if(KK[0][2] == 0) //  we have orthographic camaera in this case
                     {
                         m_pCurProjResult[ 2*saveInd ] = X;
@@ -349,7 +349,7 @@ bool ShapeSequenceReader::setCurrentFrame(int curFrame)
 
         if(!loadShape(false, shapePath, shapeFormat, currentFrameNo))
         return false;
-        
+
         projShape();
         unsigned int radius = 1;
         computeNormal(false, radius);
@@ -360,7 +360,7 @@ bool ShapeSequenceReader::setCurrentFrame(int curFrame)
         }
 
         TOCK("setCurrentFrame");
-        
+
     }
     return true;
 }
@@ -392,24 +392,40 @@ void ShapeSequenceReader::computeNormal(bool isGT, unsigned int radius)
     for(int j = 0; j < m_nHeight - radius; ++j)
     {
         for(int i = 0; i < m_nWidth - radius; ++ i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i),&pResults[0]+3*(j*m_nWidth+radius+i),
-            &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i),1);
+          compnorm(
+                 &pResults[0]+3*(j*m_nWidth+i),
+                 &pResults[0]+3*(j*m_nWidth+radius+i),
+                 &pResults[0]+3*((j+radius)*m_nWidth+i),
+                 &pNormals[0]+3*(j*m_nWidth+i),
+                 true);
 
         for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i-radius), &pResults[0]+3*(j*m_nWidth+i),
-            &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i),1);
+        compnorm(
+                 &pResults[0]+3*(j*m_nWidth+i-radius),
+                 &pResults[0]+3*(j*m_nWidth+i),
+                 &pResults[0]+3*((j+radius)*m_nWidth+i),
+                 &pNormals[0]+3*(j*m_nWidth+i),
+                 true);
     }
 
     for (int j = m_nHeight-radius; j < m_nHeight; ++j)
-    {
+      {
         for(int i = 0; i < m_nWidth-radius; ++i)
-        compnorm(&pResults[0]+3*((j-radius)*m_nWidth+i), &pResults[0]+3*(j*m_nWidth+radius+i),
-            &pResults[0]+3*(j*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i),1);
+          compnorm(
+                   &pResults[0]+3*((j-radius)*m_nWidth+i),
+                   &pResults[0]+3*(j*m_nWidth+radius+i),
+                   &pResults[0]+3*(j*m_nWidth+i),
+                   &pNormals[0]+3*(j*m_nWidth+i),
+                   true);
 
         for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i), &pResults[0]+3*(j*m_nWidth-radius+i),
-            &pResults[0]+3*((j-radius)*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i),1);
-    }
+          compnorm(
+                   &pResults[0]+3*(j*m_nWidth+i),
+                   &pResults[0]+3*(j*m_nWidth-radius+i),
+                   &pResults[0]+3*((j-radius)*m_nWidth+i),
+                   &pNormals[0]+3*(j*m_nWidth+i),
+                   true);
+      }
 
 }
 
@@ -467,14 +483,14 @@ bool ShapeSequenceReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     TrackerOutputInfo** pOutputInfo)
 {
     *pOutputInfo= &outputInfo;
-    
+
     // if this is the first frame, read the coolors of the image
     if(currentFrameNo == startFrameNo && isTextured == false)
     {
         setTextureColors(pColorImageRGB);
         isTextured = true;
     }
-    
+
     if(!setCurrentFrame(nFrame))
     return false;
 
@@ -542,7 +558,7 @@ void ShapeSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
     }
 
     outputInfo.visibilityMask.resize(outputInfo.meshData.numVertices,true);
-    
+
     // camera pose is always 0 in this case
     for(int i = 0; i < 6; ++i)
     outputInfo.camPose[i] = 0;
@@ -585,7 +601,7 @@ void ShapeSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
     // camera pose is always 0 in this case
     for(int i = 0; i < 6; ++i)
     outputInfo.camPose[i] = 0;
-    
+
     TOCK("visualRenderingUpdate");
 
 }

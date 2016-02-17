@@ -237,7 +237,7 @@ void setupPropagation(MeshPyramid<FloatType>& meshPyramid,
     // }
 
     int numLevels = meshPyramid.levels.size();
-    
+
     for(int i = 1; i < numLevels; ++i)
     AddMeshToMeshPropagation(
         meshPyramid,
@@ -259,6 +259,78 @@ void setupPropagation(MeshPyramid<FloatType>& meshPyramid,
         meshNeighborNum[ i ],
         meshNeighborRadius[ i ],
         meshPyramidUseRadius);
+}
+
+template<class FloatType>
+void setupMeshPatchNeighbor(MeshData<FloatType>& currentMesh,
+    MeshPropagation& meshPropagation, int level,
+    int meshPatchRadius)
+{
+    int numVertices = currentMesh.numVertices;
+
+    MeshWeights& patchWeights = meshPropagation.patchWeightsVec[ level ] ;
+    MeshNeighbors& patchNeighbors = meshPropagation.patchNeighborsVec[ level ] ;
+    MeshNeighbors& patchRadii = meshPropagation.patchRadiiVec[ level ] ;
+
+    patchWeights.resize(numVertices);
+    patchNeighbors.resize(numVertices);
+    patchRadii.resize(numVertices);
+
+    MeshNeighbors& adjVerticesInd = currentMesh.adjVerticesInd;
+
+    for(int i = 0; i < numVertices; ++i)
+    {
+        // first of all, push back the vertice itself,
+        // which has radius 0
+        patchWeights[i].push_back( 1 );
+        patchNeighbors[i].push_back( i );
+        patchRadii[i].push_back( 0 );
+
+        int new_neighbor_start = 0;
+
+        for(int radius = 1; radius <= meshPatchRadius; ++radius)
+        {
+            int total_num = patchNeighbors[i].size();
+
+            for(int nbor = new_neighbor_start; nbor < total_num; ++nbor)
+            {
+                int neighbor_num = adjVerticesInd[ patchNeighbors[i][ nbor ]  ].size();
+
+                for(int k = 0; k < neighbor_num; ++k)
+                {
+                    int new_neighbor = adjVerticesInd[ patchNeighbors[i][ nbor ]  ][k];
+
+                    if(std::find(patchNeighbors[i].begin(), patchNeighbors[i].end(),
+                            new_neighbor) == patchNeighbors[i].end())
+                    {
+                        patchWeights[i].push_back( 1 );
+                        patchNeighbors[i].push_back( new_neighbor );
+                        patchRadii[i].push_back( radius );
+                    }
+                }
+            }
+
+            new_neighbor_start = total_num;
+        }
+    }
+}
+
+template<class FloatType>
+void setupPatchNeighbor(MeshPyramid<FloatType>& meshPyramid,
+    MeshPropagation& meshPropagation,
+    int meshPatchRadius)
+{
+    int numLevels = meshPyramid.levels.size();
+    meshPropagation.patchWeightsVec.resize( numLevels );
+    meshPropagation.patchNeighborsVec.resize( numLevels );
+    meshPropagation.patchRadiiVec.resize( numLevels );
+
+    for(int i = 0; i < numLevels; ++i)
+    {
+        MeshData< FloatType >& currentMesh = meshPyramid.levels[i];
+        setupMeshPatchNeighbor(currentMesh, meshPropagation, i, meshPatchRadius);
+    }
+
 }
 
 // general setup propagation
@@ -328,14 +400,20 @@ void AddMeshToMeshPropagation(MeshPyramid<FloatType>& meshPyramid, vector<pair<i
 }
 
 // update output info, need to be updated
-void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
-    CoordinateType camPose[6], PangaeaMeshData& currentMesh);
+
+void UpdateHelper(MeshData<CoordinateType>& meshData, vector<vector<CoordinateType> >& meshProj, int vertex,
+                  CoordinateType trans_uvd[3], CoordinateType trans_normals[3], double KK[3][3]);
 
 void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
-    CoordinateType camPose[6], PangaeaMeshData& templateMesh, MeshDeformation& meshTrans);
+                         CoordinateType camPose[6], PangaeaMeshData& currentMesh,
+                         bool updateGT = false);
+
+void UpdateRenderingData(TrackerOutputInfo& outputInfo, double KK[3][3],
+                         CoordinateType camPose[6], PangaeaMeshData& templateMesh,
+                         MeshDeformation& meshTrans, bool updateGT = false);
 
 void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
-    PangaeaMeshData& currentMesh);
+                             PangaeaMeshData& currentMesh, bool updateGT = false);
 
 void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
     int width, int height);

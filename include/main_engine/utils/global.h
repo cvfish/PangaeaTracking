@@ -57,11 +57,13 @@ typedef cv::Vec<CoordinateType,3> Vec3d;
 
 typedef cv::Mat_< PixelType > IntensityImageType;
 typedef cv::Mat_< CoordinateType > DepthImageType;
+typedef cv::Mat_< CoordinateType > FeatureImageType;
 typedef DepthImageType InternalIntensityImageType;
 typedef cv::Mat_<Vec3b> ColorImageType;
 typedef cv::Mat_<Vec3d> InternalColorImageType;
 
 typedef std::vector<ColorImageType> ColorImageContainerType;
+typedef std::vector< FeatureImageType > FeatureImageContainerType;
 
 typedef Matrix<CoordinateType, Dynamic, Dynamic, RowMajor> MatrixXCordRow;
 typedef Matrix<float, Dynamic, Dynamic, RowMajor> MatrixXfRow;
@@ -91,6 +93,10 @@ enum TrackingType{
 ImageSourceType mapImageSourceType(std::string const& inString);
 
 TrackingType mapTrackingType(std::string const& inString);
+
+int typeConvert(string dataType);
+
+int typeSize(string dataType);
 
 #define SafeAllocArray(x,size) x = new unsigned char[size]; memset(x, 0, size);
 #define SafeAllocArrayType(x,size,tp) x = new tp[size]; memset(x, 0, size*sizeof(tp));
@@ -130,32 +136,54 @@ void flipnorm(FloatType* normals, int num)
 }
 
 template<typename FloatType>
-void compnorm(FloatType* ver1,  FloatType* ver2, FloatType* ver3, FloatType* location, int flip)
+void compnorm(FloatType* ver1,  FloatType* ver2, FloatType* ver3, FloatType* location,
+	bool clockwise)
 {
     // compute normals assume that the normal at each point
     //   is defined by the triangle consisting of the previous two
     //   points + current point.
     //   (p1-p3) x (p1-p2)
 
-    double norm[3];
-    double a[3] = {ver1[0]-ver3[0],ver1[1]-ver3[1],ver1[2]-ver3[2]};
-    double b[3] = {ver1[0]-ver2[0],ver1[1]-ver2[1],ver1[2]-ver2[2]};
+	FloatType norm[3];
+	FloatType a[3];
+	FloatType b[3];
+
+	if (clockwise)
+	{
+		a[0] = ver1[0] - ver3[0];
+		a[1] = ver1[1] - ver3[1];
+		a[2] = ver1[2] - ver3[2];
+
+		b[0] = ver1[0] - ver2[0];
+		b[1] = ver1[1] - ver2[1];
+		b[2] = ver1[2] - ver2[2];
+	}
+	else	// Anti-clockwsie
+	{
+		a[0] = ver1[0] - ver2[0];
+		a[1] = ver1[1] - ver2[1];
+		a[2] = ver1[2] - ver2[2];
+
+		b[0] = ver1[0] - ver3[0];
+		b[1] = ver1[1] - ver3[1];
+		b[2] = ver1[2] - ver3[2];
+	}
 
     norm[0] = a[1]*b[2] - a[2]*b[1];
     norm[1] = a[2]*b[0] - a[0]*b[2];
     norm[2] = a[0]*b[1] - a[1]*b[0];
 
-    if(norm[1]*norm[1]+norm[2]*norm[2]+norm[0]*norm[0]!=0)
+	if (norm[1] * norm[1] + norm[2] * norm[2] + norm[0] * norm[0] != FloatType(0))
     {
-        double temp=1.0f/sqrt(norm[1]*norm[1]+norm[2]*norm[2]+norm[0]*norm[0]);
+		FloatType temp = FloatType(1.0f) / sqrt(norm[1] * norm[1] + norm[2] * norm[2] + norm[0] * norm[0]);
         norm[0] *= temp;
         norm[1] *= temp;
         norm[2] *= temp;
     }
 
-    location[0] = flip*norm[0];
-    location[1] = flip*norm[1];
-    location[2] = flip*norm[2];
+    location[0] = norm[0];
+    location[1] = norm[1];
+    location[2] = norm[2];
 }
 
 template<typename FloatType>
@@ -221,7 +249,7 @@ void SampleLinear( const TImage & intensityImage,
 
   sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
            (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
-  
+
 }
 
 /// Linear interpolation.
@@ -275,5 +303,32 @@ void SampleLinear( const TImage & intensityImage,
   sample[2] =(     dy  * ( dx * grady11 + (1.0 - dx) * grady12 ) +
            (1 - dy) * ( dx * grady21 + (1.0 - dx) * grady22 ));
 }
+
+
+// // some stuff to deal with the compilation error of to_string(int)
+// #include <type_traits>
+// #include <string>
+
+// template<typename T>
+// inline typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value,
+//                                std::string>::type
+//   to_string(T const val) {
+//   return std::to_string(static_cast<long long>(val));
+// }
+
+// template<typename T>
+// inline typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value,
+//                                std::string>::type
+//   to_string(T const val) {
+//   return std::to_string(static_cast<unsigned long long>(val));
+// }
+
+// template<typename T>
+// inline typename std::enable_if<std::is_floating_point<T>::value, std::string>::type
+// to_string(T const val) {
+//   return std::to_string(static_cast<long double>(val));
+// }
+
+
 
 #endif

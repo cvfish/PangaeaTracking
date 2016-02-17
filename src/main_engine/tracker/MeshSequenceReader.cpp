@@ -73,9 +73,9 @@ bool MeshSequenceReader::loadMesh(std::string& meshPath,
         cout << "File not existing: " << meshFile.str() << endl;
         return false;
     }
-    
+
     if(!trackerInitialized)
-    PangaeaMeshIO::loadfromFile(meshFile.str(), currentMesh);
+    PangaeaMeshIO::loadfromFile(meshFile.str(), currentMesh, trackerSettings.clockwise);
     else
     PangaeaMeshIO::updateFromFile(meshFile.str(), currentMesh);
 
@@ -95,7 +95,7 @@ bool MeshSequenceReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
     cv::Mat tempColorImageRGB(m_nHeight, m_nWidth, CV_8UC3, pCurrentColorImageRGB);
     tempColorImageRGB.convertTo(colorImage, cv::DataType<Vec3d>::type, 1./255);
     cv::split(colorImage, colorImageSplit);
-    
+
     if(!trackerInitialized)
     trackerInitSetup(outputInfo);
     else
@@ -173,10 +173,10 @@ void MeshSequenceReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 void MeshSequenceReader::trackerUpdate(TrackerOutputInfo& outputInfo)
 {
     TICK("visualRenderingUpdate");
-    
+
     UpdateRenderingData(outputInfo, KK, camPose, currentMesh);
     UpdateRenderingDataFast(outputInfo, KK, currentMesh);
-    
+
     if(useVisibilityMask)
     {
         UpdateVisibilityMaskGL(outputInfo, visibilityMask, KK, camPose, m_nWidth, m_nHeight);

@@ -458,13 +458,13 @@ void ShapesBufferReader::computeNormals(bool isGT, unsigned int radius)
             compnorm(&pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+i),
                 &pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+radius+i),
                 &pResults[0]+bufferPos*3*nopoints+3*((j+radius)*m_nWidth+i),
-                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i),1);
+                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i), true);
 
             for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
             compnorm(&pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+i-radius),
                 &pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+i),
                 &pResults[0]+bufferPos*3*nopoints+3*((j+radius)*m_nWidth+i),
-                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i),1);
+                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i), true);
         }
 
         for (int j = m_nHeight-radius; j < m_nHeight; ++j)
@@ -473,13 +473,13 @@ void ShapesBufferReader::computeNormals(bool isGT, unsigned int radius)
             compnorm(&pResults[0]+bufferPos*3*nopoints+3*((j-radius)*m_nWidth+i),
                 &pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+radius+i),
                 &pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+i),
-                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i),1);
+                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i), true);
 
             for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
             compnorm(&pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth+i),
                 &pResults[0]+bufferPos*3*nopoints+3*(j*m_nWidth-radius+i),
                 &pResults[0]+bufferPos*3*nopoints+3*((j-radius)*m_nWidth+i),
-                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i),1);
+                &pNormals[0]+3*(bufferPos*nopoints+j*m_nWidth+i), true);
         }
     }
 
