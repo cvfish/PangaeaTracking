@@ -66,6 +66,9 @@
     <ClInclude Include="..\..\include\main_engine\utils\settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\main_engine\tracker\FeaturePyramid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main_engine\MainEngine.cpp">
@@ -117,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\main_engine\utils\settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\main_engine\tracker\FeaturePyramid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
