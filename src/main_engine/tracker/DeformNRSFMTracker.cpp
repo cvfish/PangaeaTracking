@@ -436,7 +436,6 @@ void DeformNRSFMTracker::updateGT()
 
 }
 
-
 void DeformNRSFMTracker::loadGTMeshFromFile(int nFrame)
 {
   currentMeshPyramidGT = std::move(
@@ -451,58 +450,17 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
                                     TrackerOutputInfo** pOutputInfoRendering)
 {
   if(!trackerInitialized)
-    cout << "this tracker has been initialized with a template mesh" << endl;
+    cout << "this tracker has not been initialized with a template mesh" << endl;
 
   currentFrameNo = nFrame;
 
   if(trackerSettings.hasGT)
     updateGT();
 
-  // copy over previous camera pose
+  // update camPose of previous frame
   memcpy(prevCamPose, camPose, 6*sizeof(double));
 
   TICK("imagePreprocessing");
-  // update the image pyramid, including images and gradients
-  // also depth and normals if there is anything related
-  //imagePyramid.setupPyramid(pColorImageRGB, m_nMeshLevels);
-
-  // if(preProcessingThread == NULL)
-  //   {
-  //     preProcessingThread = new boost::thread(
-  //                                             boost::bind(&ImagePyramid::setupPyramid,
-  //                                                         pImagePyramidBuffer,
-  //                                                         pColorImageRGB,
-  //                                                         m_nMeshLevels));
-  //     preProcessingThread->join();
-  //     dataInBuffer = true;
-  //     ImagePyramid* temp = pImagePyramid;
-  //     pImagePyramid = pImagePyramidBuffer;
-  //     pImagePyramidBuffer = temp;
-  //     dataInBuffer = false;
-  //   }
-  // else
-  //   {
-  //     preProcessingThread->join();
-
-  //     TICK("assignmentTime");
-  //     if(dataInBuffer)
-  //       {
-  //         ImagePyramid* temp = pImagePyramid;
-  //         pImagePyramid = pImagePyramidBuffer;
-  //         pImagePyramidBuffer = temp;
-  //         dataInBuffer = false;
-  //       }
-  //     TOCK("assignmentTime");
-
-  //     delete preProcessingThread;
-  //     preProcessingThread = new boost::thread(
-  //                                             boost::bind(&ImagePyramid::setupPyramid,
-  //                                                         pImagePyramidBuffer,
-  //                                                         pColorImageRGB,
-  //                                                         m_nMeshLevels));
-  //     dataInBuffer = true;
-
-  //   }
 
   // prepare data in buffer
   pImagePyramid->setupPyramid(pColorImageRGB, m_nMeshLevels);
@@ -519,20 +477,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       char buffer[BUFFER_SIZE];
       sprintf(buffer, featureSettings.keyNameFormat.c_str(), currentFrameNo);
 
-      // if(featureThread == NULL){
-      //     featureThread = new boost::thread(boost::bind(&FeaturePyramid::setupPyramid,
-      //                                                   pFeaturePyramid,
-      //                                                   string(buffer)));
-      //     featureThread->join();
-      //   }
-      // else{
-      //   featureThread->join();
-      //   delete featureThread;
-      //   featureThread = new boost::thread(boost::bind(&FeaturePyramid::setupPyramid,
-      //                                                 pFeaturePyramid,
-      //                                                 string(buffer)));
-      // }
-
       // prepare data in buffer
       pFeaturePyramid->setupPyramid(string(buffer));
       // get new data from buffer
@@ -545,7 +489,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       TOCK("featurePreprocessing");
     }
-
 
   int numOptimizationLevels = pStrategy->numOptimizationLevels;
 
@@ -580,11 +523,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
         {
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
-          //remove dataTermResidualBlocks from previous frame
-
-          // for(int residualID = 0; residualID < dataTermResidualBlocks.size(); ++residualID)
-          //   problem.RemoveResidualBlock(dataTermResidualBlocks[ residualID ]);
-          // dataTermResidualBlocks.resize(0);
 
           problemWrapper.clearDataTerm(currLevel);
 
@@ -594,13 +532,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
         {
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveFeatureTermResidual");
+
           // remove featureTermResidualBlocks from previous frame
           // be careful if we want to use multi-threading
-
-          // for(int residualID = 0; residualID < featureTermResidualBlocks.size(); ++residualID)
-          //   problem.RemoveResidualBlock(featureTermResidualBlocks[ residualID ]);
-          // featureTermResidualBlocks.resize(0);
-
           problemWrapper.clearFeatureTerm(currLevel);
 
           TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveFeatureTermResidual");
@@ -674,27 +608,10 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   TICK("updateProp");
   // update the results
   updateRenderingLevel(pOutputInfoRendering, 0);
-  //*pOutputInfoRendering = &outputInfoPyramid[0];
 
   // update the top level of propagation result
   outputPropPyramid[m_nMeshLevels-1] = outputInfoPyramid[m_nMeshLevels-1];
   TOCK("updateProp");
-
-  //save data
-  // TICK("SavingTime");
-
-  // if(savingThread == NULL)
-  // {
-  //     savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
-  //     savingThread->join();
-  // }else
-  // {
-  //     savingThread->join();
-  //     delete savingThread;
-  //     savingThread = new boost::thread(boost::bind(&DeformNRSFMTracker::SaveThread, this, pOutputInfoRendering) );
-  // }
-
-  // TOCK("SavingTime");
 
   // compute the energy before updating visibilityMasks
   for(int level = 0; level < numOptimizationLevels; ++level)
@@ -727,7 +644,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
     }
 
+  //save data
+  TICK("SavingTime");
+
   SaveThread(pOutputInfoRendering);
+
+  TOCK("SavingTime");
 
   // update previous feature channels to current one
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
@@ -1161,24 +1083,17 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
 
               // add the residualBlockId to problemWrapper
               ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
-                                                               cost_function,
-                                                               loss_function,
-                                                               modeGT ? &camPoseGT[0] : &camPose[0],
-                                                               modeGT ? &camPoseGT[3] : &camPose[3],
-                                                               &meshTrans[i][0]);
+                                                                                cost_function,
+                                                                                loss_function,
+                                                                                modeGT ? &camPoseGT[0] : &camPose[0],
+                                                                                modeGT ? &camPoseGT[3] : &camPose[3],
+                                                                                &meshTrans[i][0]);
 
               if(modeGT)
                 problemWrapperGT.addDataTerm(currLevel, residualBlockId);
               else
                 problemWrapper.addDataTerm(currLevel, residualBlockId);
 
-              // dataTermResidualBlocks.push_back(
-              //                                  problem.AddResidualBlock(
-              //                                                           cost_function,
-              //                                                           loss_function,
-              //                                                           &camPose[0],
-              //                                                           &camPose[3],
-              //                                                           &meshTrans[i][0]));
             }
 
             break;
@@ -1209,14 +1124,6 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                 problemWrapperGT.addDataTerm(currLevel, residualBlockId);
               else
                 problemWrapper.addDataTerm(currLevel, residualBlockId);
-
-              // dataTermResidualBlocks.push_back(
-              //                                  problem.AddResidualBlock(
-              //                                                           cost_function,
-              //                                                           loss_function,
-              //                                                           &camPose[0],
-              //                                                           &camPose[3],
-              //                                                           &meshTrans[i][0]));
 
             }
 
@@ -1257,12 +1164,6 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                 problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
               else
                 problemWrapper.addFeatureTerm(currLevel, residualBlockId);
-
-              // dataTermResidualBlocks.push_back(
-              //                                  problem.AddResidualBlock(
-              //                                                           cost_function,
-              //                                                           loss_function,
-              //                                                           parameter_blocks));
 
               break;
 
@@ -1345,15 +1246,6 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
               else
                 problemWrapper.addDataTerm(currLevel, residualBlockId);
             }
-
-          // dataTermResidualBlocks.push_back(
-          //                                  problem.AddResidualBlock(
-          //                                                           cost_function,
-          //                                                           loss_function,
-          //                                                           parameter_blocks));
-
-          // // I would like to compute residuals myself
-          // (*pResidualPatch)(&(parameter_blocks[0]),  &Residuals[ per_residual_num * i ] );
 
           break;
 
@@ -1443,12 +1335,6 @@ void DeformNRSFMTracker::AddCostImageProjectionCoarse(ceres::Problem& problem,
               else
                 problemWrapper.addDataTerm(currLevel, residualBlockId);
             }
-
-          // dataTermResidualBlocks.push_back(
-          //                                  problem.AddResidualBlock(
-          //                                                           cost_function,
-          //                                                           loss_function,
-          //                                                           parameter_blocks));
 
         }
     }
@@ -1577,12 +1463,6 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
               else
                 problemWrapper.addDataTerm(currLevel, residualBlockId);
             }
-
-          // dataTermResidualBlocks.push_back(
-          //                                  problem.AddResidualBlock(
-          //                                                           cost_function,
-          //                                                           loss_function,
-          //                                                           parameter_blocks));
 
         }
 
@@ -1776,125 +1656,104 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
       if(data_pair.first == data_pair.second )
         {
 
-            for(int i = 0; i < templateMesh.numVertices; ++i)
-              {
-                if(visibilityMask[i])
-                  {
-                    switch(errorType)
+          for(int i = 0; i < templateMesh.numVertices; ++i)
+            {
+              if(visibilityMask[i])
+                {
+                  switch(errorType)
+                    {
+                    case PE_INTENSITY:
                       {
-                      case PE_INTENSITY:
-                        {
-                          ResidualImageProjection* pResidual = new ResidualImageProjection(1,
-                                                                                           &templateMesh.grays[i],
-                                                                                           &templateMesh.vertices[i][0],
-                                                                                           pCamera,
-                                                                                           pFrame,
-                                                                                           errorType);
+                        ResidualImageProjection* pResidual = new ResidualImageProjection(1,
+                                                                                         &templateMesh.grays[i],
+                                                                                         &templateMesh.vertices[i][0],
+                                                                                         pCamera,
+                                                                                         pFrame,
+                                                                                         errorType);
 
-                          ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>* cost_function =
-                            new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>( pResidual );
-
-                          // dataTermResidualBlocks.push_back(
-                          //                                  problem.AddResidualBlock(
-                          //                                                           cost_function,
-                          //                                                           loss_function,
-                          //                                                           &camPose[0],
-                          //                                                           &camPose[3],
-                          //                                                           &meshTrans[i][0]));
-                        }
-
-                        break;
-
-                      case PE_COLOR:
-                        {
-                          ResidualImageProjection* pResidual = new ResidualImageProjection(1,
-                                                                                           &templateMesh.colors[i][0],
-                                                                                           &templateMesh.vertices[i][0],
-                                                                                           pCamera,
-                                                                                           pFrame,
-                                                                                           errorType);
-
-                          ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>* cost_function =
-                            new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>( pResidual );
-
-                          // dataTermResidualBlocks.push_back(
-                          //                                  problem.AddResidualBlock(
-                          //                                                           cost_function,
-                          //                                                           loss_function,
-                          //                                                           &camPose[0],
-                          //                                                           &camPose[3],
-                          //                                                           &meshTrans[i][0]));
-
-                        }
-
-                        break;
-
-                      case PE_NCC:
-                      case PE_COLOR_NCC:
-                        {
-                          // in patchNeighbors, point itself is counted as a neighbor of itself
-                          // patch based photometric error
-                          int numNeighbors = patchNeighbors[i].size();
-
-                          vector<double*> parameter_blocks;
-                          for(int j = 0; j < numNeighbors; ++j)
-                            parameter_blocks.push_back( &(meshTrans[ patchNeighbors[i][j] ][0]) );
-
-                          parameter_blocks.push_back( &camPose[0] );
-                          parameter_blocks.push_back( &camPose[3] );
-
-                          ResidualImageProjectionPatch* pResidualPatch = new ResidualImageProjectionPatch(1,
-                                                                                                          &templateMesh,
-                                                                                                          pCamera,
-                                                                                                          pFrame,
-                                                                                                          numNeighbors,
-                                                                                                          patchWeights[i],
-                                                                                                          patchRadii[i],
-                                                                                                          patchNeighbors[i],
-                                                                                                          errorType );
-
-                          ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatch, 5>* cost_function =
-                            new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatch, 5>( pResidualPatch );
-
-                          for(int j = 0; j < numNeighbors; ++j)
-                            cost_function->AddParameterBlock(3);
-
-                          cost_function->AddParameterBlock(3);
-                          cost_function->AddParameterBlock(3);
-
-                          cost_function->SetNumResiduals( per_residual_num  );
-
-                          // dataTermResidualBlocks.push_back(
-                          //                                  problem.AddResidualBlock(
-                          //                                                           cost_function,
-                          //                                                           loss_function,
-                          //                                                           parameter_blocks));
-
-                          // I would like to compute residuals myself
-                          (*pResidualPatch)(&(parameter_blocks[0]),  &Residuals[ per_residual_num * i ] );
-
-                        }
-
-                        break;
+                        ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>* cost_function =
+                          new ceres::AutoDiffCostFunction<ResidualImageProjection, 1, 3, 3, 3>( pResidual );
 
                       }
-                  }
-              }
 
-            // output the residuals please
-            double data_term_residual_sum = 0;
+                      break;
 
-            for(int i = 0; i < templateMesh.numVertices; ++i)
-              {
-                if(visibilityMask[i])
-                  {
-                    data_term_residual_sum += Residuals[i] * Residuals[i];
-                  }
-              }
+                    case PE_COLOR:
+                      {
+                        ResidualImageProjection* pResidual = new ResidualImageProjection(1,
+                                                                                         &templateMesh.colors[i][0],
+                                                                                         &templateMesh.vertices[i][0],
+                                                                                         pCamera,
+                                                                                         pFrame,
+                                                                                         errorType);
 
-            cout << "ncc data term cost test: " << data_term_residual_sum << endl;
+                        ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>* cost_function =
+                          new ceres::AutoDiffCostFunction<ResidualImageProjection, 3, 3, 3, 3>( pResidual );
 
-          }
+                      }
+
+                      break;
+
+                    case PE_NCC:
+                    case PE_COLOR_NCC:
+                      {
+                        // in patchNeighbors, point itself is counted as a neighbor of itself
+                        // patch based photometric error
+                        int numNeighbors = patchNeighbors[i].size();
+
+                        vector<double*> parameter_blocks;
+                        for(int j = 0; j < numNeighbors; ++j)
+                          parameter_blocks.push_back( &(meshTrans[ patchNeighbors[i][j] ][0]) );
+
+                        parameter_blocks.push_back( &camPose[0] );
+                        parameter_blocks.push_back( &camPose[3] );
+
+                        ResidualImageProjectionPatch* pResidualPatch = new ResidualImageProjectionPatch(1,
+                                                                                                        &templateMesh,
+                                                                                                        pCamera,
+                                                                                                        pFrame,
+                                                                                                        numNeighbors,
+                                                                                                        patchWeights[i],
+                                                                                                        patchRadii[i],
+                                                                                                        patchNeighbors[i],
+                                                                                                        errorType );
+
+                        ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatch, 5>* cost_function =
+                          new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatch, 5>( pResidualPatch );
+
+                        for(int j = 0; j < numNeighbors; ++j)
+                          cost_function->AddParameterBlock(3);
+
+                        cost_function->AddParameterBlock(3);
+                        cost_function->AddParameterBlock(3);
+
+                        cost_function->SetNumResiduals( per_residual_num  );
+
+                        // I would like to compute residuals myself
+                        (*pResidualPatch)(&(parameter_blocks[0]),  &Residuals[ per_residual_num * i ] );
+
+                      }
+
+                      break;
+
+                    }
+                }
+            }
+
+          // output the residuals please
+          double data_term_residual_sum = 0;
+
+          for(int i = 0; i < templateMesh.numVertices; ++i)
+            {
+              if(visibilityMask[i])
+                {
+                  data_term_residual_sum += Residuals[i] * Residuals[i];
+                }
+            }
+
+          cout << "ncc data term cost test: " << data_term_residual_sum << endl;
+
+        }
 
       else
         {
@@ -1962,11 +1821,6 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
 
                         cost_function->SetNumResiduals( per_residual_num );
 
-                        // dataTermResidualBlocks.push_back(
-                        //                                  problem.AddResidualBlock(
-                        //                                                           cost_function,
-                        //                                                           loss_function,
-                        //                                                           parameter_blocks));
                       }
 
                       break;
@@ -2055,12 +1909,6 @@ void DeformNRSFMTracker::AddPhotometricCost(ceres::Problem& problem,
                         cost_function->AddParameterBlock(3);
 
                         cost_function->SetNumResiduals( per_residual_num );
-
-                        // dataTermResidualBlocks.push_back(
-                        //                                  problem.AddResidualBlock(
-                        //                                                           cost_function,
-                        //                                                           loss_function,
-                        //                                                           parameter_blocks));
 
                       }
 
@@ -2187,13 +2035,13 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
                     new ceres::AutoDiffCostFunction<ResidualRotTV, 3, 3, 3>(pResidual);
 
                   ceres::ResidualBlockId residualBlockId = problem.AddResidualBlock(
-                                                                                  cost_function,
-                                                                                  loss_function,
-                                                                                  modeGT ? &meshRotGT[ vertex  ][0] :
-                                                                                  &meshRot[ vertex  ][0],
-                                                                                  modeGT ? &neighborMeshRotGT[ meshNeighbors[vertex][neighbor] ][0] :
-                                                                                  &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
-                                                                                  );
+                                                                                    cost_function,
+                                                                                    loss_function,
+                                                                                    modeGT ? &meshRotGT[ vertex  ][0] :
+                                                                                    &meshRot[ vertex  ][0],
+                                                                                    modeGT ? &neighborMeshRotGT[ meshNeighbors[vertex][neighbor] ][0] :
+                                                                                    &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
+                                                                                    );
                   if(modeGT)
                     problemWrapperGT.addRotTVTerm(currLevel, residualBlockId);
                   else
@@ -2283,10 +2131,10 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
                                                                                 modeGT ? &meshRotGT[ vertex ][0] :
                                                                                 &meshRot[ vertex ][0]);
 
-          if(modeGT)
-            problemWrapperGT.addARAPTerm(currLevel, residualBlockId);
-          else
-            problemWrapper.addARAPTerm(currLevel, residualBlockId);
+              if(modeGT)
+                problemWrapperGT.addARAPTerm(currLevel, residualBlockId);
+              else
+                problemWrapper.addARAPTerm(currLevel, residualBlockId);
 
             }
         }
@@ -2442,6 +2290,11 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
   long long int ii = currLevel;
 
+  // cout << "Data Term Weights " << trackerSettings.weightPhotometric
+  //      << " Levels " << currLevel << endl;
+  // cout << "Feature Term Weights " << featureSettings.featureTermWeight
+  //      << " Levels " << currLevel << endl;
+
   if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
     {
       TICK( "SetupDataTermCost" + std::to_string(ii) );
@@ -2512,6 +2365,12 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
 void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weightParaLevel)
 {
+
+  // cout << "TV Term Weights " << weightParaLevel.tvTermWeight
+  //      << " Levels " << currLevel << endl;
+  // cout << "ARAP Term Weights " << weightParaLevel.arapTermWeight
+  //      << " Levels " << currLevel << endl;
+
   // totatl variation term
   if(weightParaLevel.tvTermWeight)
     {
@@ -2872,7 +2731,7 @@ void DeformNRSFMTracker::AddGroundTruthMask(ceres::Problem& problem)
 }
 
 double DeformNRSFMTracker::ComputeRMSError(PangaeaMeshData& results,
-                                         PangaeaMeshData& resultsGT)
+                                           PangaeaMeshData& resultsGT)
 {
   int numVertices = results.numVertices;
   double gt_norm = 0;

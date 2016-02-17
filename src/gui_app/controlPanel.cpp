@@ -49,6 +49,7 @@ controlPanel::controlPanel(wxWindow *parent)
   m_nRenderLevel(0),
   m_bShowNormals(false),
   m_bShowErrorHeatMap(false),
+  m_bTurnOffLighting(false),
   m_nPntSize(1)
 {
 
@@ -104,6 +105,8 @@ controlPanel::controlPanel(wxWindow *parent)
   m_pShowNormalsBox = new wxCheckBox(this,wxID_ANY,_("Show Normals"), wxPoint(5, index));
   index+=20;
   m_pShowErrorHeatMap = new wxCheckBox(this,wxID_ANY,_("Show Error HeatMap"), wxPoint(5, index));
+  index+=20;
+  m_pTurnOffLighting = new wxCheckBox(this,wxID_ANY,_("Turn Off Lighting"), wxPoint(5, index));
   index+=40;
 
   m_pFrameNumText = new wxStaticText(this,wxID_ANY,_("Frame 1"),wxPoint(5,index));
@@ -215,6 +218,7 @@ void controlPanel::Update(bool fromTracker)
   m_bFlipNorm = m_pFlipNormsCheckBox->IsChecked();
   m_bShowNormals = m_pShowNormalsBox->IsChecked();
   m_bShowErrorHeatMap = m_pShowErrorHeatMap->IsChecked();
+  m_bTurnOffLighting = m_pTurnOffLighting->IsChecked();
 
   if(!fromTracker)
     m_nCurrentFrame = m_pFrameSlider->GetValue();

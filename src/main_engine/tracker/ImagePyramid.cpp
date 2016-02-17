@@ -212,6 +212,7 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
                  1.0/factor,
                  1.0/factor);
         }
+
     }
 
   // have to check gradient scale properly
@@ -246,6 +247,14 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
                      0,1,
                      gradScale);
         }
+
+      // cv::namedWindow("level check");
+      // cv::imshow("level check", levelsBuffer[i].colorImage);
+      // cv::waitKey(0);
+      // char imName[BUFFER_SIZE];
+      // sprintf(imName, "level%02d.png", i);
+      // cv::imwrite(imName, 255*levelsBuffer[i].colorImage);
+
     }
 
   // support for depth image will be added here

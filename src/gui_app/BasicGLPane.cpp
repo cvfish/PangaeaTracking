@@ -204,11 +204,15 @@ void BasicGLPane::render(wxPaintEvent& evt)
   glLoadIdentity();
   glLoadMatrixf(m_pCameraControl->getModelViewMatrix());
 
-  initLighting(m_pControlPanel->m_bSpotlightOn,
-               m_pControlPanel->m_nAmbientLight/500.0,
-               m_pCameraControl->cameraLoc.x,
-               m_pCameraControl->cameraLoc.y,
-               m_pCameraControl->cameraLoc.z);
+
+  if(m_pControlPanel->m_bTurnOffLighting)
+    glDisable(GL_LIGHTING);
+  else
+    initLighting(m_pControlPanel->m_bSpotlightOn,
+                 m_pControlPanel->m_nAmbientLight/500.0,
+                 m_pCameraControl->cameraLoc.x,
+                 m_pCameraControl->cameraLoc.y,
+                 m_pCameraControl->cameraLoc.z);
 
   // if(m_pControlPanel->m_bShowSurface)
   // pangaeaMeshRender(m_pMainFrame->outputInfo,
