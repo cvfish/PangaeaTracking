@@ -53,6 +53,7 @@ public:
   wxCheckBox *m_pRenderPropCheckBox;
   wxCheckBox *m_pShowNormalsBox;
   wxCheckBox *m_pShowErrorHeatMap;
+  wxCheckBox *m_pTurnOffLighting;
 
   wxStaticText *m_pFrameNumText;
   wxSlider *m_pFrameSlider;
@@ -102,6 +103,7 @@ public:
   bool m_bRenderProp;
   bool m_bShowNormals;
   bool m_bShowErrorHeatMap;
+  bool m_bTurnOffLighting;
 
   BasicGLPane* m_pGLPane; // pointer to the rendering pane
   //wxGLCanvas* m_pGLPane;
