@@ -61,6 +61,14 @@ void FeaturePyramid::InitializeDB(const char* db_path)
 
 }
 
+void FeaturePyramid::ShutDownDB()
+{
+
+  mdb_close(mdb_env, mdb_dbi);
+  mdb_env_close(mdb_env);
+
+}
+
 void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
 {
   double factor = featureSettings.scalingFactor;
@@ -95,6 +103,8 @@ void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
 
 void FeaturePyramid::setupPyramid(string key)
 {
+  InitializeDB(featureSettings.dbPath.c_str());
+
   // setup current pyramid
   mdb_key.mv_size = key.length();
   mdb_key.mv_data = reinterpret_cast<void*>(&key[0]);
@@ -236,6 +246,10 @@ void FeaturePyramid::setupPyramid(string key)
 
       m_bInitialized = true;
     }
+
+  // shut down the lmdb
+  ShutDownDB();
+
 }
 
 void FeaturePyramid::updateData()

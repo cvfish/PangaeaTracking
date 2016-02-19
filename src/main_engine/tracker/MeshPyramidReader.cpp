@@ -357,20 +357,36 @@ void MeshPyramidReader::setErrorWithGT()
           for(int j = 0; j < numVertices; ++j)
             {
               normalized_diff = outputInfoPyramid[i].meshData.diffWithGT[j][0] /diff_range;
-              if(normalized_diff <= 1.0/3)
+              // if(normalized_diff <= 1.0/3)
+              //   {
+              //     // interpolation between blue and green
+              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
+              //     outputInfoPyramid[i].meshData.diffWithGT[j][2] = normalized_diff*3;      // set blue channel
+              //   }
+              // else if(normalized_diff > 1.0/3 && normalized_diff <= 2.0/3)
+              //   {
+              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
+              //     outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*3 - 1;  // set blue channel
+              //   }
+              // else if(normalized_diff > 2.0/3)
+              //   {
+              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*3 - 2;  // set red channel
+              //   }
+              if(normalized_diff <= 1.0/2)
                 {
-                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
-                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = normalized_diff*3;      // set blue channel
+                  // interpolation between blue and green
+                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;
+                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*2;
+                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = 1-normalized_diff*2;
                 }
-              else if(normalized_diff > 1.0/3 && normalized_diff <= 2.0/3)
+              else
                 {
-                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
-                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*3 - 1;  // set blue channel
+                  // interpolation between green and red
+                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*2-1;
+                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = 2-2*normalized_diff;
+                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = 0;
                 }
-              else if(normalized_diff > 2.0/3)
-                {
-                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*3 - 2;  // set red channel
-                }
+
             }
           // normalize the diff of vertices over the whole mesh
         }
