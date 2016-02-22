@@ -262,7 +262,7 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
                               featureSettings.channels,
                               m_nMeshLevels);
       pFeaturePyramid->setupCameraPyramid(m_nMeshLevels, camInfo);
-      // pFeaturePyramid->InitializeDB( featureSettings.dbPath.c_str() );
+      pFeaturePyramid->InitializeDB( featureSettings.dbPath.c_str() );
 
       //need to update the number of channels for feature residuals
       PE_RESIDUAL_NUM_ARRAY[PE_FEATURE] = featureSettings.channels;

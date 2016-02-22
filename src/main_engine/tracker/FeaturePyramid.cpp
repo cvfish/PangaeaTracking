@@ -6,13 +6,18 @@ FeaturePyramid::FeaturePyramid()
   :prevLevels(NULL),
    currLevels(NULL),
    currLevelsBuffer(NULL)
-{}
+{
+
+}
 
 FeaturePyramid::~FeaturePyramid()
 {
   SafeDeleteArray(prevLevels);
   SafeDeleteArray(currLevels);
   SafeDeleteArray(currLevelsBuffer);
+
+  // shut down the lmdb
+  ShutDownDB();
 }
 
 void FeaturePyramid::create(int nW, int nH, int nChannels, int numLevels)
@@ -33,16 +38,16 @@ void FeaturePyramid::InitializeDB(const char* db_path)
 
   // check the status of the database
 
-  std::cout << "Openning lmdb " << db_path;
+  std::cout << "Openning lmdb " << db_path << endl;
   // check the folder already exists
 
-  bool valid;
+  // bool valid;
 
-  valid = (mdb_env_create(&mdb_env) ==  MDB_SUCCESS) &&
-    (mdb_env_set_mapsize(mdb_env, 10485760000000) == MDB_SUCCESS) &&
-    (mdb_env_open(mdb_env, db_path, 0, 0664) == MDB_SUCCESS) &&
-    (mdb_txn_begin(mdb_env, NULL, 0, &mdb_txn) == MDB_SUCCESS) &&
-    (mdb_open(mdb_txn, NULL, 0, &mdb_dbi) == MDB_SUCCESS);
+  // valid = (mdb_env_create(&mdb_env) ==  MDB_SUCCESS) &&
+  //   (mdb_env_set_mapsize(mdb_env, 10485760000000) == MDB_SUCCESS) &&
+  //   (mdb_env_open(mdb_env, db_path, 0, 0664) == MDB_SUCCESS) &&
+  //   (mdb_txn_begin(mdb_env, NULL, 0, &mdb_txn) == MDB_SUCCESS) &&
+  //   (mdb_open(mdb_txn, NULL, 0, &mdb_dbi) == MDB_SUCCESS);
 
   // assert(mdb_cursor_open(mdb_txn, mdb_dbi, &mdb_cursor) == MDB_SUCCESS);
   // int mdb_status = mdb_cursor_get(mdb_cursor, &mdb_key, &mdb_data, MDB_NEXT);
@@ -53,11 +58,28 @@ void FeaturePyramid::InitializeDB(const char* db_path)
   //   valid = true;
   // }
 
-  if(!valid)
-    {
-      std::cout << "Open lmdb error" << std::endl;
-      throw 20;
-    };
+  int test1 = mdb_env_create(&mdb_env);
+  std::cout << "return value of environment creation " << test1 << endl;
+
+  //  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000000);
+  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000);
+  std::cout << "return value of setting environment mapsize " << test2 << endl;
+
+  // int test3 = mdb_env_open(mdb_env, db_path, 0, 0664);
+  int test3 = mdb_env_open(mdb_env, db_path, MDB_NOLOCK, 0664);
+  std::cout << "return value of environment openning " << test3 << endl;
+
+  int test4 = mdb_txn_begin(mdb_env, NULL, 0, &mdb_txn);
+  std::cout << "return value of context beginning " << test4 << endl;
+
+  int test5 = mdb_open(mdb_txn, NULL, 0, &mdb_dbi);
+  std::cout << "return value of mdb openning " << test5 << endl;
+
+  // if(!valid)
+  //   {
+  //     std::cout << "Open lmdb error" << std::endl;
+  //     throw 20;
+  //   };
 
 }
 
@@ -103,7 +125,6 @@ void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
 
 void FeaturePyramid::setupPyramid(string key)
 {
-  InitializeDB(featureSettings.dbPath.c_str());
 
   // setup current pyramid
   mdb_key.mv_size = key.length();
@@ -246,9 +267,6 @@ void FeaturePyramid::setupPyramid(string key)
 
       m_bInitialized = true;
     }
-
-  // shut down the lmdb
-  ShutDownDB();
 
 }
 
