@@ -62,7 +62,7 @@ void FeaturePyramid::InitializeDB(const char* db_path)
   std::cout << "return value of environment creation " << test1 << endl;
 
   //  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000000);
-  int test2 = mdb_env_set_mapsize(mdb_env, 1048576000);
+  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000);
   std::cout << "return value of setting environment mapsize " << test2 << endl;
 
   // int test3 = mdb_env_open(mdb_env, db_path, 0, 0664);
