@@ -379,6 +379,8 @@ TrackerSettings::TrackerSettings()
   printEnergy = false;
   printEnergyGT = false;
   computeError = false;
+
+  // savePLY = false;
 }
 
 void TrackerSettings::read(const cv::FileNode& node)
@@ -635,6 +637,8 @@ void TrackerSettings::read(const cv::FileNode& node)
   if(!node["meshLevelListGT"].empty())
     node["meshLevelListGT"] >> meshLevelListGT;
 
+  // if(!node["save_ply"].empty())
+  //   node["save_ply"] >> savePLY;
 }
 
 FeatureSettings::FeatureSettings()

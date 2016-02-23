@@ -49,6 +49,32 @@ MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings, int width,
                                                           settings.clockwise));
     }
 
+  // check the normals
+  // double normals[3];
+  // double normals_gt[3];
+
+  // for(int i = 0; i < 3; ++i)
+  //   {
+  //     normals[i] = 0.0;
+  //     normals_gt[i] = 0.0;
+  //   }
+
+  // for(int i = 0; i < currentMeshPyramid.levels[0].numVertices; ++i)
+  //   {
+  //     normals[0] += currentMeshPyramid.levels[0].normals[i][0];
+  //     normals[1] += currentMeshPyramid.levels[0].normals[i][1];
+  //     normals[2] += currentMeshPyramid.levels[0].normals[i][2];
+  //     normals_gt[0] += currentMeshPyramidGT.levels[0].normals[i][0];
+  //     normals_gt[1] += currentMeshPyramidGT.levels[0].normals[i][1];
+  //     normals_gt[2] += currentMeshPyramidGT.levels[0].normals[i][2];
+
+  //   }
+
+  // cout << "during initialization " << endl;
+  // cout << "normals of tracking results: " << normals[0] << " " << normals[1] << " " << normals[2] << endl;
+  // cout << "normals of ground truth results: " << normals_gt[0] << " " << normals_gt[1] << " " << normals_gt[2] << endl;
+
+
   TOCK("loadingMesh");
 
   m_nNumMeshLevels = settings.meshLevelList.size();
@@ -139,29 +165,29 @@ bool MeshPyramidReader::loadMeshPyramid(string meshPath, string meshLevelFormat,
                                              currentFrameNo,
                                              meshLoadingSettings.meshLevelListGT);
 
-          // check the normals
-          double normals[3];
-          double normals_gt[3];
+          // // check the normals
+          // double normals[3];
+          // double normals_gt[3];
 
-          for(int i = 0; i < 3; ++i)
-            {
-              normals[i] = 0.0;
-              normals_gt[i] = 0.0;
-            }
+          // for(int i = 0; i < 3; ++i)
+          //   {
+          //     normals[i] = 0.0;
+          //     normals_gt[i] = 0.0;
+          //   }
 
-          for(int i = 0; i < currentMeshPyramid.levels[0].numVertices; ++i)
-            {
-              normals[0] += currentMeshPyramid.levels[0].normals[i][0];
-              normals[1] += currentMeshPyramid.levels[0].normals[i][1];
-              normals[2] += currentMeshPyramid.levels[0].normals[i][2];
-              normals_gt[0] += currentMeshPyramidGT.levels[0].normals[i][0];
-              normals_gt[1] += currentMeshPyramidGT.levels[0].normals[i][1];
-              normals_gt[2] += currentMeshPyramidGT.levels[0].normals[i][2];
+          // for(int i = 0; i < currentMeshPyramid.levels[0].numVertices; ++i)
+          //   {
+          //     normals[0] += currentMeshPyramid.levels[0].normals[i][0];
+          //     normals[1] += currentMeshPyramid.levels[0].normals[i][1];
+          //     normals[2] += currentMeshPyramid.levels[0].normals[i][2];
+          //     normals_gt[0] += currentMeshPyramidGT.levels[0].normals[i][0];
+          //     normals_gt[1] += currentMeshPyramidGT.levels[0].normals[i][1];
+          //     normals_gt[2] += currentMeshPyramidGT.levels[0].normals[i][2];
 
-            }
+          //   }
 
-          cout << "normals of tracking results: " << normals[0] << " " << normals[1] << " " << normals[2] << endl;
-          cout << "normals of ground truth results: " << normals_gt[0] << " " << normals_gt[1] << " " << normals_gt[2] << endl;
+          // cout << "normals of tracking results: " << normals[0] << " " << normals[1] << " " << normals[2] << endl;
+          // cout << "normals of ground truth results: " << normals_gt[0] << " " << normals_gt[1] << " " << normals_gt[2] << endl;
 
         }
 
@@ -274,6 +300,11 @@ void MeshPyramidReader::setMeshPyramid()
 
           TOCK( "visibilityMaskLevel"  + std::to_string(ii) );
         }
+      else
+        {
+          outputInfoPyramid[i].visibilityMask.resize(outputInfoPyramid[i].meshData.numVertices, true);
+          outputInfoPyramid[i].visibilityMaskGT.resize(outputInfoPyramid[i].meshData.numVertices, true);
+        }
 
       //////////////////////////// outputPropPyramid
       if(meshLoadingSettings.loadProp)
@@ -301,6 +332,11 @@ void MeshPyramidReader::setMeshPyramid()
               UpdateVisibilityMaskGL(outputPropPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
               if(!meshLoadingSettings.fastLoading)
                 UpdateColorDiff(outputPropPyramid[i], outputPropPyramid[i].visibilityMask, colorImageSplit);
+            }
+          else
+            {
+              outputPropPyramid[i].visibilityMask.resize(outputPropPyramid[i].meshData.numVertices, true);
+              outputPropPyramid[i].visibilityMaskGT.resize(outputPropPyramid[i].meshData.numVertices, true);
             }
         }
     }

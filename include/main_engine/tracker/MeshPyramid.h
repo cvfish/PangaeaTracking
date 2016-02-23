@@ -219,6 +219,8 @@ MeshPyramid<FloatType>::MeshPyramid(string meshPath, string meshLevelFormat,
       std::stringstream meshFile;
       sprintf(buffer, meshLevelFormat.c_str(), frame, meshLevelList[i]);
       meshFile << meshPath << buffer;
+      cout << "loading meshes" << endl;
+      cout << meshFile.str() << endl;
       PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh, clockwise);
       levels[i] = std::move(tempMesh);
 

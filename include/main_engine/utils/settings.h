@@ -220,6 +220,9 @@ public:
   bool printEnergy;
   bool printEnergyGT;
   bool computeError;
+
+  // save the mesh as ply files
+  // bool savePLY;
 };
 
 class FeatureSettings
