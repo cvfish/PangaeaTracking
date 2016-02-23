@@ -31,7 +31,7 @@ public:
 
   void setCurrentFrame(int curFrame);
   unsigned char* getColorImage();
-  unsigned char* getLevelColorImage(int nLevel){};
+  unsigned char* getLevelColorImage(int nLevel) { return getColorImage(); };
   void readUVDImage(DepthImageType& uImage, DepthImageType& vImage,
                     DepthImageType& dImage, InternalIntensityImageType& maskImage);
   void ReadRawDepth(std::stringstream& data_path, std::string filename,

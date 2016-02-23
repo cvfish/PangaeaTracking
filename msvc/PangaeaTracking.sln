@@ -1,13 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MainEngine", "MainEngine\MainEngine.vcxproj", "{4D8EC26E-FF70-43E6-B3FC-895F332E3BEF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApp", "ConsoleApp\ConsoleApp.vcxproj", "{9C90F969-3724-4336-B3E2-180BC465AABB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4D8EC26E-FF70-43E6-B3FC-895F332E3BEF} = {4D8EC26E-FF70-43E6-B3FC-895F332E3BEF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GUIApp", "GUIApp\GUIApp.vcxproj", "{EC357A5A-B13C-4DFA-8A2B-D0E64235C73D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4D8EC26E-FF70-43E6-B3FC-895F332E3BEF} = {4D8EC26E-FF70-43E6-B3FC-895F332E3BEF}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
