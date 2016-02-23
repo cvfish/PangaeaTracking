@@ -510,6 +510,31 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       useProblemWrapper = true;
       ceres::Problem& problem = problemWrapper.getProblem(i);
 
+      // // check if ground truth has been changed after optimization
+      // PangaeaMeshData& templateMesh = templateMeshPyramidGT.levels[currLevel];
+      // PangaeaMeshData& currentMesh = currentMeshPyramidGT.levels[currLevel];
+      // MeshDeformation& meshTrans = meshTransPyramidGT[currLevel];
+
+      // double temp[3];
+      // double first_point[3];
+
+      // for(int k = 0; k < 3; ++k)
+      //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
+
+      // ceres::AngleAxisRotatePoint(camPoseGT, first_point, temp);
+
+      // for(int k = 0; k < 3; ++k)
+      //   first_point[k] = temp[k] + camPoseGT[3+k];
+
+      // // check the first point
+      // cout << "difference before optimization ";
+
+      // for(int k = 0; k < 3; ++k)
+      //   cout << first_point[k] - currentMesh.vertices[0][k] << " ";
+
+      // cout << endl;
+
+
       modeGT = false;
 
       TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemSetup");
@@ -519,6 +544,24 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       TICK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
       EnergyMinimization(problem);
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
+
+
+      // for(int k = 0; k < 3; ++k)
+      //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
+
+      // ceres::AngleAxisRotatePoint(camPoseGT, first_point, temp);
+
+      // for(int k = 0; k < 3; ++k)
+      //   first_point[k] = temp[k] + camPoseGT[3+k];
+
+      // // check the first point
+      // cout << "difference after optimization ";
+
+      // for(int k = 0; k < 3; ++k)
+      //   cout << first_point[k] - currentMesh.vertices[0][k] << " ";
+
+      // cout << endl;
+
 
       if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
         {
@@ -782,17 +825,52 @@ void DeformNRSFMTracker::GetDeformation(PangaeaMeshData& templateMesh,
   double transTemp[3];
   double result[3];
 
+  double check_rot[3];
+
+  double check_result[3];
+  double check_temp[3];
+
   for(int j = 0; j < numVertices; ++j)
     {
       for(int k = 0; k < 3; ++k)
         {
           meshRot[j][k] = 0;
-          rotTemp[k] = -camPose[k];
+          rotTemp[k] = 0-camPose[k];
           transTemp[k] = currentMesh.vertices[j][k] - camPose[3+k];
         }
       ceres::AngleAxisRotatePoint(rotTemp, transTemp, result);
+      // ceres::AngleAxisRotatePoint(camPose, result, check_rot);
+      // cout << "check ceres rotations: " << endl;
+      // cout << "before ceres rotation " << transTemp[0]
+      //      << " " << transTemp[1] << " " << transTemp[2] << endl;
+      // cout << "after ceres rotation " << check_rot[0]
+      //      << " " << check_rot[1] << " " << check_rot[2] << endl;
+
       for(int k = 0; k < 3; ++k)
-        meshTrans[j][k] = result[k] - templateMesh.vertices[j][k];
+        {
+          meshTrans[j][k] = result[k] - templateMesh.vertices[j][k];
+        }
+
+      // for(int k = 0; k < 3; ++k)
+      //   check_result[k] = meshTrans[j][k] + templateMesh.vertices[j][k];
+
+      // cout << "check results after deformation";
+      // cout << "result "
+      //      << result[0] << " "
+      //      << result[1] << " "
+      //      << result[2] << endl;
+      // cout << "check_result "
+      //      << check_result[0] << " "
+      //      << check_result[1] << " "
+      //      << check_result[2] << endl;
+
+      // ceres::AngleAxisRotatePoint(camPose, check_result, check_temp);
+      // for(int k = 0; k < 3; ++k)
+      //   check_result[k] = check_temp[k] + camPose[3+k] - currentMesh.vertices[j][k];
+
+      // cout << "point difference of " << j << " " << check_result[0] << " "
+      //      << check_result[1] << " " << check_result[2] << endl;
+
     }
 }
 
@@ -2670,6 +2748,30 @@ void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
 
   AddGroundTruthMask(problem);
 
+  // // check if ground truth has been changed after optimization
+  // PangaeaMeshData& templateMesh = templateMeshPyramidGT.levels[currLevel];
+  // PangaeaMeshData& currentMesh = currentMeshPyramidGT.levels[currLevel];
+  // MeshDeformation& meshTrans = meshTransPyramidGT[currLevel];
+
+  // double temp[3];
+  // double first_point[3];
+
+  // for(int k = 0; k < 3; ++k)
+  //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
+
+  // ceres::AngleAxisRotatePoint(camPoseGT, first_point, temp);
+
+  // for(int k = 0; k < 3; ++k)
+  //   first_point[k] = temp[k] + camPoseGT[k+3];
+
+  // // check the first point
+  // cout << "difference before optimization ";
+
+  // for(int k = 0; k < 3; ++k)
+  //   cout << first_point[k] - currentMesh.vertices[0][k] << " ";
+
+  // cout << endl;
+
   ceres::Solve(options, &problem, &summary);
   ceresOutput << summary.FullReport() << endl;
 
@@ -2694,6 +2796,22 @@ void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
                          << std::left << setw(15) << costNames[i] << endl;
 
     }
+
+  // for(int k = 0; k < 3; ++k)
+  //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
+
+  // ceres::AngleAxisRotatePoint(camPoseGT, first_point, temp);
+
+  // for(int k = 0; k < 3; ++k)
+  //   first_point[k] = temp[k] + camPoseGT[k+3];
+
+  // // check the first point
+  // cout << "difference after optimization ";
+
+  // for(int k = 0; k < 3; ++k)
+  //   cout << first_point[k] - currentMesh.vertices[0][k] << " ";
+
+  // cout << endl;
 
 }
 

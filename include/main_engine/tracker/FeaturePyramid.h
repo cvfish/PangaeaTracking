@@ -22,6 +22,7 @@ public:
 
   void create(int nW, int nH, int nChannels, int numLevels);
   void InitializeDB(const char* db_path);
+  void ShutDownDB();
 
   void setupCameraPyramid(int numLevels, CameraInfo& camInfo);
   void setupPyramid(std::string key);

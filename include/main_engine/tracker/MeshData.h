@@ -237,6 +237,7 @@ void MeshData<FloatType>::computeNormals()
 template<typename FloatType>
 void MeshData<FloatType>::computeNormalsNeil()
 {
+  normals.resize(numVertices);
   // loop over all the faces
   for(int i = 0; i < numVertices; ++i)
     normals[i].resize(3,0);

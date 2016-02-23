@@ -2,11 +2,11 @@
 
 int main(int argc, char* argv[])
 {
-    MainEngine mainEngine;
-    mainEngine.ReadConfigurationFile(argc, argv);
-    mainEngine.SetupInputAndTracker();
-    mainEngine.Run();
+  MainEngine mainEngine;
+  mainEngine.ReadConfigurationFile(argc, argv);
+  mainEngine.SetupInputAndTracker();
+  mainEngine.Run();
 
-    return 0;
-    
+  return 0;
+
 }
