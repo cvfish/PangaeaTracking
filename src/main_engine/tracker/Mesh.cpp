@@ -170,7 +170,7 @@ void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
 }
 
 void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
-                          int width, int height)
+                          int width, int height, bool isGT)
 {
   static vector< vector<unsigned int> > visibilityFacesTest;
 
@@ -196,8 +196,9 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
   int xx, yy;
   int vertex1, vertex2, vertex3;
   vector< vector<unsigned int> >& meshFaces = outputInfo.meshData.facesVerticesInd;
-  vector< vector<CoordinateType> >& meshProj = outputInfo.meshProj;
-  vector< vector<CoordinateType> >& meshVertices = outputInfo.meshData.vertices;
+  vector< vector<CoordinateType> >& meshProj = isGT ? outputInfo.meshProjGT : outputInfo.meshProj;
+  vector< vector<CoordinateType> >& meshVertices = isGT ? outputInfo.meshDataGT.vertices :
+    outputInfo.meshData.vertices;
 
 	bool clockwise = outputInfo.meshData.clockwise;
 
@@ -375,34 +376,39 @@ void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilit
   for(int i = 0; i < visibilityFacesTest.size(); ++i)
     visibilityFacesTest[i].clear();   // 5 reserved faces for each pixel, capacity doesn't change
 
+  if(isGT)
+    outputInfo.visibilityMaskGT = visibilityMask;
+  else
+    outputInfo.visibilityMask = visibilityMask;
 
-  outputInfo.visibilityMask.resize(visibilityMask.size());
-  for(int i = 0; i < visibilityMask.size(); ++i)
-    outputInfo.visibilityMask[i] = visibilityMask[i];
+  // outputInfo.visibilityMask.resize(visibilityMask.size());
+  // for(int i = 0; i < visibilityMask.size(); ++i)
+  //   outputInfo.visibilityMask[i] = visibilityMask[i];
 
-  // print out how many points are visible and how many points are occluded
-  int visible_num = 0;
-  int occluded_num = 0;
-  for(int i = 0; i < visibilityMask.size(); ++i)
-    if(visibilityMask[i])
-      visible_num++;
-    else
-      occluded_num++;
+  // // print out how many points are visible and how many points are occluded
+  // int visible_num = 0;
+  // int occluded_num = 0;
+  // for(int i = 0; i < visibilityMask.size(); ++i)
+  //   if(visibilityMask[i])
+  //     visible_num++;
+  //   else
+  //     occluded_num++;
 
   // cout << "visible num: " << visible_num << endl;
   // cout << "occluded num: " << occluded_num << endl;
 
 }
 
-void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+void UpdateVisibilityMaskGL(PangaeaMeshData& meshData, vector<bool>& visibilityMask,
                             double KK[3][3], CoordinateType camPose[6], int width,
                             int height, double toleranceRatio)
 {
-  visibilityMask.resize(outputInfo.meshData.numVertices,true);
+
+  visibilityMask.resize(meshData.numVertices,true);
 
   CCamera camera(KK, camPose, width, height);
 
-  DepthBuffer depthBuffer(&camera, &outputInfo.meshData);
+  DepthBuffer depthBuffer(&camera, &meshData);
 
   // at this point, check first if we got the depth buffer right
 
@@ -416,10 +422,10 @@ void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibil
   float depthRange = depthBuffer._zMax - depthBuffer._zMin;
   float depthTolerance = depthRange * toleranceRatio;
 
-  for(int i = 0; i < outputInfo.meshData.numVertices; ++i)
+  for(int i = 0; i < meshData.numVertices; ++i)
     {
-      Vector3d point3d = camera.worldToCamera(outputInfo.meshData.vertices[i]);
-      Vector2d point2d = camera.worldToPixel(outputInfo.meshData.vertices[i]);
+      Vector3d point3d = camera.worldToCamera(meshData.vertices[i]);
+      Vector2d point2d = camera.worldToPixel(meshData.vertices[i]);
       Vector2f point2f(point2d[0], point2d[1]);
       //Vector2f point2f(outputInfo.meshProj[i][0], outputInfo.meshProj[i][1]);
       SampleLinear(cvDepthBuffer, point2f[1], point2f[0], &depthValue);
@@ -430,23 +436,17 @@ void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibil
       else
         visibilityMask[i] = false;
     }
+}
 
-  outputInfo.visibilityMask.resize(visibilityMask.size());
-  for(int i = 0; i < visibilityMask.size(); ++i)
-    outputInfo.visibilityMask[i] = visibilityMask[i];
+void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                            double KK[3][3], CoordinateType camPose[6], int width,
+                            int height, double toleranceRatio)
+{
 
-  // print out how many points are visible and how many points are occluded
-  int visible_num = 0;
-  int occluded_num = 0;
-  for(int i = 0; i < visibilityMask.size(); ++i)
-    if(visibilityMask[i])
-      visible_num++;
-    else
-      occluded_num++;
+  UpdateVisibilityMaskGL(outputInfo.meshData, visibilityMask, KK,
+                         camPose, width, height, toleranceRatio);
 
-  // cout << "if we switch to opengl rendering" << endl;
-  // cout << "visible num: " << visible_num << endl;
-  // cout << "occluded num: " << occluded_num << endl;
+  outputInfo.visibilityMask = visibilityMask;
 
 }
 
@@ -465,15 +465,49 @@ void UpdateColorDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask
         for(int k = 0; k <3 ; ++k)
           {
             SampleLinear(colorImageSplit[k], v, u, interpolate_value+k);
-            outputInfo.meshDataColorDiff.colors[i][k] = abs(interpolate_value[k]) -
-              outputInfo.meshData.colors[i][k];
+            outputInfo.meshDataColorDiff.colors[i][k] = abs(interpolate_value[k] -
+                                                            outputInfo.meshData.colors[i][k]);
           }
+        // // test the values of ground truth color difference
+        // cout << outputInfo.meshDataColorDiffGT.colors[i][0] << " "
+        //      << abs(interpolate_value[0]) << " "
+        //      << outputInfo.meshDataGT.colors[i][0] << endl;
+
       }
     else // all occluded points set to black
       {
         outputInfo.meshDataColorDiff.colors[i][0] = 0;
         outputInfo.meshDataColorDiff.colors[i][1] = 0;
         outputInfo.meshDataColorDiff.colors[i][2] = 1;
+      }
+  }
+}
+
+void UpdateColorDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                       InternalIntensityImageType colorImageSplit[3])
+{
+    // compute the color difference between mesh and current frame
+  for(int i = 0; i < outputInfo.meshData.numVertices; ++i) {
+    // only compute the color difference for visible points
+    if(visibilityMask[i])
+      {
+        CoordinateType u = outputInfo.meshProjGT[i][0];
+        CoordinateType v = outputInfo.meshProjGT[i][1];
+        // compute the color for location (u,v)
+        CoordinateType interpolate_value[3];
+
+        for(int k = 0; k <3 ; ++k)
+          {
+            SampleLinear(colorImageSplit[k], v, u, interpolate_value+k);
+            outputInfo.meshDataColorDiffGT.colors[i][k] = abs(interpolate_value[k] -
+                                                              outputInfo.meshDataGT.colors[i][k]);
+          }
+      }
+    else // all occluded points set to black
+      {
+        outputInfo.meshDataColorDiffGT.colors[i][0] = 0;
+        outputInfo.meshDataColorDiffGT.colors[i][1] = 0;
+        outputInfo.meshDataColorDiffGT.colors[i][2] = 1;
       }
   }
 }

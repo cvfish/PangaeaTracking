@@ -407,6 +407,13 @@ public:
                   const T* const xyz,
                   T* residuals) const
   {
+
+    // cout << "camera width and height" << endl;
+    // cout << pCamera->width << " " << pCamera->height << endl;
+
+    // cout << "image width and height" << endl;
+    // cout << ((ImageLevel*)pFrame)->grayImage.cols << " " << ((ImageLevel*)pFrame)->grayImage.rows << endl;
+
     int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
     for(int i = 0; i < residual_num; ++i)
       residuals[i] = T(0.0);

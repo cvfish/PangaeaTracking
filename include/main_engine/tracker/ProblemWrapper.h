@@ -24,6 +24,7 @@ public:
 
   void clearDataTerm(int nLevel);
   void clearFeatureTerm(int nLevel);
+  int getDataTermNum(int nLevel);
 
   void getTotalEnergy(int nLevel, double* cost);
   void getDataTermCost(int nLevel, double* cost);

@@ -309,6 +309,7 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 
       outputInfoPyramid[i].meshData = templateMeshPyramid.levels[i];
       outputInfoPyramid[i].meshDataColorDiff = templateMeshPyramid.levels[i];
+      outputInfoPyramid[i].meshDataColorDiffGT = templateMeshPyramid.levels[i];
 
       outputInfoPyramid[i].nRenderLevel = i;
 
@@ -369,6 +370,7 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
   prevMeshRotPyramidGT = prevMeshRotPyramid;
   prevMeshTransPyramidGT = prevMeshTransPyramid;
   templateMeshPyramidGT = templateMeshPyramid;
+  visibilityMaskPyramidGT = visibilityMaskPyramid;
 
   // load ground truth if there is any
   if(trackerSettings.hasGT)
@@ -417,10 +419,13 @@ void DeformNRSFMTracker::updateGT()
   PangaeaMeshData& currentMeshGT = currentMeshPyramidGT.levels[0];
 
   // camPoseGT is composed of rotation + translation
-  KnownCorresondencesICP(templateMeshGT, currentMeshGT, camPoseGT);
+  KnownCorrespondencesICP(templateMeshGT, currentMeshGT, camPoseGT);
 
   // update meshTransPyramidGT to the correct values
   // and set meshRotPyramidGT to 0
+
+  // update ground truth
+  char buffer[BUFFER_SIZE];
 
   for(int i = 0; i < m_nMeshLevels; ++i)
     {
@@ -432,6 +437,37 @@ void DeformNRSFMTracker::updateGT()
       MeshDeformation& meshRot = meshRotPyramidGT[i];
 
       GetDeformation(templateMesh, currentMesh, camPoseGT, meshTrans, meshRot);
+
+      std::stringstream meshFileGT;
+      sprintf(buffer, trackerSettings.meshLevelFormatGT.c_str(), currentFrameNo,
+              trackerSettings.meshLevelListGT[i]);
+
+      meshFileGT << trackerSettings.meshPathGT << buffer;
+
+      PangaeaMeshIO::loadfromFile(meshFileGT.str(),
+                                  outputInfoPyramid[i].meshDataGT,
+                                  trackerSettings.clockwise);
+
+      UpdateRenderingDataFast(outputInfoPyramid[i], KK, outputInfoPyramid[i].meshDataGT, true);
+
+      vector<bool>& visibilityMask = visibilityMaskPyramidGT[i];
+      if(trackerSettings.useVisibilityMask)
+        {
+          if(trackerSettings.useOpenGLMask)
+            {
+              double tempCamPose[6] = {0,0,0,0,0,0};
+              cout << "opengl visibility test" << endl;
+              UpdateVisibilityMaskGL(currentMesh, visibilityMask, KK, tempCamPose, m_nWidth, m_nHeight);
+            }
+          else
+            {
+              UpdateVisibilityMask(outputInfoPyramid[i], visibilityMask, m_nWidth, m_nHeight, true);
+            }
+        }
+
+      InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(i);
+      UpdateColorDiffGT(outputInfoPyramid[i], visibilityMask, color_image_split);
+
     }
 
 }
@@ -454,12 +490,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   currentFrameNo = nFrame;
 
-  if(trackerSettings.hasGT)
-    updateGT();
-
-  // update camPose of previous frame
-  memcpy(prevCamPose, camPose, 6*sizeof(double));
-
   TICK("imagePreprocessing");
 
   // prepare data in buffer
@@ -468,6 +498,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   pImagePyramid->updateData();
 
   TOCK("imagePreprocessing");
+
+  if(trackerSettings.hasGT)
+    updateGT();
+
+  // update camPose of previous frame
+  memcpy(prevCamPose, camPose, 6*sizeof(double));
 
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     {
@@ -545,6 +581,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       EnergyMinimization(problem);
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
 
+      ceresOutput << "number of tracking data terms " << endl
+                  << "levels " << currLevel << endl
+                  << problemWrapper.getDataTermNum(currLevel) << endl;
 
       // for(int k = 0; k < 3; ++k)
       //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
@@ -607,6 +646,10 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           EnergySetup(problemGT);
           EnergyMinimizationGT(problemGT);
 
+          ceresOutput << "number of ground truth data terms " << endl
+                      << "levels " << currLevel << endl
+                      << problemWrapperGT.getDataTermNum(currLevel) << endl;
+
           if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
             problemWrapperGT.clearDataTerm(currLevel);
 
@@ -620,24 +663,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   if(trackerSettings.hasGT)
     {
-      // update ground truth
-
-      char buffer[BUFFER_SIZE];
-
       for(int i = 0; i < m_nMeshLevels; ++i)
         {
-          std::stringstream meshFileGT;
-          sprintf(buffer, trackerSettings.meshLevelFormatGT.c_str(), currentFrameNo,
-                  trackerSettings.meshLevelListGT[i]);
-
-          meshFileGT << trackerSettings.meshPathGT << buffer;
-
-          PangaeaMeshIO::loadfromFile(meshFileGT.str(),
-                                      outputInfoPyramid[i].meshDataGT,
-                                      trackerSettings.clockwise);
-
-          UpdateRenderingDataFast(outputInfoPyramid[i], KK, outputInfoPyramid[i].meshDataGT, true);
-
           double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
 
           // print error to errorOutputForR
@@ -756,7 +783,7 @@ void DeformNRSFMTracker::AddConstantMask(ceres::Problem& problem, baType BA)
     }
 }
 
-void DeformNRSFMTracker::KnownCorresondencesICP(PangaeaMeshData& templateMesh,
+void DeformNRSFMTracker::KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
                                                 PangaeaMeshData& currentMesh,
                                                 double pose[6])
 {
@@ -906,7 +933,6 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
 
   // need to update the color diff
   InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
-
 
   UpdateColorDiff(output_info, visibility_mask, color_image_split);
 
@@ -1140,10 +1166,12 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                                                 CameraInfo* pCamera,
                                                 Level* pFrame)
 {
+
   for(int i = 0; i < templateMesh.numVertices; ++i){
 
     if(visibilityMask[i])
       {
+
         switch(errorType)
           {
           case PE_INTENSITY:
@@ -1586,7 +1614,27 @@ void DeformNRSFMTracker::AddPhotometricCostNew(ceres::Problem& problem,
         meshTransPyramidGT[ data_pair.first ] :
         meshTransPyramid[ data_pair.first ];
 
-      vector<bool>& visibilityMask = visibilityMaskPyramid[ data_pair.first ];
+      vector<bool>& visibilityMask = modeGT ?
+        visibilityMaskPyramidGT[ data_pair.first ]:
+        visibilityMaskPyramid[ data_pair.first ];
+
+      // compare the ground truth mask and tracking result mask
+      // int visibleNum = 0;
+      // int visibleNumGT = 0;
+      // for(int num = 0; num < visibilityMaskPyramidGT[ data_pair.first ].size(); ++num)
+      //   {
+      //     if(visibilityMaskPyramid[ data_pair.first ][ num ])
+      //       visibleNum++;
+      //     if(visibilityMaskPyramidGT[ data_pair.first ][ num ])
+      //       visibleNumGT++;
+
+      //     if(visibilityMaskPyramidGT[ data_pair.first ][num] !=
+      //        visibilityMaskPyramid[ data_pair.first ][num])
+      //       ceresOutput << "ground truth and tracking results have different mask" << endl;
+      //   }
+
+      // ceresOutput << "tracking result visibility number " << visibleNum << endl;
+      // ceresOutput << "ground truth visibility number " << visibleNumGT << endl;
 
       MeshNeighbors& patchNeighbors = meshPropagation.getPatchNeighbors( data_pair.first );
       MeshWeights& patchWeights = meshPropagation.getPatchWeights( data_pair.first );
@@ -2746,7 +2794,7 @@ void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
   ceresOutput << "Ground Truth Optimization" << std::endl;
   ceresOutput << "Frame" << " " << currentFrameNo << "  Level" << " " << currLevel << std::endl;
 
-  AddGroundTruthMask(problem);
+  AddGroundTruthConstantMask(problem);
 
   // // check if ground truth has been changed after optimization
   // PangaeaMeshData& templateMesh = templateMeshPyramidGT.levels[currLevel];
@@ -2797,6 +2845,8 @@ void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
 
     }
 
+  AddGroundTruthVariableMask(problem);
+
   // for(int k = 0; k < 3; ++k)
   //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
 
@@ -2815,7 +2865,7 @@ void DeformNRSFMTracker::EnergyMinimizationGT(ceres::Problem& problem)
 
 }
 
-void DeformNRSFMTracker::AddGroundTruthMask(ceres::Problem& problem)
+void DeformNRSFMTracker::AddGroundTruthConstantMask(ceres::Problem& problem)
 {
   // set all the stuff to constant except for arap local rotations
   // loop over all the parameter blocks
@@ -2845,6 +2895,29 @@ void DeformNRSFMTracker::AddGroundTruthMask(ceres::Problem& problem)
 
   ceresOutput << "number of constant parameter blocks for ground truth optimization " <<
     numConstantBlocks << endl;
+
+}
+
+void DeformNRSFMTracker::AddGroundTruthVariableMask(ceres::Problem& problem)
+{
+
+  // set all the stuff to constant except for arap local rotations
+  // loop over all the parameter blocks
+
+  // set all rigid transformation variables to constant
+  problem.SetParameterBlockVariable(&camPoseGT[0]);
+  problem.SetParameterBlockVariable(&camPoseGT[3]);
+
+  // set all translation variables to constant
+  for(int i = 0; i < m_nMeshLevels; ++i)
+    {
+      int numVertices = meshTransPyramidGT[i].size();
+      for(int j = 0; j < numVertices; ++j)
+        {
+          if(problem.HasParameterBlock( &meshTransPyramidGT[i][j][0] ))
+            problem.SetParameterBlockVariable( &meshTransPyramidGT[i][j][0] );
+        }
+    }
 
 }
 

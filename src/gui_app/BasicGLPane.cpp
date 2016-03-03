@@ -297,7 +297,10 @@ void BasicGLPane::pangaeaMeshRender(TrackerOutputInfo& outputInfo, bool showText
                                     showGT, bool showEST, bool threshOn, GLfloat thresh)
 {
   if(showGT)
-    meshRender(outputInfo.meshDataGT, showTexture, true, threshOn, thresh);
+  meshRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiffGT : outputInfo.meshDataGT,
+              showTexture, true, threshOn, thresh);
+  //  meshRender(outputInfo.meshDataGT, showTexture, true, threshOn, thresh);
+
 
   if(showEST)
     meshRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiff : outputInfo.meshData,
@@ -308,7 +311,8 @@ void BasicGLPane::pangaeaPointRender(TrackerOutputInfo& outputInfo, bool showTex
                                      showGT, bool showEST, bool deletePoints, GLfloat thresh)
 {
   if(showGT)
-    pointRender(outputInfo.meshDataGT, showTexture, true, deletePoints, thresh);
+    pointRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiffGT : outputInfo.meshDataGT,
+                showTexture, true, deletePoints, thresh);
 
   if(showEST)
     pointRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiff : outputInfo.meshData,

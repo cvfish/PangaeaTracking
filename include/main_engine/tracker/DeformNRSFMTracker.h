@@ -73,7 +73,7 @@ public:
   void AddVariableMask(ceres::Problem& problem, baType BA);
   void AddConstantMask(ceres::Problem& problem, baType BA);
 
-  void KnownCorresondencesICP(PangaeaMeshData& templateMesh,
+  void KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
                               PangaeaMeshData& currentMesh,
                               double camPose[6]);
 
@@ -90,7 +90,9 @@ public:
 
   void EnergyMinimizationGT(ceres::Problem& problem);
 
-  void AddGroundTruthMask(ceres::Problem& problem);
+  void AddGroundTruthConstantMask(ceres::Problem& problem);
+  void AddGroundTruthVariableMask(ceres::Problem& problem);
+
   double ComputeRMSError(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
   void CheckNaN();
 
@@ -246,6 +248,9 @@ private:
   vector< MeshDeformation > meshRotPyramidGT;
   vector< MeshDeformation > prevMeshTransPyramidGT;
   vector< MeshDeformation > prevMeshRotPyramidGT;
+
+  // ground truth visibilityMask Pyramid
+  vector<vector<bool > > visibilityMaskPyramidGT;
 
   ProblemWrapper problemWrapperGT;
 

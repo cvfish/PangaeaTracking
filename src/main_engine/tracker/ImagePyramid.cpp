@@ -126,9 +126,9 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 
   for(int k = 0; k < numImages; ++k)
     {
-      int shift = k*m_nWidth*m_nHeight;
+      int shift = k * 3 * m_nWidth * m_nHeight;
 
-      for(int i = 0; i < m_nWidth*m_nHeight; ++i)
+      for(int i = 0; i < m_nWidth * m_nHeight; ++i)
         {
           pCurrentColorImageBGR[ shift + 3*i ] =     pCurrentColorImageRGB[ shift + 3*i + 2 ];
           pCurrentColorImageBGR[ shift + 3*i + 1] =  pCurrentColorImageRGB[ shift + 3*i + 1 ];
