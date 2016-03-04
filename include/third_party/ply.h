@@ -64,7 +64,7 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 #define  PLY_SCALAR  0
 #define  PLY_LIST    1
 
-static char *type_names[] = {
+static const char *type_names[] = {
 	"invalid",
 	"char", "short", "int",
 	"uchar", "ushort", "uint",
@@ -90,7 +90,7 @@ static int ply_type_size[] = {
 
 typedef struct PlyProperty {    /* description of a property */
 
-  char *name;                           /* property name */
+  const char *name;                           /* property name */
   int external_type;                    /* file's data type */
   int internal_type;                    /* program's data type */
   int offset;                           /* offset bytes of prop in a struct */
@@ -187,13 +187,13 @@ typedef struct PlyFile {        /* description of PLY file */
 
 
 /* returns 1 if strings are equal, 0 if not */
-int equal_strings(char *, char *);
+int equal_strings(const char *, const char *);
 
 /* find an element in a plyfile's list */
-PlyElement *find_element(PlyFile *, char *);
+PlyElement *find_element(PlyFile *, const char *);
 
 /* find a property in an element's list */
-PlyProperty *find_property(PlyElement *, char *, int *);
+PlyProperty *find_property(PlyElement *, const char *, int *);
 
 /* write to a file the word describing a PLY file data type */
 void write_scalar_type(FILE *, int);
@@ -234,7 +234,7 @@ void ascii_get_element(PlyFile *, char *);
 void binary_get_element(PlyFile *, char *);
 
 /* memory allocation */
-static char *my_alloc(int, int, char *);
+static char *my_alloc(int, int, const char *);
 
 
 /*************/
@@ -258,7 +258,7 @@ returns a pointer to a PlyFile, used to refer to this file, or NULL if error
 inline PlyFile *ply_write(
 	FILE *fp,
 	int nelems,
-	char **elem_names,
+	const char **elem_names,
 	int file_type
 	)
 {
@@ -314,7 +314,7 @@ returns a file identifier, used to refer to this file, or NULL if error
 inline PlyFile *ply_open_for_writing(
 	const char *filename,
 	int nelems,
-	char **elem_names,
+	const char **elem_names,
 	int file_type,
 	float *version
 	)
@@ -421,7 +421,7 @@ prop      - the new property
 
 inline void ply_describe_property(
 	PlyFile *plyfile,
-	char *elem_name,
+	const char *elem_name,
 	PlyProperty *prop
 	)
 {
@@ -527,7 +527,7 @@ nelems    - number of elements of this type to be written
 
 inline void ply_element_count(
 	PlyFile *plyfile,
-	char *elem_name,
+	const char *elem_name,
 	int nelems
 	)
 {
@@ -627,7 +627,7 @@ plyfile   - file identifier
 elem_name - name of element we're talking about
 ******************************************************************************/
 
-inline void ply_put_element_setup(PlyFile *plyfile, char *elem_name)
+inline void ply_put_element_setup(PlyFile *plyfile, const char *elem_name)
 {
 	PlyElement *elem;
 
@@ -1041,7 +1041,7 @@ prop_list - list of properties
 
 inline void ply_get_element_setup(
 	PlyFile *plyfile,
-	char *elem_name,
+	const char *elem_name,
 	int nprops,
 	PlyProperty *prop_list
 	)
@@ -1092,7 +1092,7 @@ prop      - property to add to those that will be returned
 
 inline void ply_get_property(
 	PlyFile *plyfile,
-	char *elem_name,
+	const char *elem_name,
 	PlyProperty *prop
 	)
 {
@@ -1539,7 +1539,7 @@ inline void ply_get_info(PlyFile *ply, float *version, int *file_type)
 Compare two strings.  Returns 1 if they are the same, 0 if not.
 ******************************************************************************/
 
-inline int equal_strings(char *s1, char *s2)
+inline int equal_strings(const char *s1, const char *s2)
 {
 	int i;
 
@@ -1565,7 +1565,7 @@ Exit:
 returns the element, or NULL if not found
 ******************************************************************************/
 
-inline PlyElement *find_element(PlyFile *plyfile, char *element)
+inline PlyElement *find_element(PlyFile *plyfile, const char *element)
 {
 	int i;
 
@@ -1589,7 +1589,7 @@ index - index to position in list
 returns a pointer to the property, or NULL if not found
 ******************************************************************************/
 
-inline PlyProperty *find_property(PlyElement *elem, char *prop_name, int *index)
+inline PlyProperty *find_property(PlyElement *elem, const char *prop_name, int *index)
 {
 	int i;
 
@@ -2513,7 +2513,7 @@ Exit:
 returns integer code for property, or 0 if not found
 ******************************************************************************/
 
-inline int get_prop_type(char *type_name)
+inline int get_prop_type(const char *type_name)
 {
 	int i;
 
@@ -2642,7 +2642,7 @@ lnum  - line number from which memory was requested
 fname - file name from which memory was requested
 ******************************************************************************/
 
-inline static char *my_alloc(int size, int lnum, char *fname)
+inline static char *my_alloc(int size, int lnum, const char *fname)
 {
 	char *ptr;
 
@@ -2684,14 +2684,9 @@ namespace ply{
 	struct Face {
 		unsigned char nverts;    /* number of vertex indices in list */
 		int* verts;              /* vertex index list */
-
-		~Face()
-		{
-			delete[] verts;
-		}
 	};
 
-	static char *elem_names[] = { /* list of the kinds of elements in the user's object */
+	static const char *elem_names[] = { /* list of the kinds of elements in the user's object */
 		"vertex", "face"
 	};
 
