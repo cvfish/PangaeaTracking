@@ -119,6 +119,10 @@ int ProblemWrapper::getDataTermNum(int nLevel)
   return dataTermResidualBlocks[nLevel].size();
 }
 
+int ProblemWrapper::getFeatureTermNum(int nLevel)
+{
+  return featureTermResidualBlocks[nLevel].size();
+}
 // get energy
 void ProblemWrapper::getTotalEnergy(int nLevel, double* cost)
 {

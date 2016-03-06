@@ -1,6 +1,9 @@
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
+#include "hdf5.h"
+#include <lmdb.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

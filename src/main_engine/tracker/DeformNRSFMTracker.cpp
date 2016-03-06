@@ -262,7 +262,6 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
                               featureSettings.channels,
                               m_nMeshLevels);
       pFeaturePyramid->setupCameraPyramid(m_nMeshLevels, camInfo);
-      pFeaturePyramid->InitializeDB( featureSettings.dbPath.c_str() );
 
       //need to update the number of channels for feature residuals
       PE_RESIDUAL_NUM_ARRAY[PE_FEATURE] = featureSettings.channels;
@@ -581,10 +580,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       EnergyMinimization(problem);
       TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::ProblemMinimization");
 
-      ceresOutput << "number of tracking data terms " << endl
-                  << "levels " << currLevel << endl
-                  << problemWrapper.getDataTermNum(currLevel) << endl;
-
       // for(int k = 0; k < 3; ++k)
       //   first_point[k] = templateMesh.vertices[0][k] + meshTrans[0][k];
 
@@ -604,6 +599,11 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
         {
+
+          ceresOutput << "number of tracking data terms " << endl
+                      << "levels " << currLevel << endl
+                      << problemWrapper.getDataTermNum(currLevel) << endl;
+
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
 
           problemWrapper.clearDataTerm(currLevel);
@@ -613,6 +613,11 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
         {
+
+          ceresOutput << "number of tracking feature terms " << endl
+                      << "levels " << currLevel << endl
+                      << problemWrapper.getFeatureTermNum(currLevel) << endl;
+
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveFeatureTermResidual");
 
           // remove featureTermResidualBlocks from previous frame
@@ -646,15 +651,22 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           EnergySetup(problemGT);
           EnergyMinimizationGT(problemGT);
 
-          ceresOutput << "number of ground truth data terms " << endl
-                      << "levels " << currLevel << endl
-                      << problemWrapperGT.getDataTermNum(currLevel) << endl;
 
           if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
-            problemWrapperGT.clearDataTerm(currLevel);
+            {
+              ceresOutput << "number of ground truth data terms " << endl
+                          << "levels " << currLevel << endl
+                          << problemWrapperGT.getDataTermNum(currLevel) << endl;
+              problemWrapperGT.clearDataTerm(currLevel);
+            }
 
           if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
-            problemWrapperGT.clearFeatureTerm(currLevel);
+            {
+              ceresOutput << "number of ground truth feature terms " << endl
+                          << "levels " << currLevel << endl
+                          << problemWrapperGT.getFeatureTermNum(currLevel) << endl;
+              problemWrapperGT.clearFeatureTerm(currLevel);
+            }
 
         }
 
@@ -3169,9 +3181,10 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
       // update the features in ground truth template mesh
       if(trackerSettings.hasGT)
         {
+          vector<bool>& visibilityMaskGT = visibilityMaskPyramidGT[i];
           PangaeaMeshData& templateMeshGT =  templateMeshPyramidGT.levels[i];
           PangaeaMeshData& prevMeshGT = currentMeshPyramidGT.levels[i];
-          AttachFeatureToMesh(&prevMeshGT, &featureLevel, &camInfo, visibilityMask, &templateMeshGT);
+          AttachFeatureToMesh(&prevMeshGT, &featureLevel, &camInfo, visibilityMaskGT, &templateMeshGT);
         }
 
     }

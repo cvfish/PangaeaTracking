@@ -56,14 +56,16 @@ CERES_LIB := -lceres -lglog -ltbb -ltbbmalloc -lcholmod -lccolamd \
 
 LMDB_LIB := -llmdb
 
+HDF5_LIB := -lhdf5_hl -lhdf5
+
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
-LDFLAGS := $(WX_LIB) $(BOOST_LIB) $(OPENCV_LIB) $(CERES_LIB) $(GL_LIB) $(LMDB_LIB)
+LDFLAGS := $(WX_LIB) $(BOOST_LIB) $(OPENCV_LIB) $(CERES_LIB) $(GL_LIB) $(LMDB_LIB) $(HDF5_LIB)
 LDFLAGS += $(foreach library_dir, $(LIBRARY_DIRS), -L$(library_dir))
 
 # Setting compiler and building flags
 CXX := g++
 #CXXFLAGS += -std=c++11 -fopenmp -fPIC $(FLAGS_INCLUDE)
-CXXFLAGS += -std=c++11 -fopenmp $(FLAGS_INCLUDE)
+CXXFLAGS += -std=c++11 -fopenmp $(FLAGS_INCLUDE) -w
 
 # Debugging
 ifeq ($(DEBUG), 1)

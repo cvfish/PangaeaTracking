@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../utils/global.h"
+#include "FeatureReader.h"
 #include "ImagePyramid.h"
-
-#include <lmdb.h>
 
 struct FeatureLevel: public Level
 {
@@ -21,9 +19,6 @@ public:
   ~FeaturePyramid();
 
   void create(int nW, int nH, int nChannels, int numLevels);
-  void InitializeDB(const char* db_path);
-  void ShutDownDB();
-
   void setupCameraPyramid(int numLevels, CameraInfo& camInfo);
   void setupPyramid(std::string key);
 
@@ -54,11 +49,6 @@ private:
 
   int m_nNumLevels;
 
-  // lmdb
-  MDB_env *mdb_env;
-  MDB_dbi mdb_dbi;
-  MDB_val mdb_key, mdb_data;
-  MDB_txn *mdb_txn;
+  FeatureReader* pFeatureReader;
 
-  //MDB_cursor* mdb_cursor;
 };

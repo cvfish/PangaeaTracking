@@ -111,6 +111,8 @@ void ImagePyramid::deallocateMemory()
 
 void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 {
+  // static int currFrame = imageSourceSettings.startFrame;
+
   int numImages = 1;
   if(imageSourceSettings.useMultiImages)
     {
@@ -170,6 +172,16 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
           cv::Mat tempColorImageRGB(m_nHeight, m_nWidth, CV_8UC3, &pCurrentColorImageRGB[ i*3*m_nHeight*m_nWidth ] );
           tempColorImageRGB.convertTo(colorBufferImage, cv::DataType<Vec3d>::type, 1./255);
         }
+
+      // check the input images properly
+      // char imName[BUFFER_SIZE];
+      // sprintf(imName, "%s/color_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
+      //         currFrame, i);
+      // cv::imwrite(imName, colorBufferImage*255);
+
+      // sprintf(imName, "%s/gray_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
+      //         currFrame, i);
+      // cv::imwrite(imName, grayBufferImage*255);
 
       // the standard deviation of gaussian blur is fixed as 3
       int blurSize = trackerSettings.blurFilterSizes[i];
@@ -258,6 +270,7 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
     }
 
   // support for depth image will be added here
+  // currFrame++;
 
 }
 

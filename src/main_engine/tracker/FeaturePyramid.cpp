@@ -7,7 +7,7 @@ FeaturePyramid::FeaturePyramid()
    currLevels(NULL),
    currLevelsBuffer(NULL)
 {
-
+  pFeatureReader = new HDF5Reader(featureSettings.dbPath);
 }
 
 FeaturePyramid::~FeaturePyramid()
@@ -16,8 +16,7 @@ FeaturePyramid::~FeaturePyramid()
   SafeDeleteArray(currLevels);
   SafeDeleteArray(currLevelsBuffer);
 
-  // shut down the lmdb
-  ShutDownDB();
+  delete pFeatureReader;
 }
 
 void FeaturePyramid::create(int nW, int nH, int nChannels, int numLevels)
@@ -31,64 +30,8 @@ void FeaturePyramid::create(int nW, int nH, int nChannels, int numLevels)
   prevLevels = new FeatureLevel[numLevels];
   currLevels = new FeatureLevel[numLevels];
   currLevelsBuffer = new FeatureLevel[numLevels];
-}
 
-void FeaturePyramid::InitializeDB(const char* db_path)
-{
-
-  // check the status of the database
-
-  std::cout << "Openning lmdb " << db_path << endl;
-  // check the folder already exists
-
-  // bool valid;
-
-  // valid = (mdb_env_create(&mdb_env) ==  MDB_SUCCESS) &&
-  //   (mdb_env_set_mapsize(mdb_env, 10485760000000) == MDB_SUCCESS) &&
-  //   (mdb_env_open(mdb_env, db_path, 0, 0664) == MDB_SUCCESS) &&
-  //   (mdb_txn_begin(mdb_env, NULL, 0, &mdb_txn) == MDB_SUCCESS) &&
-  //   (mdb_open(mdb_txn, NULL, 0, &mdb_dbi) == MDB_SUCCESS);
-
-  // assert(mdb_cursor_open(mdb_txn, mdb_dbi, &mdb_cursor) == MDB_SUCCESS);
-  // int mdb_status = mdb_cursor_get(mdb_cursor, &mdb_key, &mdb_data, MDB_NEXT);
-  // if(mdb_status == MDB_NOTFOUND)
-  //   valid = false;
-  // else{
-  //   MDB_CHECK(mdb_status);
-  //   valid = true;
-  // }
-
-  int test1 = mdb_env_create(&mdb_env);
-  std::cout << "return value of environment creation " << test1 << endl;
-
-  //  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000000);
-  int test2 = mdb_env_set_mapsize(mdb_env, 10485760000);
-  std::cout << "return value of setting environment mapsize " << test2 << endl;
-
-  // int test3 = mdb_env_open(mdb_env, db_path, 0, 0664);
-  int test3 = mdb_env_open(mdb_env, db_path, MDB_NOLOCK, 0664);
-  std::cout << "return value of environment openning " << test3 << endl;
-
-  int test4 = mdb_txn_begin(mdb_env, NULL, 0, &mdb_txn);
-  std::cout << "return value of context beginning " << test4 << endl;
-
-  int test5 = mdb_open(mdb_txn, NULL, 0, &mdb_dbi);
-  std::cout << "return value of mdb openning " << test5 << endl;
-
-  // if(!valid)
-  //   {
-  //     std::cout << "Open lmdb error" << std::endl;
-  //     throw 20;
-  //   };
-
-}
-
-void FeaturePyramid::ShutDownDB()
-{
-
-  mdb_close(mdb_env, mdb_dbi);
-  mdb_env_close(mdb_env);
-
+  pFeatureReader->InitializeDB(nH, nW, nChannels);
 }
 
 void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
@@ -126,20 +69,6 @@ void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
 void FeaturePyramid::setupPyramid(string key)
 {
 
-  // setup current pyramid
-  mdb_key.mv_size = key.length();
-  mdb_key.mv_data = reinterpret_cast<void*>(&key[0]);
-
-  mdb_get(mdb_txn, mdb_dbi, &mdb_key, &mdb_data);
-
-  // setup the 0th level of current feature image pyramid
-
-  int data_size = mdb_data.mv_size;
-  int channel_num = m_nHeight * m_nWidth;
-  int channel_size = channel_num * featureSettings.dataElemSize;
-  int real_size =  m_nNumChannels * channel_size;
-  int shift = (data_size - real_size) / featureSettings.dataElemSize;
-
   for(int i = 0; i < m_nNumLevels; ++i)
     {
       currLevelsBuffer[i].featureImageVec.resize(m_nNumChannels);
@@ -154,46 +83,13 @@ void FeaturePyramid::setupPyramid(string key)
     {
       for(int i = 0; i < m_nNumLevels; ++i)
         {
-          // FeatureImageType featureBufferImage;
-          // FeatureImageType blurBufferImage;
-
-          // if(i == 0)
+          pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+          // features reading test
+          // if(j == 1)
           //   {
-              switch(featureSettings.dataElemSize)
-                {
-                case 1:
-                  {
-                    unsigned char* data_pointer = reinterpret_cast<unsigned char*>(mdb_data.mv_data);
-                    featureBufferImage = cv::Mat(m_nHeight,
-                                                 m_nWidth,
-                                                 featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_num);
-                  }
-                  break;
-                case 4:
-                  {
-                    float* data_pointer = reinterpret_cast<float*>(mdb_data.mv_data);
-                    featureBufferImage = cv::Mat(m_nHeight,
-                                                 m_nWidth,
-                                                 featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_num);
-                  }
-                  break;
-                case 8:
-                  {
-                    double* data_pointer = reinterpret_cast<double*>(mdb_data.mv_data);
-                    featureBufferImage = cv::Mat(m_nHeight,
-                                                 m_nWidth,
-                                                 featureSettings.dataTypeINT,
-                                                 data_pointer + shift + j * channel_num);
-                    // cv::namedWindow("featureBufferImage", cv::WINDOW_AUTOSIZE);
-                    // cv::imshow("featureBufferImage", featureBufferImage);
-                    // cv::waitKey(0);
-
-                  }
-                  break;
-                }
-            // }
+          //   for(int mm = 881; mm < 891; ++mm)
+          //     cout << featureBufferImage.at<double>(544, mm) << endl;
+          // }
 
           int blurSize = featureSettings.blurFeatureFilterSizes[i];
           if(featureSettings.blurFeatureSigmaSizes.size() > 0)
