@@ -77,6 +77,9 @@ endif
 # Automatic dependency generation
 CXXFLAGS += -MMD -MP
 
+# Disable offsetof macro warnings
+CXXFLAGS += -Wno-invalid-offsetof 
+
 # Get all source files
 MAIN_ENGINE_SRCS := $(shell find src/main_engine -name "*.cpp" ! -name "Deform*.cpp")
 #MAIN_ENGINE_SRCS := $(shell find src/main_engine -name "*.cpp" )
