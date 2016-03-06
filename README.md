@@ -16,13 +16,15 @@ Contact me if you have any questions.
 
 PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party libraries are needed for compiling PangaeaTracking.
 
-  - OpenGL / GLU / GLEW / X11 / TBB
+  - OpenGL / GLU / GLEW / X11 / TBB / LMDB / HDF5
 ```
    sudo apt-get install libgl1-mesa-dev
    sudo apt-get install libglu1-mesa-dev
    sudo apt-get install libglew1.8 libglew-dev
    sudo apt-get install libx11-dev
    sudo apt-get install libtbb-dev
+   sudo apt-get install liblmdb-dev
+   sudo apt-get install libhdf5-serial-dev
 ```
   - OPENCV (e.g. version 2.4.8 or later)
     available at http://opencv.org/
