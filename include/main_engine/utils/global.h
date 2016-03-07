@@ -308,30 +308,4 @@ void SampleLinear( const TImage & intensityImage,
 }
 
 
-// // some stuff to deal with the compilation error of to_string(int)
-// #include <type_traits>
-// #include <string>
-
-// template<typename T>
-// inline typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value,
-//                                std::string>::type
-//   to_string(T const val) {
-//   return std::to_string(static_cast<long long>(val));
-// }
-
-// template<typename T>
-// inline typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value,
-//                                std::string>::type
-//   to_string(T const val) {
-//   return std::to_string(static_cast<unsigned long long>(val));
-// }
-
-// template<typename T>
-// inline typename std::enable_if<std::is_floating_point<T>::value, std::string>::type
-// to_string(T const val) {
-//   return std::to_string(static_cast<long double>(val));
-// }
-
-
-
 #endif
