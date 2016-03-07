@@ -188,7 +188,7 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
       if(trackerSettings.blurSigmaSizes.size() > 0)
         blurSigma = trackerSettings.blurSigmaSizes[i];
       else
-        blurSigma = 3;
+        blurSigma = -1;
 
       if(blurSize > 0)
         {

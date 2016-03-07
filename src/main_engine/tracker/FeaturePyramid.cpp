@@ -95,7 +95,7 @@ void FeaturePyramid::setupPyramid(string key)
           if(featureSettings.blurFeatureSigmaSizes.size() > 0)
             blurSigma = featureSettings.blurFeatureSigmaSizes[i];
           else
-            blurSigma = 3;
+            blurSigma = -1;
 
           cout << "channel " << j << " " << "level " << i << endl;
           cout << "feature buffer: " << featureBufferImage.rows << " " << featureBufferImage.cols << endl;
