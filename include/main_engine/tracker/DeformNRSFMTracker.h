@@ -224,6 +224,7 @@ private:
   // ceres output
   std::ofstream ceresOutput;
   std::ofstream energyOutput;
+  std::ofstream errorOutput;
   std::ofstream energyOutputForR;
   std::ofstream errorOutputForR;
 
@@ -259,6 +260,10 @@ private:
 
   // set this to true when doing optimization on ground truth data
   bool modeGT;
+
+  // recording the average error over the whole sequence
+  double meanError;
+  std::ofstream scoresOutput;
 
 };
 

@@ -329,6 +329,7 @@ TrackerSettings::TrackerSettings()
   ceresOutputFile = "ceres_output.txt";
   diffFileFormat = "diff%04d.png";
   savePath = "/home/cvfish/Work/data/pangaea_tracking_data/test/tracker/";
+  scoresPath = "";
 
   energyOutputFile = "energy_output.txt";
 
@@ -534,6 +535,9 @@ void TrackerSettings::read(const cv::FileNode& node)
     node["diff_format"] >> diffFileFormat;
   if(!node["savePath"].empty())
     node["savePath"] >> savePath;
+  if(!node["scoresPath"].empty())
+    node["scoresPath"] >> scoresPath;
+
   if(!node["save_mesh"].empty())
     node["save_mesh"] >> saveMesh;
   if(!node["meshFormat"].empty())

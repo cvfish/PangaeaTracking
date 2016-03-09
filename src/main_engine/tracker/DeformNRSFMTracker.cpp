@@ -99,6 +99,13 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
         std::left << setw(15)  << "TemporalTerm" << std::left << setw(15)  << "SumCost" <<
         std::left << setw(15)  << "TotalCost" << endl;
 
+      std::stringstream errorOutputPath;
+      errorOutputPath << settings.savePath << "error_output.txt";
+      errorOutput.open(errorOutputPath.str().c_str(), std::ofstream::trunc);
+
+      errorOutput << std::left << setw(15) << "Frame," << std::left << setw(15) << "Level,"
+                  << std::left << setw(15) << "Error" << endl;
+
       std::stringstream energyOutputForRPath;
       energyOutputForRPath << settings.savePath << "energy_output_for_R.txt";
       energyOutputForR.open(energyOutputForRPath.str().c_str(), std::ofstream::trunc);
@@ -113,6 +120,28 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
         "INEXTENTTerm", "DeformTerm", "TermporalTerm", "SumCost", "TotalCost"});
   costNames = std::move(temp);
 
+  meanError = 0;
+  if(trackerSettings.hasGT && !settings.scoresPath.empty())
+    {
+      // we will record the scores of all runned experiments here
+      std::stringstream scoresOutputPath;
+      scoresOutputPath << settings.scoresPath << "scores_output.txt";
+      if(!boost::filesystem::exists(scoresOutputPath.str()))
+        {
+          // prints the file header
+          scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::trunc);
+
+          scoresOutput << std::left << setw(15) << "dataTermName" << ","
+                       << std::left << setw(15) << "featureTermName" << ","
+                       << std::left << setw(15) << "patchRadius" << ",";
+
+          for(int i = 0; i < costNames.size() - 2 ; ++i)
+            scoresOutput << std::left << setw(15) << costNames[i] << ",";
+
+          scoresOutput << std::left << setw(15) << "error" << endl;
+
+        }
+    }
 }
 
 DeformNRSFMTracker::~DeformNRSFMTracker()
@@ -681,10 +710,16 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
           // print error to errorOutputForR
           if(trackerSettings.hasGT)
-            errorOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << i
-                            << std::left << setw(15) << error << endl;
-        }
+            {
+              errorOutputForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << i
+                              << std::left << setw(15) << error << endl;
+              errorOutput << std::left << setw(15) << currentFrameNo << "," << std::left << setw(15) << i
+                          << "," << std::left << setw(15) << error << endl;
+            }
 
+          if(i == 0)
+            meanError += error;
+        }
     }
 
   TICK("updateProp");
@@ -736,6 +771,37 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   // update previous feature channels to current one
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     pFeaturePyramid->updatePrev();
+
+  // if this is the last frame, print out the scores to the file
+  if(trackerSettings.hasGT && !trackerSettings.scoresPath.empty() && nFrame == imageSourceSettings.numFrames)
+    {
+      std::string dataTermName = "not_used";
+      std::string featureTermName = "not_used";
+      if(trackerSettings.useRGBImages)
+        dataTermName = trackerSettings.errorType;
+      if(trackerSettings.useFeatureImages)
+        featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+      scoresOutput << std::left << setw(15) << dataTermName << ","
+                   << std::left << setw(15) << featureTermName << ",";
+
+      char buffer[BUFFER_SIZE];
+      sprintf(buffer, "patch_radius%02d", trackerSettings.neighborPatchRadius);
+      scoresOutput << std::left << setw(15) << buffer << ",";
+
+      // print the all the weights of the terms
+      scoresOutput << std::left << setw(15) << trackerSettings.weightPhotometric << ",";
+      scoresOutput << std::left << setw(15) << featureSettings.featureTermWeight << ",";
+
+      scoresOutput << std::left << setw(15) << trackerSettings.weightTV << ",";
+      scoresOutput << std::left << setw(15) << trackerSettings.weightRotTV << ",";
+      scoresOutput << std::left << setw(15) << trackerSettings.weightARAP << ",";
+      scoresOutput << std::left << setw(15) << trackerSettings.weightINEXTENT << ",";
+      scoresOutput << std::left << setw(15) << trackerSettings.weightDeform << ",";
+      scoresOutput << std::left << setw(15) << trackerSettings.weightTransPrior << ",";
+
+      meanError = meanError / (nFrame - imageSourceSettings.startFrame + 1);
+      scoresOutput << std::left << setw(15) << meanError;
+    }
 
   return true;
 }
