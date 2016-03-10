@@ -126,9 +126,11 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
       // we will record the scores of all runned experiments here
       std::stringstream scoresOutputPath;
       scoresOutputPath << settings.scoresPath << "scores_output.txt";
+
+      // prints the file header
+
       if(!boost::filesystem::exists(scoresOutputPath.str()))
         {
-          // prints the file header
           scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::trunc);
 
           scoresOutput << std::left << setw(15) << "dataTermName" << ","
@@ -140,7 +142,11 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
 
           scoresOutput << std::left << setw(15) << "error" << endl;
 
+          scoresOutput.close();
         }
+
+      scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::app);
+
     }
 }
 
@@ -800,7 +806,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       scoresOutput << std::left << setw(15) << trackerSettings.weightTransPrior << ",";
 
       meanError = meanError / (nFrame - imageSourceSettings.startFrame + 1);
-      scoresOutput << std::left << setw(15) << meanError;
+      scoresOutput << std::left << setw(15) << meanError << endl;
+
+      scoresOutput.close();
     }
 
   return true;

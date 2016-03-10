@@ -95,6 +95,8 @@ void MainEngine::SetupInputAndTracker()
       break;
     }
 
+  //cout << "set up input and tracker" << endl;
+
   m_nWidth = imageSourceSettings.width;
   m_nHeight = imageSourceSettings.height;
   m_nStartFrame = imageSourceSettings.startFrame;
