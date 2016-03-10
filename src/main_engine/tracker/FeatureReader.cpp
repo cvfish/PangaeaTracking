@@ -5,7 +5,6 @@
 //// LMDB DataBase
 
 LMDBReader::LMDBReader(string folder)
-  :pFeatureImages(NULL)
 {
   db_path = folder;
 }
@@ -132,6 +131,7 @@ void LMDBReader::getFeatureLevel(string key, int channel,
 //// HDF5 DataBase
 
 HDF5Reader::HDF5Reader(string file)
+  :pFeatureImages(NULL)
 {
   hdf5file = file;
 }
