@@ -5,6 +5,7 @@
 //// LMDB DataBase
 
 LMDBReader::LMDBReader(string folder)
+  :pFeatureImages(NULL)
 {
   db_path = folder;
 }
@@ -137,7 +138,8 @@ HDF5Reader::HDF5Reader(string file)
 
 HDF5Reader::~HDF5Reader()
 {
-  delete[] pFeatureImages;
+  if(pFeatureImages)
+    delete[] pFeatureImages;
 }
 
 void HDF5Reader::InitializeDB(int height, int width, int numChannels)
