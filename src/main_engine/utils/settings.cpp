@@ -334,11 +334,14 @@ TrackerSettings::TrackerSettings()
   energyOutputFile = "energy_output.txt";
 
   saveMesh = false;
-  meshFormat = "mesh%04d.obj";
+  //  meshFormat = "mesh%04d.obj";
+  meshFormat = "mesh%04d.ply";
 
   saveMeshPyramid = false;
-  meshPyramidFormat = "mesh%04d_level%02d.obj";
-  propPyramidFormat = "prop_mesh%04d_level%02d.obj";
+  // meshPyramidFormat = "mesh%04d_level%02d.obj";
+  // propPyramidFormat = "prop_mesh%04d_level%02d.obj";
+  meshPyramidFormat = "mesh%04d_level%02d.ply";
+  propPyramidFormat = "prop_mesh%04d_level%02d.ply";
 
   savePropPyramid = false;
 
