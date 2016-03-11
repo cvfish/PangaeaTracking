@@ -9,6 +9,8 @@ public:
   ~ProblemWrapper();
 
   void Initialize(int numLevels);
+  int getLevelsNum();
+
   ceres::Problem& getProblem(int nLevel);
   bool getLevelFlag(int nLevel);
   void setLevelFlag(int nLevel);

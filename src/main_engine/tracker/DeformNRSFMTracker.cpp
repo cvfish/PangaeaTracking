@@ -423,7 +423,8 @@ void DeformNRSFMTracker::initializeGT()
   prevMeshRotPyramidGT = prevMeshRotPyramid;
   prevMeshTransPyramidGT = prevMeshTransPyramid;
 
-  problemWrapperGT.Initialize( pStrategy->numOptimizationLevels );
+  //  problemWrapperGT.Initialize( pStrategy->numOptimizationLevels );
+  problemWrapperGT.Initialize( trackerSettings.meshLevelListGT.size() );
   // problemWrapperGT.setOptimizationVariables(camPoseGT,
   //                                           &templateMeshPyramidGT,
   //                                           &meshRotPyramidGT,
@@ -461,7 +462,7 @@ void DeformNRSFMTracker::updateGT()
   // update ground truth
   char buffer[BUFFER_SIZE];
 
-  for(int i = 0; i < m_nMeshLevels; ++i)
+  for(int i = 0; i < currentMeshPyramidGT.levels.size(); ++i)
     {
       int numVertices = meshTransPyramidGT[i].size();
 
@@ -677,7 +678,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       TOCK( "trackingTimeLevel" + std::to_string(ii) );
 
-      if(trackerSettings.hasGT)
+      if(trackerSettings.hasGT && problemWrapperGT.getLevelsNum() > i)
         {
           ceres::Problem& problemGT = problemWrapperGT.getProblem(i);
 
@@ -685,7 +686,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
           EnergySetup(problemGT);
           EnergyMinimizationGT(problemGT);
-
 
           if(trackerSettings.useRGBImages && trackerSettings.weightPhotometric > 0)
             {
@@ -710,7 +710,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   if(trackerSettings.hasGT)
     {
-      for(int i = 0; i < m_nMeshLevels; ++i)
+      for(int i = 0; i < problemWrapperGT.getLevelsNum(); ++i)
         {
           double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
 

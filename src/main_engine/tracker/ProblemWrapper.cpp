@@ -36,6 +36,11 @@ void ProblemWrapper::Initialize(int num)
   temporalTermResidualBlocks.resize(num);
 }
 
+int ProblemWrapper::getLevelsNum()
+{
+  return numLevels;
+}
+
 ceres::Problem& ProblemWrapper::getProblem(int nLevel)
 {
   return *(problems[nLevel]);
@@ -292,53 +297,3 @@ void ProblemWrapper::getAllCost(int nLevel, double cost[7], double* total_cost, 
   getTotalEnergy(nLevel, total_cost);
 
 }
-
-// double* ProblemWrapper::getRigidTransformation()
-// {
-//   return pRigidTransform_;
-// }
-
-// PangaeaMeshData& ProblemWrapper::getMeshData(int nLevel)
-// {
-//   return (*pMeshPyr_).levels[nLevel];
-// }
-
-// MeshDeformation& ProblemWrapper::getMeshRotation(int nLevel)
-// {
-//   return (*pMeshRotPyr_)[nLevel];
-// }
-
-// MeshDeformation& ProblemWrapper::getMeshTranslation(int nLevel)
-// {
-//   return (*pMeshTransPyr_)[nLevel];
-// }
-
-// MeshDeformation& ProblemWrapper::getPrevMeshRotation(int nLevel)
-// {
-//   return (*pPrevMeshRotPyr_)[nLevel];
-// }
-
-// MeshDeformation& ProblemWrapper::getPrevMeshTranslation(int nLevel)
-// {
-//   return (*pPrevMeshTransPyr_)[nLevel];
-// }
-
-// void ProblemWrapper::setOptimizationVariables(double* pRigidTransform,
-//                                               PangaeaMeshPyramid* pMeshPyr,
-//                                               vector<MeshDeformation>* pMeshRotPyr;
-//                                               vector<MeshDeformation>* pMeshTransPyr;
-//                                               vector<MeshDeformation>* pPrevMeshRotPyr;
-//                                               vector<MeshDeformation>* pPrevMeshTransPyr)
-// {
-//   pRigidTransform_ = pRigidTransform;
-
-//   pMeshPyr_ = pMeshPyr;
-
-//   pMeshRotPyr_ = pMeshRotPyr;
-
-//   pMeshTransPyr_ = pMeshTransPyr;
-
-//   pPrevMeshRotPyr_ = pPrevMeshRotPyr;
-
-//   pPrevMeshTransPyr_ = pPrevMeshTransPyr;
-// }

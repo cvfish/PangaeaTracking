@@ -22,7 +22,6 @@ MainEngine::~MainEngine()
   delete m_pTrackingEngine;
 }
 
-
 void MainEngine::GetInput(int nFrame)
 {
   if(nFrame <= m_NumTrackingFrames)
@@ -298,7 +297,6 @@ void MainEngine::Run()
       Stopwatch::getInstance().printAll();
     }
 }
-
 
 // load mesh from uImage, vImage, dImage and maskImage
 // only for the first frame
