@@ -85,11 +85,11 @@ void FeaturePyramid::setupPyramid(string key)
         {
           pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
           // features reading test
-          if(j == 1)
-            {
-            for(int mm = 881; mm < 891; ++mm)
-              cout << featureBufferImage.at<double>(544, mm) << endl;
-            }
+          // if(j == 1)
+          //   {
+          //   for(int mm = 881; mm < 891; ++mm)
+          //     cout << featureBufferImage.at<double>(544, mm) << endl;
+          //   }
 
           int blurSize = featureSettings.blurFeatureFilterSizes[i];
           if(featureSettings.blurFeatureSigmaSizes.size() > 0)

@@ -3235,7 +3235,6 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
   // attach features based on previous frame to the mesh
   // project those visible points based on visibilityMask
   // to the feature image
-
   for(int i = 0; i < m_nMeshLevels; ++i)
     {
 
@@ -3253,7 +3252,7 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
       AttachFeatureToMesh(&prevMesh, &featureLevel, &camInfo, visibilityMask, &templateMesh);
 
       // update the features in ground truth template mesh
-      if(trackerSettings.hasGT)
+      if( trackerSettings.hasGT &&  i < currentMeshPyramidGT.levels.size() )
         {
           vector<bool>& visibilityMaskGT = visibilityMaskPyramidGT[i];
           PangaeaMeshData& templateMeshGT =  templateMeshPyramidGT.levels[i];
