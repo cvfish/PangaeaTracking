@@ -125,10 +125,14 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
     {
       // we will record the scores of all runned experiments here
       std::stringstream scoresOutputPath;
-      scoresOutputPath << settings.scoresPath << "scores_output.txt";
+      scoresOutputPath << settings.scoresPath;
+
+      if(!boost::filesystem::is_directory(scoresOutputPath.str()))
+        boost::filesystem::create_directories(scoresOutputPath.str());
+
+      scoresOutputPath << "scores_output.txt";
 
       // prints the file header
-
       if(!boost::filesystem::exists(scoresOutputPath.str()))
         {
           scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::trunc);
