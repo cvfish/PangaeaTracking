@@ -3315,16 +3315,15 @@ void DeformNRSFMTracker::AttachFeatureToMesh(PangaeaMeshData* pMesh,
 
   for(int i = 0; i < numVertices; ++i)
     {
+      pOutputMesh->featuresBuffer[i].resize( numChannels, 0 );
+
       if(visibilityMask[i])
         {
-          pOutputMesh->featuresBuffer[i].resize( numChannels );
-
           getValue(pCamera,
                    pFeatureLevel,
                    &(pMesh->vertices[i][0]),
                    &(pOutputMesh->featuresBuffer[i][0]),
                    PE_FEATURE);
-
         }
 
     }
