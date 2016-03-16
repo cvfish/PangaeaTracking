@@ -369,8 +369,9 @@ TrackerSettings::TrackerSettings()
 	clockwise = true;
 
   // patch optimization stuff
-  // by default we do not do any patch based stuff
-  neighborPatchRadius = 0;
+  // by default the radius of patch is 1, if radius of patch is zero then
+  // the patch only includes itself, one single point
+  neighborPatchRadius = 1;
 
   useFeatureImages = false;
   useRGBImages = true;

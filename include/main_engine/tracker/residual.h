@@ -308,10 +308,25 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
   for(int i = 0; i < numNeighbors; ++i)
     {
       getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_TYPE);
-      getValueFromMesh( pMesh, PE_TYPE, i, &pValue );
+      getValueFromMesh( pMesh, PE_TYPE, neighbors[i], &pValue );
       for(int k = 0; k < numChannels; ++k)
         neighborValues[ numChannels*i + k] = T( pValue[k] );
     }
+
+  // compare the values of projValues and neighborValues
+  // cout << "neighborValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  //   {
+  //     cout << ceres::JetOps<T>::GetScalar(neighborValues[i]) << " ";
+  //   }
+  // cout << endl;
+
+  // cout << "projValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  // {
+  //   cout << ceres::JetOps<T>::GetScalar(projValues[i]) << " ";
+  // }
+  // cout << endl;
 
   // get the residual for two different cases, with or without NCC
   // without NCC: just sum the square differences between residual or of all the pixels in the patch
@@ -334,7 +349,10 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
     score.resize(numChannels);
     getPatchScore(neighborValues, projValues, &score[0], numChannels);
     for(int i = 0; i < numChannels; ++i)
-      residuals[i] = T(weight) * (T(1.0) - score[i]);
+      {
+        //        cout << "ncc scores: " << ceres::JetOps<T>::GetScalar(score[i]) << endl;
+        residuals[i] = T(weight) * (T(1.0) - score[i]);
+      }
   }
 
 }
@@ -752,6 +770,14 @@ public:
     neighborVertices.resize( 3*numNeighbors );
 
     T p[3];
+    // print id of the neighbors
+    // cout << "neighbors ";
+    // for(int i = 0; i < numNeighbors; ++i)
+    //   {
+    //     cout << neighbors[ i ] << " ";
+    //   }
+    // cout << endl;
+
     for(int i = 0; i < numNeighbors; ++i)
       {
         for( int k = 0; k < 3; ++k)

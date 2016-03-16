@@ -75,6 +75,16 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
   setIntrinsicMatrix(K);
   initializeCamera();
 
+  //create result folder
+  cout << settings.savePath << endl;
+  if(!bfs::exists( settings.savePath ))
+    {
+      if(!bfs::create_directories( settings.savePath ))
+        {
+          std::cerr << "Cannot create result directory: " << settings.savePath << std::endl;
+        }
+    }
+
   // debug info output
   std::stringstream ceresOutputPath;
   ceresOutputPath << settings.savePath << settings.ceresOutputFile;
@@ -127,13 +137,14 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
       std::stringstream scoresOutputPath;
       scoresOutputPath << settings.scoresPath;
 
-      if(!boost::filesystem::is_directory(scoresOutputPath.str()))
-        boost::filesystem::create_directories(scoresOutputPath.str());
+      if(!bfs::is_directory( scoresOutputPath.str() ) &&
+         !bfs::exists( scoresOutputPath.str() ) )
+        bfs::create_directories( scoresOutputPath.str() );
 
       scoresOutputPath << "scores_output.txt";
 
       // prints the file header
-      if(!boost::filesystem::exists(scoresOutputPath.str()))
+      if(!bfs::exists(scoresOutputPath.str()))
         {
           scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::trunc);
 
@@ -3120,18 +3131,6 @@ void DeformNRSFMTracker::CheckNaN()
 
 bool DeformNRSFMTracker::SaveData()
 {
-  //create result folder
-  bfs::path result_folder(trackerSettings.savePath.c_str());
-  cout << trackerSettings.savePath << endl;
-  if(!bfs::exists(result_folder))
-    {
-      if(!bfs::create_directories(result_folder) && !bfs::exists(result_folder))
-        {
-          std::cerr << "Cannot create result directory: " << result_folder << std::endl;
-          return EXIT_FAILURE;
-        }
-    }
-
   // save shape
   char buffer[BUFFER_SIZE];
   std::ofstream shapeFile;
@@ -3159,7 +3158,7 @@ bool DeformNRSFMTracker::SaveMeshToFile(TrackerOutputInfo& outputInfo)
   // create the directory if there isn't one
   if(!bfs::exists(trackerSettings.savePath.c_str()))
     {
-      bfs::create_directory(trackerSettings.savePath.c_str());
+      bfs::create_directories(trackerSettings.savePath.c_str());
     }
 
   // save current mesh to file for results checking afterwards
@@ -3182,7 +3181,7 @@ bool DeformNRSFMTracker::SaveMeshPyramid()
 
   if(!bfs::exists(trackerSettings.savePath.c_str()))
     {
-      bfs::create_directory(trackerSettings.savePath.c_str());
+      bfs::create_directories(trackerSettings.savePath.c_str());
       cout << "creating dir " << trackerSettings.savePath << endl;
     }
 
