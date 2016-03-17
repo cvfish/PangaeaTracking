@@ -137,8 +137,7 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
       std::stringstream scoresOutputPath;
       scoresOutputPath << settings.scoresPath;
 
-      if(!bfs::is_directory( scoresOutputPath.str() ) &&
-         !bfs::exists( scoresOutputPath.str() ) )
+      if( !bfs::exists( scoresOutputPath.str() ) )
         bfs::create_directories( scoresOutputPath.str() );
 
       scoresOutputPath << "scores_output.txt";
@@ -1407,16 +1406,53 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
                                                      Level* pFrame)
 {
 
+  vector<double> patchWeightsI;
+  vector<unsigned int> patchRadiiI;
+  vector<unsigned int> patchNeighborsI;
+
   for(int i = 0; i < templateMesh.numVertices; ++i)
     {
       if(visibilityMask[i])
         {
 
-          int numNeighbors = patchNeighbors[i].size();
+          patchWeightsI.clear();
+          patchRadiiI.clear();
+          patchNeighborsI.clear();
+
+          for(int k = 0; k < patchNeighbors[i].size(); ++k)
+            {
+              if(visibilityMask[ patchNeighbors[i][k] ])
+                {
+                  patchWeightsI.push_back( patchWeights[i][k] );
+                  patchRadiiI.push_back( patchRadii[i][k] );
+                  patchNeighborsI.push_back( patchNeighbors[i][k] );
+                }
+            }
+
+          // int numNeighbors = patchNeighbors[i].size();
+
+          // vector<double*> parameter_blocks;
+          // for(int j = 0; j < numNeighbors; ++j)
+          //   parameter_blocks.push_back( &(meshTrans[ patchNeighbors[i][j] ][0]) );
+
+          // parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
+          // parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
+
+          // ResidualImageProjectionPatch* pResidualPatch = new ResidualImageProjectionPatch(1,
+          //                                                                                 &templateMesh,
+          //                                                                                 pCamera,
+          //                                                                                 pFrame,
+          //                                                                                 numNeighbors,
+          //                                                                                 patchWeights[i],
+          //                                                                                 patchRadii[i],
+          //                                                                                 patchNeighbors[i],
+          //                                                                                 errorType );
+
+          int numNeighbors = patchNeighborsI.size();
 
           vector<double*> parameter_blocks;
           for(int j = 0; j < numNeighbors; ++j)
-            parameter_blocks.push_back( &(meshTrans[ patchNeighbors[i][j] ][0]) );
+            parameter_blocks.push_back( &(meshTrans[ patchNeighborsI[j] ][0]) );
 
           parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
           parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
@@ -1426,9 +1462,9 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
                                                                                           pCamera,
                                                                                           pFrame,
                                                                                           numNeighbors,
-                                                                                          patchWeights[i],
-                                                                                          patchRadii[i],
-                                                                                          patchNeighbors[i],
+                                                                                          patchWeightsI,
+                                                                                          patchRadiiI,
+                                                                                          patchNeighborsI,
                                                                                           errorType );
 
           ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatch, 5>* cost_function =
@@ -1576,12 +1612,31 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
                                                            Level* pFrame)
 {
 
+  vector<double> patchWeightsI;
+  vector<unsigned int> patchRadiiI;
+  vector<unsigned int> patchNeighborsI;
+
   for(int i = 0; i < templateMesh.numVertices; ++i)
     {
       if(visibilityMask[i])
         {
-          // path neighbors
-          int numNeighbors;
+          patchWeightsI.clear();
+          patchRadiiI.clear();
+          patchNeighborsI.clear();
+
+          for(int k = 0; k < patchNeighbors[i].size(); ++k)
+            {
+              if(visibilityMask[ patchNeighbors[i][k] ])
+                {
+                  patchWeightsI.push_back( patchWeights[i][k] );
+                  patchRadiiI.push_back( patchRadii[i][k] );
+                  patchNeighborsI.push_back( patchNeighbors[i][k] );
+                }
+            }
+
+          // patch neighbors
+          //          int numNeighbors = patchNeighbors[i].size();
+          int numNeighbors = patchNeighborsI.size();
 
           //coarse neighbors;
           int numCoarseNeighbors;
@@ -1593,13 +1648,12 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
           vector<double*> parameter_blocks;
           vector<double*> parameter_blocks_rot;
 
-          numNeighbors = patchNeighbors[i].size();
-
           int bias = 0;
           vector<double*>::iterator iter;
           for(int j = 0; j < numNeighbors; ++j)
             {
-              int m = patchNeighbors[i][j];
+              //              int m = patchNeighbors[i][j];
+              int m = patchNeighborsI[j];
               int coarseNum = neighbors[ m ].size();
 
               bias += coarseNum;
@@ -1640,6 +1694,25 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
           parameter_blocks.push_back( modeGT ? &camPoseGT[0] : &camPose[0] );
           parameter_blocks.push_back( modeGT ? &camPoseGT[3] : &camPose[3] );
 
+          // ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatchCoarse, 5>* cost_function =
+          //   new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(
+          //                                                                                   new ResidualImageProjectionPatchCoarse(
+          //                                                                                                                          1,
+          //                                                                                                                          &templateMesh,
+          //                                                                                                                          &templateNeighborMesh,
+          //                                                                                                                          pCamera,
+          //                                                                                                                          pFrame,
+          //                                                                                                                          numNeighbors,
+          //                                                                                                                          numCoarseNeighbors,
+          //                                                                                                                          patchWeights[i],
+          //                                                                                                                          patchRadii[i],
+          //                                                                                                                          patchNeighbors[i],
+          //                                                                                                                          parameterIndices,
+          //                                                                                                                          coarseNeighborIndices,
+          //                                                                                                                          coarseNeighborBiases,
+          //                                                                                                                          coarseNeighborWeights,
+          //                                                                                                                          errorType ) );
+
           ceres::DynamicAutoDiffCostFunction<ResidualImageProjectionPatchCoarse, 5>* cost_function =
             new ceres::DynamicAutoDiffCostFunction< ResidualImageProjectionPatchCoarse, 5 >(
                                                                                             new ResidualImageProjectionPatchCoarse(
@@ -1650,9 +1723,9 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
                                                                                                                                    pFrame,
                                                                                                                                    numNeighbors,
                                                                                                                                    numCoarseNeighbors,
-                                                                                                                                   patchWeights[i],
-                                                                                                                                   patchRadii[i],
-                                                                                                                                   patchNeighbors[i],
+                                                                                                                                   patchWeightsI,
+                                                                                                                                   patchRadiiI,
+                                                                                                                                   patchNeighborsI,
                                                                                                                                    parameterIndices,
                                                                                                                                    coarseNeighborIndices,
                                                                                                                                    coarseNeighborBiases,
