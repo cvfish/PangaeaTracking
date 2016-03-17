@@ -1081,6 +1081,10 @@ void DeformNRSFMTracker::UpdateResults()
 
 void DeformNRSFMTracker::PropagateMeshCoarseToFine(int coarse_level, int fine_level)
 {
+
+  if(coarse_level == fine_level)
+    return;
+
   MeshDeformation& mesh_rot = meshRotPyramid[coarse_level];
   MeshDeformation& mesh_trans = meshTransPyramid[coarse_level];
 
