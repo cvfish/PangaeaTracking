@@ -852,6 +852,8 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 
 	/* close the PLY file */
 	ply_close(ply);
+
+  delete[] f.verts;
 }
 
 template<class FloatType>
