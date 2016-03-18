@@ -826,6 +826,15 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       scoresOutput.close();
     }
 
+  // print out memory usage
+  double vm, rss;
+  process_mem_usage(vm, rss);
+
+  ceresOutput << "--------------- " << endl;
+  ceresOutput << "memory usage " << endl;
+  ceresOutput << "VM: " << vm << "; RSS: " << rss << endl;
+  ceresOutput << "--------------- " << endl;
+
   return true;
 }
 
