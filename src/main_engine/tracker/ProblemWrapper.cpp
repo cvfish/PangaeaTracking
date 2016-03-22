@@ -12,8 +12,19 @@ ProblemWrapper::ProblemWrapper(int num)
 
 ProblemWrapper::~ProblemWrapper()
 {
+  // as we take care of cost functions and loss functions ourselves
+
   for(int i = 0; i < numLevels; ++i)
-    delete problems[i];
+    {
+      // clear cost functions
+      clearCostFunctions(i);
+
+      // clear loss functions
+      clearLossFunctions(i);
+
+      delete problems[i];
+    }
+
 }
 
 void ProblemWrapper::Initialize(int num)
@@ -23,8 +34,12 @@ void ProblemWrapper::Initialize(int num)
   problems.resize(numLevels);
   setupFlag.resize(numLevels, false);
 
+  ceres::Problem::Options problemOptions;
+  problemOptions.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+  problemOptions.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+
   for(int i = 0; i < numLevels; ++i)
-    problems[i] = new ceres::Problem;
+    problems[i] = new ceres::Problem(problemOptions);
 
   dataTermResidualBlocks.resize(num);
   featureTermResidualBlocks.resize(num);
@@ -34,6 +49,14 @@ void ProblemWrapper::Initialize(int num)
   inextentTermResidualBlocks.resize(num);
   deformTermResidualBlocks.resize(num);
   temporalTermResidualBlocks.resize(num);
+
+  dataTermCostFunctions.resize(num);
+  featureTermCostFunctions.resize(num);
+  regTermCostFunctions.resize(num);
+
+  dataTermLossFunctions.resize(num);
+  featureTermLossFunctions.resize(num);
+  regTermLossFunctions.resize(num);
 }
 
 int ProblemWrapper::getLevelsNum()
@@ -97,6 +120,72 @@ void ProblemWrapper::addTemporalTerm(int nLevel, ceres::ResidualBlockId& residua
 {
   temporalTermResidualBlocks[nLevel].push_back(residualBlockId);
 }
+
+void ProblemWrapper::addDataTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+{
+  dataTermCostFunctions[nLevel].push_back(pCostFunction);
+}
+
+void ProblemWrapper::addFeatureTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+{
+  featureTermCostFunctions[nLevel].push_back(pCostFunction);
+}
+
+void ProblemWrapper::addRegTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+{
+  regTermCostFunctions[nLevel].push_back(pCostFunction);
+}
+
+// void ProblemWrapper::addTVTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   tvTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+// void ProblemWrapper::addRotTVTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   rotTVTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+// void ProblemWrapper::addARAPTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   arapTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+// void ProblemWrapper::addINEXTENTTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   inextentTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+// void ProblemWrapper::addDeformTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   deformTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+// void ProblemWrapper::addTemporalTermCost(int nLevel, ceres::CostFunction* pCostFunction)
+// {
+//   temporalTermCostFunctions[nLevel].push_back(pCostFunction);
+// }
+
+
+void ProblemWrapper::addDataTermLoss(int nLevel, ceres::LossFunction* pLossFunction)
+{
+  dataTermLossFunctions[nLevel].push_back(pLossFunction);
+}
+
+void ProblemWrapper::addFeatureTermLoss(int nLevel, ceres::LossFunction* pLossFunction)
+{
+  featureTermLossFunctions[nLevel].push_back(pLossFunction);
+}
+
+void ProblemWrapper::addRegTermLoss(int nLevel, ceres::LossFunction* pLossFunction)
+{
+  regTermLossFunctions[nLevel].push_back(pLossFunction);
+}
+
+// void addLossFunction(int nLevel, ceres::LossFunction* pLossFunction)
+// {
+//   lossFunctions[nLevel].push_back(pLossFunction);
+// }
 
 // clear terms
 void ProblemWrapper::clearDataTerm(int nLevel)
@@ -239,7 +328,6 @@ void ProblemWrapper::getINEXTENTTermCost(int nLevel, double* cost)
 
 }
 
-
 void ProblemWrapper::getDeformTermCost(int nLevel, double* cost)
 {
 
@@ -296,4 +384,74 @@ void ProblemWrapper::getAllCost(int nLevel, double cost[7], double* total_cost, 
 
   getTotalEnergy(nLevel, total_cost);
 
+}
+
+
+// clear cost functions
+void ProblemWrapper::clearDataTermCost(int nLevel)
+{
+  for(int i = 0; i < dataTermCostFunctions[nLevel].size(); ++i)
+    delete dataTermCostFunctions[nLevel][i];
+
+  dataTermCostFunctions[nLevel].clear();
+}
+
+void ProblemWrapper::clearFeatureTermCost(int nLevel)
+{
+  for(int i = 0; i < featureTermCostFunctions[nLevel].size(); ++i)
+    delete featureTermCostFunctions[nLevel][i];
+
+  featureTermCostFunctions[nLevel].clear();
+}
+
+// clear all cost functions
+void ProblemWrapper::clearCostFunctions(int nLevel)
+{
+  clearCostFunctionsHelper( dataTermCostFunctions[nLevel] );
+  clearCostFunctionsHelper( featureTermCostFunctions[nLevel] );
+  clearCostFunctionsHelper( regTermCostFunctions[nLevel] );
+
+  // clearCostFunctionsHelper( tvTermCostFunctions[nLevel] );
+  // clearCostFunctionsHelper( rotTVTermCostFunctions[nLevel] );
+  // clearCostFunctionsHelper( arapTermCostFunctions[nLevel] );
+  // clearCostFunctionsHelper( inextentTermCostFunctions[nLevel] );
+  // clearCostFunctionsHelper( deformTermCostFunctions[nLevel] );
+  // clearCostFunctionsHelper( temporalTermCostFunctions[nLevel] );
+}
+
+void ProblemWrapper::clearCostFunctionsHelper(vector<ceres::CostFunction*>& costFunctions)
+{
+  for(int i = 0; i < costFunctions.size(); ++i)
+    delete costFunctions[i];
+  costFunctions.clear();
+}
+
+void ProblemWrapper::clearDataTermLoss(int nLevel)
+{
+  for(int i = 0; i < dataTermLossFunctions[nLevel].size(); ++i)
+    delete dataTermLossFunctions[nLevel][i];
+
+  dataTermLossFunctions[nLevel].clear();
+}
+
+void ProblemWrapper::clearFeatureTermLoss(int nLevel)
+{
+  for(int i = 0; i < featureTermLossFunctions[nLevel].size(); ++i)
+    delete featureTermLossFunctions[nLevel][i];
+
+  featureTermLossFunctions[nLevel].clear();
+}
+
+void ProblemWrapper::clearLossFunctions(int nLevel)
+{
+  clearLossFunctionsHelper( dataTermLossFunctions[nLevel] );
+  clearLossFunctionsHelper( featureTermLossFunctions[nLevel] );
+  clearLossFunctionsHelper( regTermLossFunctions[nLevel] );
+}
+
+void ProblemWrapper::clearLossFunctionsHelper(vector<ceres::LossFunction*>& lossFunctions)
+{
+  for(int i = 0; i < lossFunctions.size(); ++i)
+    delete lossFunctions[i];
+  lossFunctions.clear();
 }

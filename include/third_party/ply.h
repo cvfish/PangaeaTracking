@@ -344,6 +344,8 @@ inline PlyFile *ply_open_for_writing(
 		fp = fopen(name, "wb");
 	}
 
+  delete name;
+
 	if (fp == NULL) {
 		return (NULL);
 	}

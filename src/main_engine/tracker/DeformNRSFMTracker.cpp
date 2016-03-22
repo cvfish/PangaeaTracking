@@ -657,6 +657,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           TICK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
 
           problemWrapper.clearDataTerm(currLevel);
+          problemWrapper.clearDataTermCost(currLevel);
+          problemWrapper.clearDataTermLoss(currLevel);
 
           TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveDataTermResidual");
         }
@@ -673,6 +675,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           // remove featureTermResidualBlocks from previous frame
           // be careful if we want to use multi-threading
           problemWrapper.clearFeatureTerm(currLevel);
+          problemWrapper.clearFeatureTermCost(currLevel);
+          problemWrapper.clearFeatureTermLoss(currLevel);
 
           TOCK( "trackingTimeLevel" + std::to_string(ii)  + "::RemoveFeatureTermResidual");
         }
@@ -708,6 +712,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
                           << "levels " << currLevel << endl
                           << problemWrapperGT.getDataTermNum(currLevel) << endl;
               problemWrapperGT.clearDataTerm(currLevel);
+              problemWrapperGT.clearDataTermCost(currLevel);
+              problemWrapperGT.clearDataTermLoss(currLevel);
             }
 
           if(useProblemWrapper && trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
@@ -716,6 +722,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
                           << "levels " << currLevel << endl
                           << problemWrapperGT.getFeatureTermNum(currLevel) << endl;
               problemWrapperGT.clearFeatureTerm(currLevel);
+              problemWrapperGT.clearFeatureTermCost(currLevel);
+              problemWrapperGT.clearFeatureTermLoss(currLevel);
             }
 
         }
@@ -1312,9 +1320,16 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               if(useProblemWrapper)
                 {
                   if(modeGT)
-                    problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addDataTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addDataTerm(currLevel, residualBlockId);
+                      problemWrapper.addDataTermCost(currLevel, cost_function);
+                    }
+
                 }
 
             }
@@ -1342,12 +1357,20 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
                                                                                 modeGT ? &camPoseGT[0] : &camPose[0],
                                                                                 modeGT ? &camPoseGT[3] : &camPose[3],
                                                                                 &meshTrans[i][0]);
+
               if(useProblemWrapper)
                 {
                   if(modeGT)
-                    problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addDataTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addDataTerm(currLevel, residualBlockId);
+                      problemWrapper.addDataTermCost(currLevel, cost_function);
+                    }
+
                 }
 
             }
@@ -1387,9 +1410,16 @@ void DeformNRSFMTracker::AddCostImageProjection(ceres::Problem& problem,
               if(useProblemWrapper)
                 {
                   if(modeGT)
-                    problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapper.addFeatureTermCost(currLevel, cost_function);
+                    }
+
                 }
 
               break;
@@ -1500,23 +1530,34 @@ void DeformNRSFMTracker::AddCostImageProjectionPatch(ceres::Problem& problem,
               if(modeGT)
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addDataTermCost(currLevel, cost_function);
+                    }
                 }
               else
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapper.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addDataTerm(currLevel, residualBlockId);
+                      problemWrapper.addDataTermCost(currLevel, cost_function);
+                    }
                 }
             }
 
         }
 
     }
-
 
 }
 
@@ -1589,19 +1630,30 @@ void DeformNRSFMTracker::AddCostImageProjectionCoarse(ceres::Problem& problem,
               if(modeGT)
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addDataTermCost(currLevel, cost_function);
+                    }
                 }
               else
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapper.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addDataTerm(currLevel, residualBlockId);
+                      problemWrapper.addDataTermCost(currLevel, cost_function);
+                    }
                 }
             }
-
 
         }
     }
@@ -1763,16 +1815,28 @@ void DeformNRSFMTracker::AddCostImageProjectionPatchCoarse(ceres::Problem& probl
               if(modeGT)
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addDataTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addDataTermCost(currLevel, cost_function);
+                    }
                 }
               else
                 {
                   if(errorType == PE_FEATURE || errorType == PE_FEATURE_NCC)
-                    problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addFeatureTerm(currLevel, residualBlockId);
+                      problemWrapper.addFeatureTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addDataTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addDataTerm(currLevel, residualBlockId);
+                      problemWrapper.addDataTermCost(currLevel, cost_function);
+                    }
                 }
             }
 
@@ -2312,9 +2376,15 @@ void DeformNRSFMTracker::AddTotalVariationCost(ceres::Problem& problem,
                   if(useProblemWrapper)
                     {
                       if(modeGT)
-                        problemWrapperGT.addTVTerm(currLevel, residualBlockId);
+                        {
+                          problemWrapperGT.addTVTerm(currLevel, residualBlockId);
+                          problemWrapperGT.addRegTermCost(currLevel, cost_function);
+                        }
                       else
-                        problemWrapper.addTVTerm(currLevel, residualBlockId);
+                        {
+                          problemWrapper.addTVTerm(currLevel, residualBlockId);
+                          problemWrapper.addRegTermCost(currLevel, cost_function);
+                        }
                     }
 
                 }
@@ -2376,12 +2446,19 @@ void DeformNRSFMTracker::AddRotTotalVariationCost(ceres::Problem& problem,
                                                                                     modeGT ? &neighborMeshRotGT[ meshNeighbors[vertex][neighbor] ][0] :
                                                                                     &neighborMeshRot[ meshNeighbors[vertex][neighbor] ][0]
                                                                                     );
+
                   if(useProblemWrapper)
                     {
                       if(modeGT)
-                        problemWrapperGT.addRotTVTerm(currLevel, residualBlockId);
+                        {
+                          problemWrapperGT.addRotTVTerm(currLevel, residualBlockId);
+                          problemWrapperGT.addRegTermCost(currLevel, cost_function);
+                        }
                       else
-                        problemWrapper.addRotTVTerm(currLevel, residualBlockId);
+                        {
+                          problemWrapper.addRotTVTerm(currLevel, residualBlockId);
+                          problemWrapper.addRegTermCost(currLevel, cost_function);
+                        }
                     }
 
                 }
@@ -2470,9 +2547,15 @@ void DeformNRSFMTracker::AddARAPCost(ceres::Problem& problem,
               if(useProblemWrapper)
                 {
                   if(modeGT)
-                    problemWrapperGT.addARAPTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addARAPTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addRegTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addARAPTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addARAPTerm(currLevel, residualBlockId);
+                      problemWrapper.addRegTermCost(currLevel, cost_function);
+                    }
                 }
 
             }
@@ -2533,11 +2616,16 @@ void DeformNRSFMTracker::AddInextentCost(ceres::Problem& problem,
               if(useProblemWrapper)
                 {
                   if(modeGT)
-                    problemWrapperGT.addINEXTENTTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapperGT.addINEXTENTTerm(currLevel, residualBlockId);
+                      problemWrapperGT.addRegTermCost(currLevel, cost_function);
+                    }
                   else
-                    problemWrapper.addINEXTENTTerm(currLevel, residualBlockId);
+                    {
+                      problemWrapper.addINEXTENTTerm(currLevel, residualBlockId);
+                      problemWrapper.addRegTermCost(currLevel, cost_function);
+                    }
                 }
-
             }
         }
     }
@@ -2582,9 +2670,15 @@ void DeformNRSFMTracker::AddDeformationCost(ceres::Problem& problem,
           if(useProblemWrapper)
             {
               if(modeGT)
-                problemWrapperGT.addDeformTerm(currLevel, residualBlockId);
+                {
+                  problemWrapperGT.addDeformTerm(currLevel, residualBlockId);
+                  problemWrapperGT.addRegTermCost(currLevel, cost_function);
+                }
               else
-                problemWrapper.addDeformTerm(currLevel, residualBlockId);
+                {
+                  problemWrapper.addDeformTerm(currLevel, residualBlockId);
+                  problemWrapper.addRegTermCost(currLevel, cost_function);
+                }
             }
         }
     }
@@ -2618,9 +2712,15 @@ void DeformNRSFMTracker::AddTemporalMotionCost(ceres::Problem& problem,
   if(useProblemWrapper)
     {
       if(modeGT)
-        problemWrapperGT.addTemporalTerm(currLevel, residualBlockId);
+        {
+          problemWrapperGT.addTemporalTerm(currLevel, residualBlockId);
+          problemWrapperGT.addRegTermCost(currLevel, cost_function);
+        }
       else
-        problemWrapper.addTemporalTerm(currLevel, residualBlockId);
+        {
+          problemWrapper.addTemporalTerm(currLevel, residualBlockId);
+          problemWrapperGT.addRegTermCost(currLevel, cost_function);
+        }
     }
 
 }
@@ -2659,6 +2759,14 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
 
       AddPhotometricCostNew(problem, photometricScaledLoss, PEType);
 
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addDataTermLoss(currLevel, photometricScaledLoss);
+          else
+            problemWrapper.addDataTermLoss(currLevel, photometricScaledLoss);
+        }
+
       TOCK( "SetupDataTermCost" + std::to_string(ii) );
     }
 
@@ -2678,6 +2786,14 @@ void DeformNRSFMTracker::EnergySetup(ceres::Problem& problem)
                                                                    weightParaLevel.featureTermWeight,
                                                                    ceres::TAKE_OWNERSHIP);
       AddPhotometricCostNew(problem, featureScaledLoss, featureSettings.useNCC ? PE_FEATURE_NCC : PE_FEATURE );
+
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addFeatureTermLoss(currLevel, featureScaledLoss);
+          else
+            problemWrapper.addFeatureTermLoss(currLevel, featureScaledLoss);
+        }
 
       TOCK("SetupFeatureTermCost" + std::to_string(ii));
 
@@ -2740,6 +2856,14 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
       AddTotalVariationCost(problem, tvScaledLoss);
       //AddTotalVariationCost(problem, NULL);
 
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addRegTermLoss(currLevel, tvScaledLoss);
+          else
+            problemWrapper.addRegTermLoss(currLevel, tvScaledLoss);
+        }
+
       //TOCK("SetupTVCost"  + std::to_string( currLevel ) );
     }
 
@@ -2762,6 +2886,14 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
 
       AddRotTotalVariationCost(problem, tvRotScaledLoss);
 
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addRegTermLoss(currLevel, tvRotScaledLoss);
+          else
+            problemWrapper.addRegTermLoss(currLevel, tvRotScaledLoss);
+        }
+
       //TOCK("SetupRotTVCost"  + std::to_string( currLevel ) );
 
     }
@@ -2776,6 +2908,14 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
                                                                 weightParaLevel.arapTermWeight,
                                                                 ceres::TAKE_OWNERSHIP);
       AddARAPCost(problem, arapScaledLoss);
+
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addRegTermLoss(currLevel, arapScaledLoss);
+          else
+            problemWrapper.addRegTermLoss(currLevel, arapScaledLoss);
+        }
 
       //TOCK("SetupARAPCost"  + std::to_string( currLevel ) );
     }
@@ -2792,6 +2932,14 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
                                                                     ceres::TAKE_OWNERSHIP);
       AddInextentCost(problem, inextentScaledLoss);
 
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addRegTermLoss(currLevel, inextentScaledLoss);
+          else
+            problemWrapper.addRegTermLoss(currLevel, inextentScaledLoss);
+        }
+
       //TOCK("SetupInextentCost"  + std::to_string( currLevel ) );
     }
 
@@ -2806,6 +2954,14 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
                                                                   weightParaLevel.deformWeight,
                                                                   ceres::TAKE_OWNERSHIP);
       AddDeformationCost(problem, deformScaledLoss);
+
+      if(useProblemWrapper)
+        {
+          if(modeGT)
+            problemWrapperGT.addRegTermLoss(currLevel, deformScaledLoss);
+          else
+            problemWrapper.addRegTermLoss(currLevel, deformScaledLoss);
+        }
 
       //TOCK("SetupDeformationCost" + std::to_string( currLevel ) );
     }
