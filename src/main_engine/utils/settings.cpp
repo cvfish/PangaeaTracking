@@ -329,15 +329,19 @@ TrackerSettings::TrackerSettings()
   ceresOutputFile = "ceres_output.txt";
   diffFileFormat = "diff%04d.png";
   savePath = "/home/cvfish/Work/data/pangaea_tracking_data/test/tracker/";
+  scoresPath = "";
 
   energyOutputFile = "energy_output.txt";
 
   saveMesh = false;
-  meshFormat = "mesh%04d.obj";
+  //  meshFormat = "mesh%04d.obj";
+  meshFormat = "mesh%04d.ply";
 
   saveMeshPyramid = false;
-  meshPyramidFormat = "mesh%04d_level%02d.obj";
-  propPyramidFormat = "prop_mesh%04d_level%02d.obj";
+  // meshPyramidFormat = "mesh%04d_level%02d.obj";
+  // propPyramidFormat = "prop_mesh%04d_level%02d.obj";
+  meshPyramidFormat = "mesh%04d_level%02d.ply";
+  propPyramidFormat = "prop_mesh%04d_level%02d.ply";
 
   savePropPyramid = false;
 
@@ -365,8 +369,9 @@ TrackerSettings::TrackerSettings()
 	clockwise = true;
 
   // patch optimization stuff
-  // by default we do not do any patch based stuff
-  neighborPatchRadius = 0;
+  // by default the radius of patch is 1, if radius of patch is zero then
+  // the patch only includes itself, one single point
+  neighborPatchRadius = 1;
 
   useFeatureImages = false;
   useRGBImages = true;
@@ -534,6 +539,9 @@ void TrackerSettings::read(const cv::FileNode& node)
     node["diff_format"] >> diffFileFormat;
   if(!node["savePath"].empty())
     node["savePath"] >> savePath;
+  if(!node["scoresPath"].empty())
+    node["scoresPath"] >> scoresPath;
+
   if(!node["save_mesh"].empty())
     node["save_mesh"] >> saveMesh;
   if(!node["meshFormat"].empty())

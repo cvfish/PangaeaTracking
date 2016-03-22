@@ -292,11 +292,32 @@ void MeshPyramidReader::setMeshPyramid()
 
           TICK( "visibilityMaskLevel" + std::to_string(ii) );
 
-          UpdateVisibilityMaskGL(outputInfoPyramid[i], visibilityMaskPyramid[i], KK, camPose, m_nWidth, m_nHeight);
+          UpdateVisibilityMaskGL(outputInfoPyramid[i],
+                                 visibilityMaskPyramid[i],
+                                 KK, camPose, m_nWidth, m_nHeight);
+          UpdateVisibilityMaskGL(outputInfoPyramid[i].meshDataGT,
+                                 outputInfoPyramid[i].visibilityMaskGT,
+                                 KK, camPose, m_nWidth, m_nHeight);
+
+          // check the visiblity mask during results loading
+          int visibleNum = 0;
+          int visibleNumGT = 0;
+          for(int kk = 0; kk < visibilityMaskPyramid[i].size(); ++kk)
+            {
+              if(visibilityMaskPyramid[i][kk])
+                visibleNum++;
+              if(outputInfoPyramid[i].visibilityMaskGT[kk])
+                visibleNumGT++;
+            }
+          cout << "total number of points " << visibilityMaskPyramid[i].size() << endl;
+          cout << "number of visible points for tracking results " << visibleNum << endl;
+          cout << "number of visible points for ground truth " << visibleNumGT << endl;
 
           if(!meshLoadingSettings.fastLoading)
-            UpdateColorDiff(outputInfoPyramid[i], outputInfoPyramid[i].visibilityMask, colorImageSplit);
-
+            {
+              UpdateColorDiff(outputInfoPyramid[i], outputInfoPyramid[i].visibilityMask, colorImageSplit);
+              UpdateColorDiffGT(outputInfoPyramid[i], outputInfoPyramid[i].visibilityMaskGT, colorImageSplit);
+            }
 
           TOCK( "visibilityMaskLevel"  + std::to_string(ii) );
         }

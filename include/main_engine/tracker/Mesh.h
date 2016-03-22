@@ -416,10 +416,16 @@ void UpdateRenderingDataFast(TrackerOutputInfo& outputInfo, double KK[3][3],
                              PangaeaMeshData& currentMesh, bool updateGT = false);
 
 void UpdateVisibilityMask(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
-    int width, int height);
+                          int width, int height, bool isGT = false);
+
+void UpdateVisibilityMaskGL(PangaeaMeshData& outputInfo, vector<bool>& visibilityMask,
+                            double KK[3][3], CoordinateType camPose[6], int width, int height, double toleranceRatio = 0.01);
 
 void UpdateVisibilityMaskGL(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
     double KK[3][3], CoordinateType camPose[6], int width, int height, double toleranceRatio = 0.01);
 
 void UpdateColorDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
     InternalIntensityImageType colorImageSplit[3]);
+
+void UpdateColorDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                       InternalIntensityImageType colorImageSplit[3]);

@@ -22,7 +22,6 @@ MainEngine::~MainEngine()
   delete m_pTrackingEngine;
 }
 
-
 void MainEngine::GetInput(int nFrame)
 {
   if(nFrame <= m_NumTrackingFrames)
@@ -94,6 +93,8 @@ void MainEngine::SetupInputAndTracker()
       m_pImageSourceEngine = new ImageSequenceReader(imageSourceSettings);
       break;
     }
+
+  //cout << "set up input and tracker" << endl;
 
   m_nWidth = imageSourceSettings.width;
   m_nHeight = imageSourceSettings.height;
@@ -297,7 +298,6 @@ void MainEngine::Run()
     }
 }
 
-
 // load mesh from uImage, vImage, dImage and maskImage
 // only for the first frame
 void MainEngine::LoadInitialMeshUVD()
@@ -379,7 +379,19 @@ void MainEngine::ReadConfigurationFile(int argc, char* argv[])
 
   // settings test
   // cv::FileStorage fs(wxString(argv[1]).ToStdString(), cv::FileStorage::READ);
-  cv::FileStorage fs(argv[1], cv::FileStorage::READ);
+  cv::FileStorage fs;
+
+  if(argc < 2)
+    {
+      cv::FileStorage fs1("/home/cvfish/Work/code/github/PangaeaTracking/config/Levi_cluster/cluster_levi_real_images_blur_ncc_coarse/PangaeaTracking_001_test.yml",
+                          cv::FileStorage::READ);
+      fs = fs1;
+    }
+  else
+    {
+      cv::FileStorage fs1(argv[1], cv::FileStorage::READ);
+      fs = fs1;
+    }
 
   // read settings
   std::string imageSource;

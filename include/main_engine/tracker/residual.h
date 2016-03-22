@@ -28,22 +28,28 @@ enum dataTermErrorType{
 static int PE_RESIDUAL_NUM_ARRAY[COST_TYPE_NUM] = {1,3,3,1,1,3,-1,-1};
 
 template<typename T>
-void getValueFromMesh(const PangaeaMeshData* pMeshData, dataTermErrorType errorType, int pntInd, T* pValue)
+void getValueFromMesh(const PangaeaMeshData* pMeshData, dataTermErrorType errorType, int pntInd, T** pValue)
 {
   switch(errorType)
     {
     case PE_INTENSITY:
     case PE_NCC:
-      pValue = (T*)(&pMeshData->grays[ pntInd ]);
-      break;
+      {
+        *pValue = const_cast<T*>( &(pMeshData->grays[ pntInd ]) );
+        break;
+      }
     case PE_COLOR:
     case PE_COLOR_NCC:
-      pValue = (T*)(&pMeshData->colors[ pntInd ][0]);
-      break;
+      {
+        *pValue = const_cast<T*>( &(pMeshData->colors[ pntInd ][0]) );
+        break;
+      }
     case PE_FEATURE:
     case PE_FEATURE_NCC:
-      pValue = (T*)(&pMeshData->features[ pntInd ][0]);
-      break;
+      {
+        *pValue = const_cast<T*>( &(pMeshData->features[ pntInd ][0]) ) ;
+        break;
+      }
     }
 }
 
@@ -100,7 +106,7 @@ void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, 
 
   pScore[0] = T(0.0);
 
-  int num = neighborValues.size();
+  int num = neighborValues.size() / k1;
   for(int i = 0; i < num; ++i)
     {
       neighborMean += neighborValues[ k1*i + k2 ];
@@ -134,7 +140,14 @@ void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, 
         (projValues[k1*i + k2] - projMean) / projSTD;
     }
 
-  // pScore[0] = T(0.0);
+  // if(ceres::IsNaN(pScore[0]))
+  //   {
+  //     int haha = 0;
+  //     haha = haha + 1;
+  //     cout << "gradient is nan " << haha << endl;
+  //   }
+
+  //pScore[0] = T(0.0);
 
 }
 
@@ -165,6 +178,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
       switch(PE_TYPE)
         {
         case PE_INTENSITY:
+        case PE_NCC:
           {
 
             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
@@ -176,6 +190,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             break;
           }
         case PE_COLOR:
+        case PE_COLOR_NCC:
           {
             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
             for(int i = 0; i < 3; ++i)
@@ -219,6 +234,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             break;
           }
         case PE_FEATURE:
+        case PE_FEATURE_NCC:
           {
             //
             FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
@@ -284,7 +300,7 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
   int numChannels;
 
   numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
-  T* pValue = NULL;
+  double* pValue = NULL;
 
   neighborValues.resize( numChannels * numNeighbors );
   projValues.resize( numChannels * numNeighbors );
@@ -292,10 +308,25 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
   for(int i = 0; i < numNeighbors; ++i)
     {
       getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_TYPE);
-      getValueFromMesh( pMesh, PE_TYPE, i, pValue );
+      getValueFromMesh( pMesh, PE_TYPE, neighbors[i], &pValue );
       for(int k = 0; k < numChannels; ++k)
         neighborValues[ numChannels*i + k] = T( pValue[k] );
     }
+
+  // compare the values of projValues and neighborValues
+  // cout << "neighborValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  //   {
+  //     cout << ceres::JetOps<T>::GetScalar(neighborValues[i]) << " ";
+  //   }
+  // cout << endl;
+
+  // cout << "projValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  // {
+  //   cout << ceres::JetOps<T>::GetScalar(projValues[i]) << " ";
+  // }
+  // cout << endl;
 
   // get the residual for two different cases, with or without NCC
   // without NCC: just sum the square differences between residual or of all the pixels in the patch
@@ -318,7 +349,10 @@ void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFr
     score.resize(numChannels);
     getPatchScore(neighborValues, projValues, &score[0], numChannels);
     for(int i = 0; i < numChannels; ++i)
-      residuals[i] = T(weight) * (T(1.0) - score[i]);
+      {
+        //        cout << "ncc scores: " << ceres::JetOps<T>::GetScalar(score[i]) << endl;
+        residuals[i] = T(weight) * (T(1.0) - score[i]);
+      }
   }
 
 }
@@ -407,6 +441,13 @@ public:
                   const T* const xyz,
                   T* residuals) const
   {
+
+    // cout << "camera width and height" << endl;
+    // cout << pCamera->width << " " << pCamera->height << endl;
+
+    // cout << "image width and height" << endl;
+    // cout << ((ImageLevel*)pFrame)->grayImage.cols << " " << ((ImageLevel*)pFrame)->grayImage.rows << endl;
+
     int residual_num = PE_RESIDUAL_NUM_ARRAY[PE_TYPE];
     for(int i = 0; i < residual_num; ++i)
       residuals[i] = T(0.0);
@@ -729,6 +770,14 @@ public:
     neighborVertices.resize( 3*numNeighbors );
 
     T p[3];
+    // print id of the neighbors
+    // cout << "neighbors ";
+    // for(int i = 0; i < numNeighbors; ++i)
+    //   {
+    //     cout << neighbors[ i ] << " ";
+    //   }
+    // cout << endl;
+
     for(int i = 0; i < numNeighbors; ++i)
       {
         for( int k = 0; k < 3; ++k)
@@ -1188,9 +1237,3 @@ public:
   }
 
 };
-
-// class ResidualPhotometricCallback: public ceres::IterationCallback
-// {
-
-
-// }

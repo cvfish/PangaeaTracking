@@ -1,0 +1,110 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'DeformNRSFMTracker'
+ImageSourceSettings:
+  dataPath: '/cvfish/home/Work/data/Qi_synthetic/images/'
+  numFrames: 379
+  width: 1920
+  height: 1088
+  startFrame: 180
+  imageFormat: 'rgb%04d.png'
+  useMultiImages: 1
+  dataPathLevelRoot: "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/images_render/"
+  dataPathLevelFormat: "%02dk/"
+  imageLevelFormat: "render%04d.png"
+#  dataPathLevelList: [25, 10, 5, 5, 5]
+  dataPathLevelList: [25, 10, 5]
+TrackerSettings:
+  savePath: '/home/cvfish/Work/code/github/PangaeaTracking/results/Levi/feature_images/feature_term_1000/'
+#  error_type: 'gray'
+#  error_type: 'color'
+#  error_type: 'ncc'
+  error_type: 'color_ncc'
+  ba_type: 'motstr'
+  photometric_huber_width: 0.1
+  tv_huber_width: 1
+  tv_tukey_width: 0
+#  photometric_weight: 1000
+  photometric_weight: 1
+  grad_weight: 0
+  tv_weight: 0.05
+  deform_weight: 0.2
+  do_alternation: 1
+  arap_weight: 1
+  inextent_weight: 0
+  trans_weight: 100000
+  linear_solver: CG
+  save_results: 1
+  save_mesh: 1
+  # save_mesh_pyramid: 1
+  # save_prop_pyramid: 1
+  save_mesh_pyramid: 0
+  save_prop_pyramid: 0
+  use_depth_pyramid: 0
+  use_prev_for_template_in_tv: 0
+  load_mesh: 1
+  use_visibility_mask: 1
+  use_opengl_mask: 0
+  mesh_pyramid_file: '/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/cropped_remeshed_color_obj/cropped_remeshed_color_0180_%02dk.obj'
+  show_window: 0
+  blurFilterSize (at each level): [0,0,0,0,0]
+  imageGradientsScalingFactor (at each level): [0.03125,0.03125,0.03125,0.03125,0.03125]
+#  max_num_iterations (at each level): [5,5,10,10,30]
+  max_num_iterations (at each level): [10,20,30,30,30]
+  function_tolerance (at each level): [1e-4, 1e-4, 1e-4, 1e-4, 1e-4]
+  gradient_tolerance (at each level): [1e-3, 1e-3, 1e-3, 1e-3, 1e-3]
+  parameter_tolerance (at each level): [1e-6, 1e-6, 1e-6, 1e-6, 1e-6]
+  initial_trust_region_radius (at each level): [1e4, 1e4, 1e4, 1e4, 1e4]
+  max_trust_region_radius (at each level): [1e8, 1e8, 1e8, 1e8, 1e8]
+  min_trust_region_radius (at each level): [1e-32,1e-32,1e-32,1e-32,1e-32]
+  min_relative_decrease (at each level): [1e-3,1e-3,1e-3,1e-3,1e-3]
+#  mesh_pyramid_vertex_num:  [25, 10, 5, 5, 5]
+  mesh_pyramid_vertex_num:  [25, 10, 5]
+#  imagePyramidSamplingFactors (at each level):  [1,2,4,8,16]
+  imagePyramidSamplingFactors (at each level):  [1,2,8]
+  mesh_pyramid_neighbor_num: [5, 5, 5, 5, 5]
+  mesh_pyramid_neighbor_radius: [500, 200, 100, 50, 10]
+  clockwise: 0
+  hasGT: 1
+  meshPathGT: "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/cropped_remeshed_color_obj/"
+  meshLevelFormatGT: "cropped_remeshed_color_%04d_%02dk.obj"
+#  meshLevelListGT: [25,10,5,5,5]
+  meshLevelListGT: [25,10,5]
+  print_energy: 1
+  meshPyramidFormat: 'mesh%04d_level%02d.ply'
+  propPyramidFormat: 'prop_mesh%04d_level%02d.ply'
+  save_ply: 1
+  # use_feature_images: 0
+  # use_rgb_images: 1
+  neighbor_patch_radius: 1
+  use_feature_images: 1
+  use_rgb_images: 0
+  data_term_pair:
+    - { first:[0], second:[1] }
+    - { first:[1], second:[2] }
+  reg_term_pair:
+    - { first:[2], second:[2] }
+    - { first:[2], second:[2] }
+FeatureSettings:
+  use_ncc: 1
+  channels: 3
+  scaling_factor: 1.0
+  db_path: '/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/images_render/25k/feature_images/sift/binSize2_lmdb_double/features.h5'
+#  feature_term_weight: 1000
+  feature_term_weight: 1
+  feature_huber_width: 0.1
+  key_name_format: '/sift%04d'
+  blurFeatureFilterSize (at each level): [5,7,9,11,13]
+#  blurFeatureFilterSize (at each level): [0,0,0,0,0]
+  featurePyramidSamplingFactors (at each level):  [1,2,4,8,16]
+  featureGradientScalingFactor (at each level): [0.03125,0.03125,0.03125,0.03125,0.03125]
+# MeshLoadingSettings:
+#   meshPath: "/cvfish/home/Work/data/Qi_synthetic/remeshed_0180/remeshed_color_obj/"
+#   meshFormat: "remeshed_color_%04d_05k.obj"
+#   meshLevelFormat: "remeshed_color_%04d_%02dk.obj"
+#   #  meshLevelList: [5,10,25,30,40,50]
+#   meshLevelList: [25,10,5]
+#   visibilityMask: 1
+#   loadProp: 0
+#   fastLoading: 0
+#   clockwise: 0

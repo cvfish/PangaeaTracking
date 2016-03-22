@@ -35,7 +35,6 @@ ImageSequenceReader::ImageSequenceReader(ImageSourceSettings& settings)
       std::cout << std::endl;
     }
 
-
   // read different level images if necessary
   if(imageSourceSettings.useMultiImages)
     {
