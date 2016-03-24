@@ -2719,7 +2719,7 @@ void DeformNRSFMTracker::AddTemporalMotionCost(ceres::Problem& problem,
       else
         {
           problemWrapper.addTemporalTerm(currLevel, residualBlockId);
-          problemWrapperGT.addRegTermCost(currLevel, cost_function);
+          problemWrapper.addRegTermCost(currLevel, cost_function);
         }
     }
 

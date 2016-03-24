@@ -111,6 +111,22 @@ typedef struct PlyElement {     /* description of an element */
   char *store_prop;             /* flags: property wanted by user? */
   int other_offset;             /* offset to un-asked-for props, or -1 if none*/
   int other_size;               /* size of other_props structure */
+
+  ~PlyElement()
+  {
+	  if (nprops > 0)
+	  {
+		  for (int i = 0; i < nprops; i++)
+		  {
+			  delete props[i];
+		  }
+		  delete[] props;
+		  delete[] store_prop;
+	  }
+
+	  delete[] name;
+  }
+
 } PlyElement;
 
 typedef struct PlyOtherProp {   /* describes other properties in an element */
@@ -118,10 +134,31 @@ typedef struct PlyOtherProp {   /* describes other properties in an element */
   int size;                     /* size of other_props */
   int nprops;                   /* number of properties in other_props */
   PlyProperty **props;          /* list of properties in other_props */
+
+  ~PlyOtherProp()
+  {
+	  if (nprops > 0)
+	  {
+		  for (int i = 0; i < nprops; i++)
+		  {
+			  delete props[i];
+		  }
+		  delete[] props;
+	  }
+
+	  delete[] name;
+  }
+
 } PlyOtherProp;
 
 typedef struct OtherData { /* for storing other_props for an other element */
   void *other_props;
+
+  ~OtherData()
+  {
+	  delete[] other_props;
+  }
+
 } OtherData;
 
 typedef struct OtherElem {     /* data for one "other" element */
@@ -129,11 +166,29 @@ typedef struct OtherElem {     /* data for one "other" element */
   int elem_count;              /* count of instances of each element */
   OtherData **other_data;      /* actual property data for the elements */
   PlyOtherProp *other_props;   /* description of the property data */
+
+  ~OtherElem()
+  {
+	  for (int i = 0; i < elem_count; i++)
+	  {
+		  delete other_data[i];
+	  }
+	  delete[] other_data;
+	  delete[] elem_name;
+	  delete[] other_props;
+  }
+
 } OtherElem;
 
 typedef struct PlyOtherElems {  /* "other" elements, not interpreted by user */
   int num_elems;                /* number of other elements */
   OtherElem *other_list;        /* list of data for other elements */
+
+  ~PlyOtherElems()
+  {
+	  delete[] other_list;
+  }
+
 } PlyOtherElems;
 
 typedef struct PlyFile {        /* description of PLY file */
@@ -148,6 +203,37 @@ typedef struct PlyFile {        /* description of PLY file */
   char **obj_info;              /* list of object info items */
   PlyElement *which_elem;       /* which element we're currently writing */
   PlyOtherElems *other_elems;   /* "other" elements from a PLY file */
+
+  ~PlyFile()
+  {
+	  if (nelems > 0)
+	  {
+		  for (int i = 0; i < nelems; i++)
+		  {
+			  delete elems[i];
+		  }
+		  delete[] elems;
+	  }
+
+	  if (num_comments > 0)
+	  {
+		  for (int i = 0; i < num_comments; i++)
+		  {
+			  delete comments[i];
+		  }
+		  delete[] comments;
+	  }
+
+	  if (num_obj_info > 0)
+	  {
+		  for (int i = 0; i < num_obj_info; i++)
+		  {
+			  delete obj_info[i];
+		  }
+		  delete[] obj_info;
+	  }
+  }
+
 } PlyFile;
 
 /* memory allocation */
@@ -895,6 +981,8 @@ inline PlyFile *ply_read(FILE *fp, int *nelems, char ***elem_names)
 		words = get_words(plyfile->fp, &nwords, &orig_line);
 	}
 
+	free(words);
+
 	/* create tags for each property of each element, to be used */
 	/* later to say whether or not to store each property for the user */
 
@@ -945,19 +1033,10 @@ inline PlyFile *ply_open_for_reading(
 {
 	FILE *fp;
 	PlyFile *plyfile;
-	char *name;
-
-	/* tack on the extension .ply, if necessary */
-
-	name = (char *)myalloc(sizeof (char)* (strlen(filename) + 5));
-	strcpy(name, filename);
-	if (strlen(name) < 4 ||
-		strcmp(name + strlen(name) - 4, ".ply") != 0)
-		strcat(name, ".ply");
 
 	/* open the file for reading */
 
-	fp = fopen(name, "rb");
+	fp = fopen(filename, "rb");
 	if (fp == NULL)
 		return (NULL);
 
@@ -1018,12 +1097,15 @@ inline PlyProperty **ply_get_element_description(
 	*nprops = elem->nprops;
 
 	/* make a copy of the element's property list */
-	prop_list = (PlyProperty **)myalloc(sizeof (PlyProperty *)* elem->nprops);
-	for (i = 0; i < elem->nprops; i++) {
-		prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
-		copy_property(prop, elem->props[i]);
-		prop_list[i] = prop;
-	}
+	//prop_list = (PlyProperty **)myalloc(sizeof (PlyProperty *)* elem->nprops);
+	//for (i = 0; i < elem->nprops; i++) {
+	//	prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+	//	copy_property(prop, elem->props[i]);
+	//	prop_list[i] = prop;
+	//}
+
+	// No need to copy the values. Just return pointer to properties of the element
+	prop_list = elem->props;
 
 	/* return this duplicate property list */
 	return (prop_list);
@@ -1512,7 +1594,7 @@ inline void ply_close(PlyFile *plyfile)
 	fclose(plyfile->fp);
 
 	/* free up memory associated with the PLY file */
-	free(plyfile);
+	delete plyfile;
 }
 
 
@@ -2686,6 +2768,14 @@ namespace ply{
 	struct Face {
 		unsigned char nverts;    /* number of vertex indices in list */
 		int* verts;              /* vertex index list */
+
+		~Face()
+		{
+			if (nverts)
+			{
+				delete[] verts;
+			}
+		}
 	};
 
 	static const char *elem_names[] = { /* list of the kinds of elements in the user's object */
