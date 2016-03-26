@@ -90,7 +90,7 @@ static int ply_type_size[] = {
 
 typedef struct PlyProperty {    /* description of a property */
 
-  const char *name;                           /* property name */
+  std::string name;                     /* property name */
   int external_type;                    /* file's data type */
   int internal_type;                    /* program's data type */
   int offset;                           /* offset bytes of prop in a struct */
@@ -103,7 +103,7 @@ typedef struct PlyProperty {    /* description of a property */
 } PlyProperty;
 
 typedef struct PlyElement {     /* description of an element */
-  char *name;                   /* element name */
+  std::string name;             /* element name */
   int num;                      /* number of elements in this object */
   int size;                     /* size of element (bytes) or -1 if variable */
   int nprops;                   /* number of properties for this element */
@@ -123,14 +123,12 @@ typedef struct PlyElement {     /* description of an element */
 		  delete[] props;
 		  delete[] store_prop;
 	  }
-
-	  delete[] name;
   }
 
 } PlyElement;
 
 typedef struct PlyOtherProp {   /* describes other properties in an element */
-  char *name;                   /* element name */
+  std::string name;                   /* element name */
   int size;                     /* size of other_props */
   int nprops;                   /* number of properties in other_props */
   PlyProperty **props;          /* list of properties in other_props */
@@ -145,8 +143,6 @@ typedef struct PlyOtherProp {   /* describes other properties in an element */
 		  }
 		  delete[] props;
 	  }
-
-	  delete[] name;
   }
 
 } PlyOtherProp;
@@ -162,7 +158,7 @@ typedef struct OtherData { /* for storing other_props for an other element */
 } OtherData;
 
 typedef struct OtherElem {     /* data for one "other" element */
-  char *elem_name;             /* names of other elements */
+  std::string elem_name;             /* names of other elements */
   int elem_count;              /* count of instances of each element */
   OtherData **other_data;      /* actual property data for the elements */
   PlyOtherProp *other_props;   /* description of the property data */
@@ -174,7 +170,6 @@ typedef struct OtherElem {     /* data for one "other" element */
 		  delete other_data[i];
 	  }
 	  delete[] other_data;
-	  delete[] elem_name;
 	  delete[] other_props;
   }
 
@@ -371,9 +366,9 @@ inline PlyFile *ply_write(
 
 	plyfile->elems = (PlyElement **)myalloc(sizeof (PlyElement *)* nelems);
 	for (i = 0; i < nelems; i++) {
-		elem = (PlyElement *)myalloc(sizeof (PlyElement));
+		elem = new PlyElement();
 		plyfile->elems[i] = elem;
-		elem->name = strdup(elem_names[i]);
+		elem->name = std::string(elem_names[i]);
 		elem->num = 0;
 		elem->nprops = 0;
 	}
@@ -405,9 +400,7 @@ inline PlyFile *ply_open_for_writing(
 	float *version
 	)
 {
-	int i;
 	PlyFile *plyfile;
-	PlyElement *elem;
 	char *name;
 	FILE *fp;
 
@@ -490,7 +483,7 @@ inline void ply_describe_element(
 	elem->store_prop = (char *)myalloc(sizeof (char)* nprops);
 
 	for (i = 0; i < nprops; i++) {
-		prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+		prop = new PlyProperty();
 		elem->props[i] = prop;
 		elem->store_prop[i] = NAMED_PROP;
 		copy_property(prop, &prop_list[i]);
@@ -541,7 +534,7 @@ inline void ply_describe_property(
 
 	/* copy the new property */
 
-	elem_prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+	elem_prop = new PlyProperty();
 	elem->props[elem->nprops - 1] = elem_prop;
 	elem->store_prop[elem->nprops - 1] = NAMED_PROP;
 	copy_property(elem_prop, prop);
@@ -564,7 +557,7 @@ inline void ply_describe_other_properties(
 	PlyProperty *prop;
 
 	/* look for appropriate element */
-	elem = find_element(plyfile, other->name);
+	elem = find_element(plyfile, other->name.c_str());
 	if (elem == NULL) {
 		fprintf(stderr, "ply_describe_other_properties: can't find element '%s'\n",
 			other->name);
@@ -591,7 +584,7 @@ inline void ply_describe_other_properties(
 	/* copy the other properties */
 
 	for (i = 0; i < other->nprops; i++) {
-		prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+		prop = new PlyProperty();
 		copy_property(prop, other->props[i]);
 		elem->props[elem->nprops] = prop;
 		elem->store_prop[elem->nprops] = OTHER_PROP;
@@ -619,9 +612,7 @@ inline void ply_element_count(
 	int nelems
 	)
 {
-	int i;
 	PlyElement *elem;
-	PlyProperty *prop;
 
 	/* look for appropriate element */
 	elem = find_element(plyfile, elem_name);
@@ -682,7 +673,7 @@ inline void ply_header_complete(PlyFile *plyfile)
 	for (i = 0; i < plyfile->nelems; i++) {
 
 		elem = plyfile->elems[i];
-		fprintf(fp, "element %s %d\n", elem->name, elem->num);
+		fprintf(fp, "element %s %d\n", elem->name.c_str(), elem->num);
 
 		/* write out each property */
 		for (j = 0; j < elem->nprops; j++) {
@@ -692,12 +683,12 @@ inline void ply_header_complete(PlyFile *plyfile)
 				write_scalar_type(fp, prop->count_external);
 				fprintf(fp, " ");
 				write_scalar_type(fp, prop->external_type);
-				fprintf(fp, " %s\n", prop->name);
+				fprintf(fp, " %s\n", prop->name.c_str());
 			}
 			else {
 				fprintf(fp, "property ");
 				write_scalar_type(fp, prop->external_type);
-				fprintf(fp, " %s\n", prop->name);
+				fprintf(fp, " %s\n", prop->name.c_str());
 			}
 		}
 	}
@@ -741,7 +732,7 @@ elem_ptr - pointer to the element
 
 inline void ply_put_element(PlyFile *plyfile, void *elem_ptr)
 {
-	int i, j, k;
+	int j, k;
 	FILE *fp = plyfile->fp;
 	PlyElement *elem;
 	PlyProperty *prop;
@@ -961,7 +952,7 @@ inline PlyFile *ply_read(FILE *fp, int *nelems, char ***elem_names)
 				plyfile->file_type = PLY_BINARY_LE;
 			else
 				return (NULL);
-			plyfile->version = atof(words[2]);
+			plyfile->version = (float)atof(words[2]);
 			found_format = 1;
 		}
 		else if (equal_strings(words[0], "element"))
@@ -998,7 +989,7 @@ inline PlyFile *ply_read(FILE *fp, int *nelems, char ***elem_names)
 
 	elist = (char **)myalloc(sizeof (char *)* plyfile->nelems);
 	for (i = 0; i < plyfile->nelems; i++)
-		elist[i] = strdup(plyfile->elems[i]->name);
+		elist[i] = strdup(plyfile->elems[i]->name.c_str());
 
 	*elem_names = elist;
 	*nelems = plyfile->nelems;
@@ -1083,9 +1074,7 @@ inline PlyProperty **ply_get_element_description(
 	int *nprops
 	)
 {
-	int i;
 	PlyElement *elem;
-	PlyProperty *prop;
 	PlyProperty **prop_list;
 
 	/* find information about the element */
@@ -1143,7 +1132,7 @@ inline void ply_get_element_setup(
 	for (i = 0; i < nprops; i++) {
 
 		/* look for actual property */
-		prop = find_property(elem, prop_list[i].name, &index);
+		prop = find_property(elem, prop_list[i].name.c_str(), &index);
 		if (prop == NULL) {
 			fprintf(stderr, "Warning:  Can't find property '%s' in element '%s'\n",
 				prop_list[i].name, elem_name);
@@ -1190,7 +1179,7 @@ inline void ply_get_property(
 
 	/* deposit the property information into the element's description */
 
-	prop_ptr = find_property(elem, prop->name, &index);
+	prop_ptr = find_property(elem, prop->name.c_str(), &index);
 	if (prop_ptr == NULL) {
 		fprintf(stderr, "Warning:  Can't find property '%s' in element '%s'\n",
 			prop->name, elem_name);
@@ -1374,8 +1363,8 @@ inline PlyOtherProp *ply_get_other_properties(
 	setup_other_props(plyfile, elem);
 
 	/* create structure for describing other_props */
-	other = (PlyOtherProp *)myalloc(sizeof (PlyOtherProp));
-	other->name = strdup(elem_name);
+	other = new PlyOtherProp();
+	other->name = std::string(elem_name);
 #if 0
 	if (elem->other_offset == NO_OTHER_PROPS) {
 		other->size = 0;
@@ -1392,7 +1381,7 @@ inline PlyOtherProp *ply_get_other_properties(
 	for (i = 0; i < elem->nprops; i++) {
 		if (elem->store_prop[i])
 			continue;
-		prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+		prop = new PlyProperty();
 		copy_property(prop, elem->props[i]);
 		other->props[nprops] = prop;
 		nprops++;
@@ -1443,7 +1432,6 @@ inline PlyOtherElems *ply_get_other_element(
 	PlyElement *elem;
 	PlyOtherElems *other_elems;
 	OtherElem *other;
-	int num_elems;
 
 	/* look for appropriate element */
 	elem = find_element(plyfile, elem_name);
@@ -1459,7 +1447,7 @@ inline PlyOtherElems *ply_get_other_element(
 	if (plyfile->other_elems == NULL) {
 		plyfile->other_elems = (PlyOtherElems *)myalloc(sizeof (PlyOtherElems));
 		other_elems = plyfile->other_elems;
-		other_elems->other_list = (OtherElem *)myalloc(sizeof (OtherElem));
+		other_elems->other_list = new OtherElem();
 		other = &(other_elems->other_list[0]);
 		other_elems->num_elems = 1;
 	}
@@ -1468,6 +1456,7 @@ inline PlyOtherElems *ply_get_other_element(
 		other_elems->other_list = (OtherElem *)realloc(other_elems->other_list,
 			sizeof (OtherElem)* other_elems->num_elems + 1);
 		other = &(other_elems->other_list[other_elems->num_elems]);
+		new (other)OtherElem();
 		other_elems->num_elems++;
 	}
 
@@ -1475,7 +1464,7 @@ inline PlyOtherElems *ply_get_other_element(
 	other->elem_count = elem_count;
 
 	/* save name of element */
-	other->elem_name = strdup(elem_name);
+	other->elem_name = std::string(elem_name);
 
 	/* create a list to hold all the current elements */
 	other->other_data = (OtherData **)
@@ -1525,7 +1514,7 @@ inline void ply_describe_other_elements(
 
 	for (i = 0; i < other_elems->num_elems; i++) {
 		other = &(other_elems->other_list[i]);
-		ply_element_count(plyfile, other->elem_name, other->elem_count);
+		ply_element_count(plyfile, other->elem_name.c_str(), other->elem_count);
 		ply_describe_other_properties(plyfile, other->other_props,
 			offsetof(OtherData, other_props));
 	}
@@ -1553,7 +1542,7 @@ inline void ply_put_other_elements(PlyFile *plyfile)
 	for (i = 0; i < plyfile->other_elems->num_elems; i++) {
 
 		other = &(plyfile->other_elems->other_list[i]);
-		ply_put_element_setup(plyfile, other->elem_name);
+		ply_put_element_setup(plyfile, other->elem_name.c_str());
 
 		/* write out each instance of the current element */
 		for (j = 0; j < other->elem_count; j++)
@@ -1625,8 +1614,6 @@ Compare two strings.  Returns 1 if they are the same, 0 if not.
 
 inline int equal_strings(const char *s1, const char *s2)
 {
-	int i;
-
 	while (*s1 && *s2)
 	if (*s1++ != *s2++)
 		return (0);
@@ -1654,7 +1641,7 @@ inline PlyElement *find_element(PlyFile *plyfile, const char *element)
 	int i;
 
 	for (i = 0; i < plyfile->nelems; i++)
-	if (equal_strings(element, plyfile->elems[i]->name))
+	if (equal_strings(element, plyfile->elems[i]->name.c_str()))
 		return (plyfile->elems[i]);
 
 	return (NULL);
@@ -1678,7 +1665,7 @@ inline PlyProperty *find_property(PlyElement *elem, const char *prop_name, int *
 	int i;
 
 	for (i = 0; i < elem->nprops; i++)
-	if (equal_strings(prop_name, elem->props[i]->name)) {
+	if (equal_strings(prop_name, elem->props[i]->name.c_str())) {
 		*index = i;
 		return (elem->props[i]);
 	}
@@ -1698,7 +1685,7 @@ elem_ptr - pointer to element
 
 inline void ascii_get_element(PlyFile *plyfile, char *elem_ptr)
 {
-	int i, j, k;
+	int j, k;
 	PlyElement *elem;
 	PlyProperty *prop;
 	char **words;
@@ -1820,7 +1807,7 @@ elem_ptr - pointer to an element
 
 inline void binary_get_element(PlyFile *plyfile, char *elem_ptr)
 {
-	int i, j, k;
+	int j, k;
 	PlyElement *elem;
 	PlyProperty *prop;
 	FILE *fp = plyfile->fp;
@@ -1964,7 +1951,6 @@ returns a list of words from the line, or NULL if end-of-file
 inline char **get_words(FILE *fp, int *nwords, char **orig_line)
 {
 #define BIG_STRING 4096
-	int i, j;
 	static char str[BIG_STRING];
 	static char str_copy[BIG_STRING];
 	char **words;
@@ -2569,8 +2555,8 @@ inline void add_element(PlyFile *plyfile, char **words, int nwords)
 	PlyElement *elem;
 
 	/* create the new element */
-	elem = (PlyElement *)myalloc(sizeof (PlyElement));
-	elem->name = strdup(words[1]);
+	elem = new PlyElement();
+	elem->name = std::string(words[1]);
 	elem->num = atoi(words[2]);
 	elem->nprops = 0;
 
@@ -2621,24 +2607,22 @@ nwords  - number of words in the list
 
 inline void add_property(PlyFile *plyfile, char **words, int nwords)
 {
-	int prop_type;
-	int count_type;
 	PlyProperty *prop;
 	PlyElement *elem;
 
 	/* create the new property */
 
-	prop = (PlyProperty *)myalloc(sizeof (PlyProperty));
+	prop = new PlyProperty();
 
 	if (equal_strings(words[1], "list")) {       /* is a list */
 		prop->count_external = get_prop_type(words[2]);
 		prop->external_type = get_prop_type(words[3]);
-		prop->name = strdup(words[4]);
+		prop->name = std::string(words[4]);
 		prop->is_list = 1;
 	}
 	else {                                        /* not a list */
 		prop->external_type = get_prop_type(words[1]);
-		prop->name = strdup(words[2]);
+		prop->name = std::string(words[2]);
 		prop->is_list = 0;
 	}
 
@@ -2705,7 +2689,7 @@ Copy a property.
 
 inline void copy_property(PlyProperty *dest, PlyProperty *src)
 {
-	dest->name = strdup(src->name);
+	dest->name = src->name;
 	dest->external_type = src->external_type;
 	dest->internal_type = src->internal_type;
 	dest->offset = src->offset;
@@ -2848,25 +2832,27 @@ namespace ply{
 		{
 			PlyProperty* prop = _plist[i];
 
-			if (equal_strings(prop->name, "x") || equal_strings(prop->name, "y")
-				|| equal_strings(prop->name, "z"))
+			if (equal_strings(prop->name.c_str(), "x") 
+				|| equal_strings(prop->name.c_str(), "y")
+				|| equal_strings(prop->name.c_str(), "z"))
 			{
 				if (prop->external_type != PLY_FLOAT)
 				{
 					std::cout << "ERROR: float type expected for property'"
-						<< prop->name << "'." << std::endl;
+						<< prop->name.c_str() << "'." << std::endl;
 					exit(0);
 				}
 			}
 			else
 			{
-				if (equal_strings(prop->name, "nx") || equal_strings(prop->name, "ny")
-					|| equal_strings(prop->name, "nz"))
+				if (equal_strings(prop->name.c_str(), "nx")
+					|| equal_strings(prop->name.c_str(), "ny")
+					|| equal_strings(prop->name.c_str(), "nz"))
 				{
 					if (prop->external_type != PLY_FLOAT)
 					{
 						std::cout << "ERROR: float type expected for property'"
-							<< prop->name << "'." << std::endl;
+							<< prop->name.c_str() << "'." << std::endl;
 						exit(0);
 					}
 
@@ -2874,26 +2860,28 @@ namespace ply{
 				}
 				else
 				{
-					if (equal_strings(prop->name, "red") || equal_strings(prop->name, "green")
-						|| equal_strings(prop->name, "blue"))
+					if (equal_strings(prop->name.c_str(), "red")
+						|| equal_strings(prop->name.c_str(), "green")
+						|| equal_strings(prop->name.c_str(), "blue"))
 					{
 						if (prop->external_type != PLY_UCHAR)
 						{
 							std::cout << "ERROR: uchar type expected for property'"
-								<< prop->name << "'." << std::endl;
+								<< prop->name.c_str() << "'." << std::endl;
 							exit(0);
 						}
 					}
 					else
 					{
-						if (equal_strings(prop->name, "alpha"))
+						if (equal_strings(prop->name.c_str(), "alpha"))
 						{
 							vertex_type |= 0x02;
 						}
 						else
 						{
 							std::cout << "ERROR: property'"
-								<< prop->name << "' is not supported." << std::endl;
+								<< prop->name.c_str() << "' is not supported." 
+								<< std::endl;
 							exit(0);
 						}
 					}
