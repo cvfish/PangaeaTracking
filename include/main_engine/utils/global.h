@@ -22,6 +22,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 
 #ifdef _MSC_VER
 #include "third_party/msvc/Stopwatch.h"

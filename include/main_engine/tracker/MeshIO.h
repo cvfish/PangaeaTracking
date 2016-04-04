@@ -292,6 +292,12 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 	/* close the PLY file */
 	ply_close(ply);
 
+	for (int i = 0; i < nelems; i++)
+	{
+		delete elist[i];
+	}
+	delete[] elist;
+
   meshData.numVertices = meshData.vertices.size();
   meshData.numFaces = meshData.facesVerticesInd.size();
 
@@ -635,6 +641,12 @@ void MeshIO<FloatType>::updateFromPLY(const std::string& filename,
 	/* close the PLY file */
 	ply_close(ply);
 
+	for (int i = 0; i < nelems; i++)
+	{
+		delete elist[i];
+	}
+	delete[] elist;
+
   if(vertex_type == PLY_VERTEX_RGBA || vertex_type == PLY_VERTEX_RGB)
     meshData.computeNormalsNeil();
 
@@ -852,8 +864,6 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 
 	/* close the PLY file */
 	ply_close(ply);
-
-  delete[] f.verts;
 }
 
 template<class FloatType>

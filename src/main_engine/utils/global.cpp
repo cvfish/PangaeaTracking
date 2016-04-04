@@ -204,7 +204,7 @@ void process_mem_usage(double& vm_usage, double& resident_set)
 
    stat_stream.close();
 
-   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+   long page_size_kb = (long)boost::interprocess::mapped_region::get_page_size() / 1024; // in case x86-64 is configured to use 2MB pages
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
 }
