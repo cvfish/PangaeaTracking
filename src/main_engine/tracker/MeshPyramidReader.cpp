@@ -92,13 +92,15 @@ bool MeshPyramidReader::setCurrentFrame(int curFrame)
       currentFrameNo = curFrame;
 
       TICK("setCurrentFrame");
-
-      if(!loadMeshPyramid(
-                          meshLoadingSettings.meshPath,
-                          meshLoadingSettings.meshLevelFormat,
-                          currentFrameNo,
-                          meshLoadingSettings.meshLevelList))
-        return false;
+      if(!meshLoadingSettings.rigidRendering || currentFrameNo == startFrameNo)
+        {
+          if(!loadMeshPyramid(
+                              meshLoadingSettings.meshPath,
+                              meshLoadingSettings.meshLevelFormat,
+                              currentFrameNo,
+                              meshLoadingSettings.meshLevelList))
+            return false;
+        }
 
       TOCK("setCurrentFrame");
 
@@ -245,6 +247,52 @@ bool MeshPyramidReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
 void MeshPyramidReader::setMeshPyramid()
 {
+  if(currentFrameNo > startFrameNo && meshLoadingSettings.rigidRendering)
+    {
+      // do not load new meshes, just rigid transform the first mesh
+      // translate this mesh along x axis
+      double camPose[6] = {0,0,0,0,0,0};
+      double rot_angle = (currentFrameNo - startFrameNo)*10*3.14/180;
+      int numLevels = currentMeshPyramid.numLevels;
+
+      camPose[0] = rot_angle;
+      double* center = currentMeshPyramid.levels[0].center;
+
+      // cout << "print center coordinates" << endl;
+      // cout << std::setprecision(15) << center[0] << " "
+      //      << std::setprecision(15) << center[1] << " "
+      //      << std::setprecision(15) << center[2] << endl;
+
+      Vector3d axis;
+      double angle = Map<Vector3d>(camPose).norm();
+      if(angle != 0)
+        axis = Map<Vector3d>(camPose)/angle;
+      else
+        axis << 1, 0, 0;
+
+      // cout << "rotation angle" << endl;
+      // cout << rot_angle << " " << angle << endl;
+
+      Matrix3d R = AngleAxisd(angle, axis).toRotationMatrix();
+
+      cout << "rotation matrix" << endl;
+      cout << R << endl;
+      // cout << "rotation matrix * center" << endl;
+      // cout << R * Vector3d::Map(center) << endl;
+
+      Map<Vector3d>(camPose+3) =  -R * Vector3d::Map(center) + Vector3d::Map(center);
+
+      // cout << "translation vector" << endl;
+      // cout << Map<Vector3d>(camPose+3) << endl;
+
+      for(int i = 0; i < numLevels; ++i)
+        {
+          UpdateRenderingData(outputInfoPyramid[i], KK, camPose, currentMeshPyramid.levels[i], true);
+          UpdateRenderingData(outputInfoPyramid[i], KK, camPose, currentMeshPyramid.levels[i], false);
+        }
+      return;
+    }
+
   visibilityMaskPyramid.resize(m_nNumMeshLevels);
   outputInfoPyramid.resize(m_nNumMeshLevels);
   outputPropPyramid.resize(m_nNumMeshLevels);

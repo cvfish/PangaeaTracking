@@ -238,6 +238,8 @@ MeshLoadingSettings::MeshLoadingSettings()
   // By default, faces are supposed to be defined clockwise to support the
 	// original implementation of Pangaea
 	clockwise = true;
+
+  rigidRendering = false;
 }
 
 void MeshLoadingSettings::read(const cv::FileNode& node)
@@ -282,6 +284,9 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
   // Read if faces are defined clockwise or anti-clockwise
 	if (!node["clockwise"].empty())
     node["clockwise"] >> clockwise;
+
+  if(!node["rigidRendering"].empty())
+    node["rigidRendering"] >> rigidRendering;
 }
 
 TrackerSettings::TrackerSettings()

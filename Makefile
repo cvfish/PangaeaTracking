@@ -70,6 +70,7 @@ CXXFLAGS += -std=c++11 -fopenmp $(FLAGS_INCLUDE) -w
 # Debugging
 ifeq ($(DEBUG), 1)
 	CXXFLAGS += -DDEBUG -g -O0
+#	CXXFLAGS += -DDEBUG -O
 else
 	CXXFLAGS += -DNDEBUG -O2 -ffast-math -Wno-unused-result
 endif
@@ -78,7 +79,7 @@ endif
 CXXFLAGS += -MMD -MP
 
 # Disable offsetof macro warnings
-CXXFLAGS += -Wno-invalid-offsetof 
+CXXFLAGS += -Wno-invalid-offsetof
 
 # Get all source files
 MAIN_ENGINE_SRCS := $(shell find src/main_engine -name "*.cpp" ! -name "Deform*.cpp")

@@ -7,7 +7,7 @@ class CCamera
 {
 
     // a camera class based on eigen3
-    
+
     // By convention with this class:
     // u = 2D coord in image plane
     // c = 3D coord in camera centred coords
@@ -17,7 +17,7 @@ protected:
 
     Matrix3d _K;
     Matrix3d _R;
-    Vector3d _t; 
+    Vector3d _t;
 
     // derived parameters
     Matrix3d _Kinv;
@@ -33,14 +33,14 @@ protected:
 
     // Orthographic camera ?
     bool _IsOrtho;
-    
+
     void setDerivedParams();
 
 public:
 
     CCamera(double K[3][3], double camPose[6], unsigned int W,
         unsigned int H);
-    
+
     CCamera(double K[3][3], double R[3][3], double t[3], unsigned int W,
         unsigned int H);
 
@@ -122,7 +122,7 @@ public:
     Matrix4d getProjectionMatrix(double zNear = 0.1, double zFar = 1000.0) const;
 
     Matrix4d getModelViewMatrix() const;
-    
+
 };
 
 #endif

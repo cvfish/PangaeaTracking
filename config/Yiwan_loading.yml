@@ -15,5 +15,6 @@ MeshLoadingSettings:
   propPyramidFormat: "prop_mesh%04d_level%02d.obj"
   meshLevelList: [0,1,2]
 #  meshLevelList: [0]
-  visibilityMask: 0
+  visibilityMask: 1
   loadProp: 0
+  fastLoading: 0

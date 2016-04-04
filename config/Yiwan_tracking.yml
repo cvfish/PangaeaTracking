@@ -9,7 +9,7 @@ ImageSourceSettings:
   isOrthoCamera: 0
 TrackerSettings:
 #  savePath: '../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/'
-  savePath: '../results/'
+  savePath: '../results/yiwan_test_trust_region/'
   error_type: 'gray'
   ba_type: 'motstr'
   photometric_huber_width: 0.1
