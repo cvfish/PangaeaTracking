@@ -560,7 +560,7 @@ inline void ply_describe_other_properties(
 	elem = find_element(plyfile, other->name.c_str());
 	if (elem == NULL) {
 		fprintf(stderr, "ply_describe_other_properties: can't find element '%s'\n",
-			other->name);
+			other->name.c_str());
 		return;
 	}
 
@@ -1135,7 +1135,7 @@ inline void ply_get_element_setup(
 		prop = find_property(elem, prop_list[i].name.c_str(), &index);
 		if (prop == NULL) {
 			fprintf(stderr, "Warning:  Can't find property '%s' in element '%s'\n",
-				prop_list[i].name, elem_name);
+              prop_list[i].name.c_str(), elem_name);
 			continue;
 		}
 
@@ -1182,7 +1182,7 @@ inline void ply_get_property(
 	prop_ptr = find_property(elem, prop->name.c_str(), &index);
 	if (prop_ptr == NULL) {
 		fprintf(stderr, "Warning:  Can't find property '%s' in element '%s'\n",
-			prop->name, elem_name);
+            prop->name.c_str(), elem_name);
 		return;
 	}
 	prop_ptr->internal_type = prop->internal_type;
@@ -2832,7 +2832,7 @@ namespace ply{
 		{
 			PlyProperty* prop = _plist[i];
 
-			if (equal_strings(prop->name.c_str(), "x") 
+			if (equal_strings(prop->name.c_str(), "x")
 				|| equal_strings(prop->name.c_str(), "y")
 				|| equal_strings(prop->name.c_str(), "z"))
 			{
@@ -2880,7 +2880,7 @@ namespace ply{
 						else
 						{
 							std::cout << "ERROR: property'"
-								<< prop->name.c_str() << "' is not supported." 
+								<< prop->name.c_str() << "' is not supported."
 								<< std::endl;
 							exit(0);
 						}

@@ -259,7 +259,6 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
   if(!node["propLevelFormat"].empty())
     node["propLevelFormat"] >> propLevelFormat;
 
-
   if(!node["meshLevelList"].empty())
     node["meshLevelList"] >> meshLevelList;
 
