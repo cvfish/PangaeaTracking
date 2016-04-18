@@ -208,3 +208,15 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
 }
+
+// remove file extension
+// use '.' to recognize file extension
+void remove_file_extension(std::string file, std::string& file_wo_extension)
+{
+  std::size_t found = file.find('.');
+  if(found == std::string::npos)
+    file_wo_extension = file;
+  else
+    file_wo_extension = file.substr(0, found);
+
+}

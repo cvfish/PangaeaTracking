@@ -239,8 +239,8 @@ void SampleLinear( const TImage & intensityImage,
   /* x -= 0.5; */
   /* y -= 0.5; */
 
-  x -= 1.0;
-  y -= 1.0;
+  // x -= 1.0;
+  // y -= 1.0;
 
   LinearInitAxis(y, intensityImage.rows, &y1, &y2, &dy);
   LinearInitAxis(x, intensityImage.cols,  &x1, &x2, &dx);
@@ -274,8 +274,8 @@ void SampleLinear( const TImage & intensityImage,
   /* x -= 0.5; */
   /* y -= 0.5; */
 
-  x -= 1.0;
-  y -= 1.0;
+  // x -= 1.0;
+  // y -= 1.0;
 
   LinearInitAxis(y, intensityImage.rows, &y1, &y2, &dy);
   LinearInitAxis(x, intensityImage.cols,  &x1, &x2, &dx);
@@ -311,5 +311,9 @@ void SampleLinear( const TImage & intensityImage,
 
 // memory logging
 void process_mem_usage(double& vm_usage, double& resident_set);
+
+// remove file extension
+// use '.' to recognize file extension
+void remove_file_extension(std::string file, std::string& file_wo_extension);
 
 #endif

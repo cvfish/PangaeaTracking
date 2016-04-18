@@ -43,6 +43,7 @@ public:
 
 		clockwise = d.clockwise;
     features = d.features;
+    featuresBuffer = d.featuresBuffer;
 
   }
 
@@ -66,6 +67,7 @@ public:
 		clockwise = d.clockwise;
 
     features = d.features;
+    featuresBuffer = d.featuresBuffer;
 
     return *this;
   }
@@ -90,6 +92,7 @@ public:
 		clockwise = d.clockwise;
 
     features = std::move(d.features);
+    featuresBuffer = std::move(d.featuresBuffer);
 
 	};
 	MeshData& operator=(MeshData&& d) {
@@ -110,6 +113,7 @@ public:
 		clockwise = d.clockwise;
 
     features = std::move(d.features);
+    featuresBuffer = std::move(d.featuresBuffer);
 
     return *this;
 	};
@@ -155,6 +159,7 @@ void MeshData<FloatType>::clear()
   modelLabels.clear();
 
   features.clear();
+  featuresBuffer.clear();
 }
 
 template<typename FloatType>

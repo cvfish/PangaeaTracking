@@ -567,7 +567,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       // get new data from buffer
       pFeaturePyramid->updateData();
 
-      AttachFeaturesToMeshPyramid();
+      if(!featureSettings.isFeatureAlreadyOnMesh)
+        AttachFeaturesToMeshPyramid();
+
       templateMeshPyramid.swapFeatures();
       if(trackerSettings.hasGT)
         templateMeshPyramidGT.swapFeatures();
@@ -3508,6 +3510,47 @@ void DeformNRSFMTracker::SaveThread(TrackerOutputInfo** pOutputInfoRendering)
         SaveData();
     }
 }
+
+// void DeformNRSFMTracker::LoadFeaturesToMeshPyramid()
+// {
+//   // load features to template mesh
+//   char buffer[BUFFER_SIZE];
+//   std::string fileName;
+
+//   for(int i = 0; i < m_nMeshLevels; ++i)
+//     {
+//       // assume that feature file has a corresponding name with the mesh
+//       PangaeaMeshData& templateMesh = templateMeshPyramid.levels[i];
+//       PangaeaMeshData& templateMeshGT = templateMeshPyramidGT.levels[i];
+
+//       if(trackerSettings.meshLevelFormat.empty())
+//         {
+//           // load mesh from obj, off or ply file,
+//           // no pyramid in this case
+//           remove_file_extension(trackerSettings.meshFile, fileName);
+//           fileName = fileName + std::to_string('_') + featureSettings.featureType + std::to_string('.txt');
+
+//         }
+//       else
+//         {
+//           std::stringstream meshFile;
+//           sprintf(buffer,
+//                   trackerSettings.meshLevelFormat.c_str(),
+//                   trackerSettings.meshVertexNum[i]);
+//           meshFile << buffer;
+
+//           remove_file_extension(meshFile.str(), fileName);
+//           fileName = fileName + std::to_string('_') + featureSettings.featureType + std::to_string('.txt');
+//         }
+
+//       PangaeaMeshIO::loadFeatures(fileName,
+//                                   featureSettings.channels,
+//                                   templateMesh);
+
+//       templateMeshGT.featuresBuffer = templateMesh.featuresBuffer;
+
+//     }
+// }
 
 void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
 {

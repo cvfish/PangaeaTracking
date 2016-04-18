@@ -672,6 +672,9 @@ FeatureSettings::FeatureSettings()
   featureTermWeight = 0;
   featureHuberWidth = 0.1;
 
+  featureType = "sift";
+  isFeatureAlreadyOnMesh = false;
+
 }
 
 void FeatureSettings::read(const cv::FileNode& node)
@@ -718,6 +721,12 @@ void FeatureSettings::read(const cv::FileNode& node)
 
   if(!node["feature_huber_width"].empty())
     node["feature_huber_width"] >> featureHuberWidth;
+
+  if(!node["feature_type"].empty())
+    node["feature_type"] >> featureType;
+
+  if(!node["is_feature_on_mesh"].empty())
+    node["is_feature_on_mesh"] >> isFeatureAlreadyOnMesh;
 
   // convert dataType and gradType from string to int
   dataTypeINT = typeConvert(dataType);

@@ -108,6 +108,7 @@ public:
   void PropagateMeshCoarseToFine(int coarse_level, int fine_level);
 
   // attach features to the meshes
+  // void LoadFeaturesToMeshPyramid();
   void AttachFeaturesToMeshPyramid();
   void AttachFeatureToMesh(PangaeaMeshData* pMesh,
                            FeatureLevel* pFeatureLevel,

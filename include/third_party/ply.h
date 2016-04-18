@@ -45,6 +45,10 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 #define PLY_BINARY_BE  2        /* binary PLY file, big endian */
 #define PLY_BINARY_LE  3        /* binary PLY file, little endian */
 
+// #ifndef PLY_SAVE_ASCII
+// #define PLY_SAVE_ASCII
+// #endif
+
 #define PLY_OKAY    0           /* ply routine worked okay */
 #define PLY_ERROR  -1           /* error in ply routine */
 
@@ -83,10 +87,13 @@ static int ply_type_size[] = {
 #define OTHER_PROP       0
 #define NAMED_PROP       1
 
+#define PLY_VERTEX -1
 #define PLY_VERTEX_RGB			0
 #define PLY_VERTEX_NORMAL_RGB	1
 #define PLY_VERTEX_RGBA			2
 #define PLY_VERTEX_NORMAL_RGBA	3
+
+#define PLY_VERTEX_RGB_FEATURES 10
 
 typedef struct PlyProperty {    /* description of a property */
 
@@ -1624,6 +1631,22 @@ inline int equal_strings(const char *s1, const char *s2)
 		return (1);
 }
 
+/******************************************************************************
+Compare two strings to see if the first one includes the second one. Returns 1
+if the first one includes the second one, otherwise return 0
+******************************************************************************/
+
+inline int contain_strings(const char *s1, const char *s2)
+{
+	while (*s1 && *s2)
+    if (*s1++ != *s2++)
+      return (0);
+
+  if (*s1 != *s2 && *s2 == '\0')
+    return (1);
+  else
+    return (0);
+}
 
 /******************************************************************************
 Find an element from the element list of a given PLY object.
@@ -2763,8 +2786,14 @@ namespace ply{
 	};
 
 	static const char *elem_names[] = { /* list of the kinds of elements in the user's object */
-		"vertex", "face"
+		"vertex", "face", "feature"
 	};
+
+  static PlyProperty v_props[] = { /* list of property information for a vertex with uchar rgb */
+		{ "x", PLY_FLOAT, PLY_FLOAT, offsetof(ply::Vertex, x), 0, 0, 0, 0 },
+		{ "y", PLY_FLOAT, PLY_FLOAT, offsetof(ply::Vertex, y), 0, 0, 0, 0 },
+		{ "z", PLY_FLOAT, PLY_FLOAT, offsetof(ply::Vertex, z), 0, 0, 0, 0 }
+  };
 
 	static PlyProperty vc_props[] = { /* list of property information for a vertex with uchar rgb */
 		{ "x", PLY_FLOAT, PLY_FLOAT, offsetof(ply::VertexColor, x), 0, 0, 0, 0 },
@@ -2879,10 +2908,23 @@ namespace ply{
 						}
 						else
 						{
-							std::cout << "ERROR: property'"
-								<< prop->name.c_str() << "' is not supported."
-								<< std::endl;
-							exit(0);
+              // if(contain_strings(prop->name.c_str(), "channel"))
+              //   {
+              //     vertex_type = PLY_VERTEX_RGB_FEATURES;
+              //     if (prop->external_type != PLY_DOUBLE)
+              //       {
+              //         std::cout << "ERROR: double type expected for property'"
+              //                   << prop->name.c_str() << "'." << std::endl;
+              //         exit(0);
+              //       }
+              //   }
+              // else
+                {
+                  std::cout << "ERROR: property'"
+                            << prop->name.c_str() << "' is not supported."
+                            << std::endl;
+                  exit(0);
+                }
 						}
 					}
 				}
@@ -2898,6 +2940,9 @@ namespace ply{
 
 		switch (_vertex_type)
 		{
+    case PLY_VERTEX:
+      prop = &ply::v_props[_prop_idx];
+      break;
 		case PLY_VERTEX_RGB:
 			prop = &ply::vc_props[_prop_idx];
 			break;

@@ -44,6 +44,8 @@ public:
 
   static void setupMeshFromFile(MeshData<FloatType>& meshData);
 
+  static void loadFeatures(const std::string& filename, int featureChannels, MeshData<FloatType>& meshData);
+
 private:
 
 
@@ -66,6 +68,7 @@ private:
 	/************************************************************************/
 
 	static void writeToPLY(const std::string& filename, const MeshData<FloatType>& meshData);
+  static void writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData);
 
 	static void writeToOFF(const std::string& filename, const MeshData<FloatType>& meshData) {};
 
@@ -197,6 +200,36 @@ void MeshIO<FloatType>::ply_read_vertices(PlyFile *_ply, int _vertex_type, int _
 }
 
 template<class FloatType>
+void MeshIO<FloatType>::loadFeatures(const std::string& filename,
+                                     int featureChannels,
+                                     MeshData<FloatType>& meshData)
+{
+  FILE* fp = NULL;
+  fp = fopen(filename.c_str(), "r");
+
+  if(!fp)
+    {
+      cerr << "cannot open file " << filename << endl;
+      return;
+    }
+
+  char buf[OBJ_LINE_BUF_SIZE];
+
+  vector<FloatType> vertFeatures;
+  vertFeatures.resize(featureChannels);
+
+  while( fscanf(fp, "%s", buf) != EOF ) {
+    for(int i = 0; i < featureChannels; ++i) {
+      fscanf(fp, "%f", &vertFeatures[i]);
+      }
+    meshData.featuresBuffer.push_back(vertFeatures);
+  }
+
+  assert(meshData.features.size() == meshData.numVertices);
+
+}
+
+template<class FloatType>
 void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
                                     MeshData<FloatType>& meshData)
 {
@@ -281,6 +314,34 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 				meshData.facesVerticesInd[j] = f;
 			}
 		}
+
+    // features maybe
+    char channel_string[100];
+    if(equal_strings(ply::elem_names[2], elem_name)){
+
+      int num_features = num_elems;
+
+      for(int i = 0; i < nprops; i++)
+        {
+          sprintf(channel_string,"channel%02d",i+1);
+          PlyProperty featProperty = {channel_string, PLY_DOUBLE, PLY_DOUBLE, 8*i, 0, 0, 0, 0};
+          ply_get_property(ply, elem_name, &featProperty);
+        }
+
+      // check if the number of features and vertices is consistent
+      meshData.featuresBuffer.resize(num_features);
+      for(int j = 0; j < num_features; ++j)
+        {
+          vector<FloatType> vertFeature;
+          vertFeature.resize(nprops);
+          ply_get_element(ply, &vertFeature[0]);
+          meshData.featuresBuffer[j] = vertFeature;
+        }
+
+      assert(meshData.featuresBuffer.size() == meshData.vertices.size());
+
+    }
+
 	}
 
 	/* grab and print out the comments in the file */
@@ -734,7 +795,10 @@ void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<
   if(filePath.extension().compare(std::string(".off")) == 0) {
     writeToOFF(filename,meshData);
   } else if(filePath.extension().compare(std::string(".ply")) == 0){
-    writeToPLY(filename,meshData);
+    if(meshData.featuresBuffer.size() == 0)
+      writeToPLY(filename,meshData);
+    else
+      writeToWithFeaturePLY(filename,meshData);
   } else if(filePath.extension().compare(std::string(".obj")) == 0){
     writeToOBJ(filename,meshData);
   } else {
@@ -862,6 +926,99 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 		ply_put_element(ply, (void *)&f);
 	}
 
+	/* close the PLY file */
+	ply_close(ply);
+}
+
+template<class FloatType>
+void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData)
+{
+	PlyFile *ply;
+	float version;
+
+	/* open either a binary or ascii PLY file for writing */
+	/* (the file will be called "test.ply" because the routines */
+	/*  enforce the .ply filename extension) */
+
+#ifdef PLY_SAVE_ASCII
+	ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_ASCII, &version);
+#else
+	ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_BINARY_LE, &version);
+#endif
+
+	/* describe what properties go into the vertex and face elements */
+
+	int num_vertices = meshData.numVertices;
+	ply_element_count(ply, ply::elem_names[0], num_vertices);
+	int vertex_type = 1;
+	for (int i = 0; i < ply::n_vprops[vertex_type]; i++)
+	{
+		PlyProperty* prop = ply::get_vertex_property(vertex_type, i);
+		ply_describe_property(ply, ply::elem_names[0], prop);
+	}
+
+	int num_faces = meshData.numFaces;
+	ply_element_count(ply, ply::elem_names[1], num_faces);
+	for (int i = 0; i < ply::n_fprops; i++)
+	{
+		ply_describe_property(ply, ply::elem_names[1], &ply::face_props[i]);
+	}
+
+  int num_features = meshData.featuresBuffer.size();
+  int channels = meshData.featuresBuffer[0].size();
+  ply_element_count(ply, ply::elem_names[2], num_features);
+  char channel_string[100];
+  for(int i = 0; i < channels; ++i)
+    {
+      sprintf(channel_string,"channel%02d",i+1);
+      PlyProperty featProperty = {channel_string, PLY_DOUBLE, PLY_DOUBLE, 8*i, 0, 0, 0, 0};
+      ply_describe_property(ply, ply::elem_names[2], &featProperty);
+    }
+
+	/* we have described exactly what we will put in the file, so */
+	/* we are now done with the header info */
+	ply_header_complete(ply);
+
+	/* set up and write the vertex elements */
+	ply_put_element_setup(ply, ply::elem_names[0]);
+	//for (i = 0; i < nverts; i++)
+	for (int i = 0; i < num_vertices; i++){
+		ply::VertexNormalColor v;
+		v.x = meshData.vertices[i][0];
+		v.y = meshData.vertices[i][1];
+		v.z = meshData.vertices[i][2];
+		v.nx = meshData.normals[i][0];
+		v.ny = meshData.normals[i][1];
+		v.nz = meshData.normals[i][2];
+		v.r = (unsigned char)(meshData.colors[i][0] * 255.f);
+		v.g = (unsigned char)(meshData.colors[i][1] * 255.f);
+		v.b = (unsigned char)(meshData.colors[i][2] * 255.f);
+		ply_put_element(ply, (void *)&v);
+	}
+
+	/* set up and write the face elements */
+	ply_put_element_setup(ply, ply::elem_names[1]);
+	ply::Face f;
+	f.verts = new int[10];
+	for (int i = 0; i < num_faces; i++)
+	{
+		f.nverts = (unsigned char)meshData.facesVerticesInd[i].size();
+		for (int j = 0; j < f.nverts; j++)
+		{
+			f.verts[j] = meshData.facesVerticesInd[i][j];
+		}
+		ply_put_element(ply, (void *)&f);
+	}
+
+  /* set up feature properties */
+  ply_put_element_setup(ply, ply::elem_names[2]);
+  for(int j = 0; j < num_features; ++j)
+    {
+      // vector<FloatType> vertFeature;
+      // vertFeature = meshData.featuresBuffer[j];
+      // ply_put_element(ply, (void*)&vertFeature[0]);
+      ply_put_element(ply, (void*)&meshData.featuresBuffer[j][0]);
+    }
 	/* close the PLY file */
 	ply_close(ply);
 }

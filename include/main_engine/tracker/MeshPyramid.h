@@ -191,6 +191,8 @@ MeshPyramid<FloatType>::MeshPyramid(string meshLevelFormat,
       std::stringstream meshFile;
       sprintf(buffer, meshLevelFormat.c_str(), meshVertexNum[i]);
       meshFile << buffer;
+      cout << "loading meshes" << endl;
+      cout << meshFile.str() << endl;
       PangaeaMeshIO::loadfromFile(meshFile.str(), tempMesh, clockwise);
 
       // // Set orientation of the faces of the mesh
@@ -233,7 +235,10 @@ void MeshPyramid<FloatType>::swapFeatures()
 {
 
   for(int i = 0; i < numLevels; ++i)
-    swap(levels[i].features, levels[i].featuresBuffer);
+    {
+      if(levels[i].featuresBuffer.size() > 0)
+        swap(levels[i].features, levels[i].featuresBuffer);
+    }
 
 }
 
