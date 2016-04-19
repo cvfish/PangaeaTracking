@@ -105,10 +105,10 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
           else
             blurSigma = -1;
 
-          cout << "channel " << j << " " << "level " << i << endl;
-          cout << "feature buffer: " << featureBufferImage.rows << " " << featureBufferImage.cols << endl;
-          cout << "blur size: " << blurSize << endl;
-          cout << "blur sigma: " << blurSigma << endl;
+          // cout << "channel " << j << " " << "level " << i << endl;
+          // cout << "feature buffer: " << featureBufferImage.rows << " " << featureBufferImage.cols << endl;
+          // cout << "blur size: " << blurSize << endl;
+          // cout << "blur sigma: " << blurSigma << endl;
 
           if(blurSize > 0){
             cv::GaussianBlur(featureBufferImage,
@@ -118,7 +118,7 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
           }else
             featureBufferImage.copyTo(blurBufferImage);
 
-          cout << "blur buffer: " << blurBufferImage.rows << " " << blurBufferImage.cols << endl;
+          // cout << "blur buffer: " << blurBufferImage.rows << " " << blurBufferImage.cols << endl;
 
           // do some proper downsampling at this point
           if(featureSettings.featurePyramidSamplingFactors.size() > 0){
@@ -133,8 +133,8 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
             blurBufferImage.copyTo(currLevelsBuffer[i].featureImageVec[j]);
           }
 
-          cout << "currLevelsBuffer: " << currLevelsBuffer[i].featureImageVec[j].rows << " "
-               << currLevelsBuffer[i].featureImageVec[j].cols << endl;
+          // cout << "currLevelsBuffer: " << currLevelsBuffer[i].featureImageVec[j].rows << " "
+          //      << currLevelsBuffer[i].featureImageVec[j].cols << endl;
 
           // setup gradient
           double gradScale = featureSettings.featureGradientScalingFactors[i];

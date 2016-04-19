@@ -456,8 +456,9 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
   meshTransPyramidGT = meshTransPyramid;
   prevMeshRotPyramidGT = prevMeshRotPyramid;
   prevMeshTransPyramidGT = prevMeshTransPyramid;
-  templateMeshPyramidGT = templateMeshPyramid;
   visibilityMaskPyramidGT = visibilityMaskPyramid;
+
+  templateMeshPyramidGT = templateMeshPyramid;
 
   // load ground truth if there is any
   if(trackerSettings.hasGT)
@@ -470,6 +471,18 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
 void DeformNRSFMTracker::initializeGT()
 {
   loadGTMeshFromFile(startFrameNo);
+
+  if(!trackerSettings.isTrackingStartedWithGT)
+    {
+      if(!trackerSettings.meshLevelFormatGTFF.empty())
+        {
+        templateMeshPyramid = std::move(
+                                        PangaeaMeshPyramid(trackerSettings.meshLevelFormatGTFF,
+                                                           trackerSettings.meshVertexNum,
+                                                           trackerSettings.clockwise));
+        }
+      templateMeshPyramidGT = currentMeshPyramidGT;
+    }
 
   meshRotPyramidGT = meshRotPyramid;
   meshTransPyramidGT = meshTransPyramid;
@@ -607,9 +620,12 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       // get new data from buffer
       pFeaturePyramid->updateData();
 
+      // if features is not on mesh, then we have to attach features to mesh for each frame
       if(!featureSettings.isFeatureAlreadyOnMesh)
         AttachFeaturesToMeshPyramid();
 
+      // a hack to update the features for the mesh if mesh doesn't have features itself
+      // if featuresBuffer has been updated, swap it to features
       templateMeshPyramid.swapFeatures();
       if(trackerSettings.hasGT)
         templateMeshPyramidGT.swapFeatures();
@@ -860,7 +876,13 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       if(trackerSettings.useRGBImages)
         dataTermName = trackerSettings.errorType;
       if(trackerSettings.useFeatureImages)
-        featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+        {
+          if(featureSettings.useBitPlaneDescriptors)
+            featureTermName = featureSettings.useNCC ? "bp_ncc" : "bp";
+          else
+            featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+        }
+
       scoresOutput << std::left << setw(15) << dataTermName << ","
                    << std::left << setw(15) << featureTermName << ",";
 

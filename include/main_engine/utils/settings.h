@@ -102,6 +102,8 @@ public:
   std::string meshFile;
   std::string optimizationType;
 
+  std::string meshFileGT;
+
   bool isRigid;
   bool doAlternation;
   bool updateColor;
@@ -185,6 +187,10 @@ public:
   IntegerContainerType meshNeighborNum;
   CoordinateContainerType meshNeighborRadius;
   bool meshPyramidUseRadius;
+
+  // mesh pyramid gt stuff, just for the first frame
+  std::string meshLevelFormatGTFF;
+  bool isTrackingStartedWithGT;
 
   // create a mesh pyramid from depth image
   bool useDepthPyramid;

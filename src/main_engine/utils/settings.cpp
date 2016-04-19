@@ -355,6 +355,10 @@ TrackerSettings::TrackerSettings()
   meshLevelFormat = "";
   meshPyramidUseRadius = false;
 
+  // meshPyramidGT first frame
+  meshLevelFormatGTFF = "";
+  isTrackingStartedWithGT = true;
+
   //
   useDepthPyramid = false;
   usePrevForTemplateInTV = false;
@@ -403,6 +407,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 
   if(!node["mesh_file"].empty())
     node["mesh_file"] >> meshFile;
+
+  if(!node["mesh_file_gt"].empty())
+    node["mesh_file_gt"] >> meshFileGT;
 
   if(!node["rigid_sequence"].empty())
     node["rigid_sequence"] >> isRigid;
@@ -579,6 +586,11 @@ void TrackerSettings::read(const cv::FileNode& node)
     node["mesh_pyramid_neighbor_radius"] >> meshNeighborRadius;
   if(!node["mesh_pyramid_use_radius"].empty())
     node["mesh_pyramid_use_radius"] >> meshPyramidUseRadius;
+
+  if(!node["mesh_pyramid_file_gt_ff"].empty())
+    node["mesh_pyramid_file_gt_ff"] >> meshLevelFormatGTFF;
+  if(!node["is_tracking_started_with_gt"].empty())
+    node["is_tracking_started_with_gt"] >> isTrackingStartedWithGT;
 
   if(!node["use_depth_pyramid"].empty())
     node["use_depth_pyramid"] >> useDepthPyramid;
