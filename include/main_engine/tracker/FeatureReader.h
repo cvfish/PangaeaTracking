@@ -18,6 +18,14 @@ public:
   virtual void getFeatureLevel(string key, int channel,
                                FeatureImageType& featureBufferImage) = 0;
 
+  virtual void getFeatureLevel(int channel,
+                       IntensityImageType& grayImageBYTE,
+                       FeatureImageType& featureBufferImage){};
+
+  virtual void getFeatureLevel(int channel,
+                               unsigned char* pCurrentGrayImage,
+                               FeatureImageType& featureBufferImage){};
+
   int m_nWidth;
   int m_nHeight;
   int m_nNumChannels;
@@ -77,6 +85,31 @@ private:
 
   double* pFeatureImages;
   string currentKey;
+
+};
+
+// wrapper for bitplane descriptors
+class BPReader : public FeatureReader
+{
+
+public:
+
+  BPReader();
+  ~BPReader();
+
+  void InitializeDB(int height, int width, int numChannels);
+  void ShutDownDB(){};
+
+  void getFeatureLevel(string key, int channel,
+                       FeatureImageType& featureBufferImage){};
+
+  void getFeatureLevel(int channel,
+                       IntensityImageType& grayImageBYTE,
+                       FeatureImageType& featureBufferImage);
+
+  void getFeatureLevel(int channel,
+                       unsigned char* pCurrentGrayImage,
+                       FeatureImageType& featureBufferImage);
 
 };
 

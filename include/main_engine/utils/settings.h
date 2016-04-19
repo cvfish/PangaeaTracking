@@ -274,6 +274,10 @@ public:
   string featureType;
   bool isFeatureAlreadyOnMesh;
 
+
+  // use bit plane descriptors
+  bool useBitPlaneDescriptors;
+
 };
 
 void read(const cv::FileNode& node, std::string& value, const char* default_value);

@@ -563,7 +563,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       sprintf(buffer, featureSettings.keyNameFormat.c_str(), currentFrameNo);
 
       // prepare data in buffer
-      pFeaturePyramid->setupPyramid(string(buffer));
+      //      pFeaturePyramid->setupPyramid(pImagePyramid->getIntensityImageByte(), string(buffer));
+      pFeaturePyramid->setupPyramid(pImagePyramid->getCurrentGrayImage(), string(buffer));
       // get new data from buffer
       pFeaturePyramid->updateData();
 

@@ -20,7 +20,8 @@ public:
 
   void create(int nW, int nH, int nChannels, int numLevels);
   void setupCameraPyramid(int numLevels, CameraInfo& camInfo);
-  void setupPyramid(std::string key);
+  // void setupPyramid(IntensityImageType& grayImageBYTE,std::string key);
+  void setupPyramid(unsigned char* pCurrentGrayImage, string key);
 
   void updateData();
   void updatePrev();

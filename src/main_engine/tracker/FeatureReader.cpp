@@ -183,3 +183,122 @@ void HDF5Reader::getFeatureLevel(string key, int channel,
   H5Fclose(file_id);
 
 }
+
+
+BPReader::BPReader() {}
+
+BPReader::~BPReader() {}
+
+void BPReader::InitializeDB(int height, int width, int numChannels)
+{
+  m_nWidth = width;
+  m_nHeight = height;
+  m_nNumChannels = numChannels;
+}
+
+void BPReader::getFeatureLevel(int channel,
+                               IntensityImageType& grayImageBYTE,
+                               FeatureImageType& featureBufferImage)
+{
+
+  // featureBufferImage = cv::Mat(m_nHeight, m_nWidth, featureSettings.dataTypeINT, cv::Scalar::all(0));
+  featureBufferImage = cv::Mat(m_nHeight, m_nWidth, cv::DataType<CoordinateType>::type);
+
+  int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+  int width = m_nWidth;
+  int height = m_nHeight;
+
+  // for(int j = 0; j < height; ++j)
+  //   {
+  //     for(int i = 0; i < width; ++i)
+  //       {
+  //         if( i == 0 || j == 0 || i == (width -1) || j == (height -1))
+  //           featureBufferImage(j, i) = 0.0;
+  //         else if( (grayImageBYTE(dy[channel] +j, dx[channel]+i) < grayImageBYTE(j,i)) )
+  //           featureBufferImage(j, i) = 1.0;
+  //         else
+  //           featureBufferImage(j, i) = 0.0;
+  //       }
+  //   }
+
+  for(int j = 1; j < height-1; ++j)
+    {
+      for(int i = 1; i < width-1; ++i)
+        {
+          // featureBufferImage.at<CoordinateType>(j, i) =
+          //   (grayImageBYTE(dy[channel] +j, dx[channel]+i) < grayImageBYTE(j,i));
+          featureBufferImage(j, i) =
+            (grayImageBYTE(dy[channel] +j, dx[channel]+i) < grayImageBYTE(j,i));
+
+          if(j == 508 && i == 999)
+            {
+              cout << featureBufferImage(j, i) << " "
+                   << int(grayImageBYTE(dy[channel] +j, dx[channel]+i)) << " "
+                   << int(grayImageBYTE(j,i)) << endl;
+            }
+        }
+    }
+
+  // print the channel offsets
+  cout << "channel offsets" << endl;
+  cout << channel << " " << dx[channel] << " " << dy[channel] << endl;
+
+  char imName[1000];
+
+  sprintf(imName, "%s/gray_%06d.png", trackerSettings.savePath.c_str(), channel);
+  cv::imwrite(imName, grayImageBYTE);
+
+  sprintf(imName, "%s/channel_%06d.png", trackerSettings.savePath.c_str(), channel);
+  cv::imwrite(imName, featureBufferImage*255);
+
+}
+
+void BPReader::getFeatureLevel(int channel,
+                               unsigned char* pCurrentGrayImage,
+                               FeatureImageType& featureBufferImage)
+{
+
+  // featureBufferImage = cv::Mat(m_nHeight, m_nWidth, featureSettings.dataTypeINT, cv::Scalar::all(0));
+  featureBufferImage = cv::Mat(m_nHeight, m_nWidth, cv::DataType<CoordinateType>::type);
+
+  int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+  int width = m_nWidth;
+  int height = m_nHeight;
+
+  for(int j = 1; j < height-1; ++j)
+    {
+      for(int i = 1; i < width-1; ++i)
+        {
+
+          unsigned char currentValue = pCurrentGrayImage[ j*width + i ];
+          unsigned char testValue = pCurrentGrayImage[ (dy[channel] +j)*width + dx[channel]+i ];
+
+          featureBufferImage(j, i) = testValue < currentValue;
+
+          if(j == 508 && i == 999)
+            {
+              cout << featureBufferImage(j, i) << " "
+                   << int(testValue) << " " << int(currentValue) << endl;
+            }
+        }
+    }
+
+  // print the channel offsets
+  cout << "channel offsets" << endl;
+  cout << channel << " " << dx[channel] << " " << dy[channel] << endl;
+
+  char imName[1000];
+
+  cv::Mat intensityImage(m_nHeight, m_nWidth, CV_8U, pCurrentGrayImage);
+
+  // sprintf(imName, "%s/gray_%06d.png", trackerSettings.savePath.c_str(), channel);
+  // cv::imwrite(imName, intensityImage);
+
+  // sprintf(imName, "%s/channel_%06d.png", trackerSettings.savePath.c_str(), channel);
+  // cv::imwrite(imName, featureBufferImage*255);
+
+}

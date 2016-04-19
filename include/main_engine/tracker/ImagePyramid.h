@@ -65,6 +65,9 @@ public:
 
   InternalIntensityImageType* getColorImageSplit(int nLevel);
 
+  IntensityImageType& getIntensityImageByte();
+  unsigned char* getCurrentGrayImage();
+
 private:
 
   unsigned char* pCurrentColorImageRGB;

@@ -7,7 +7,10 @@ FeaturePyramid::FeaturePyramid()
    currLevels(NULL),
    currLevelsBuffer(NULL)
 {
-  pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+  if(featureSettings.useBitPlaneDescriptors)
+    pFeatureReader = new BPReader;
+  else
+    pFeatureReader = new HDF5Reader(featureSettings.dbPath);
 }
 
 FeaturePyramid::~FeaturePyramid()
@@ -66,7 +69,8 @@ void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
     }
 }
 
-void FeaturePyramid::setupPyramid(string key)
+// void FeaturePyramid::setupPyramid(IntensityImageType& grayImageBYTE, string key)
+void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
 {
 
   for(int i = 0; i < m_nNumLevels; ++i)
@@ -83,7 +87,11 @@ void FeaturePyramid::setupPyramid(string key)
     {
       for(int i = 0; i < m_nNumLevels; ++i)
         {
-          pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+          if(featureSettings.useBitPlaneDescriptors)
+            //            pFeatureReader->getFeatureLevel(j, grayImageBYTE, featureBufferImage);
+            pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+          else
+            pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
           // features reading test
           // if(j == 1)
           //   {

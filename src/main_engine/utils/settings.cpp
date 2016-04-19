@@ -675,6 +675,8 @@ FeatureSettings::FeatureSettings()
   featureType = "sift";
   isFeatureAlreadyOnMesh = false;
 
+  useBitPlaneDescriptors = false;
+
 }
 
 void FeatureSettings::read(const cv::FileNode& node)
@@ -727,6 +729,9 @@ void FeatureSettings::read(const cv::FileNode& node)
 
   if(!node["is_feature_on_mesh"].empty())
     node["is_feature_on_mesh"] >> isFeatureAlreadyOnMesh;
+
+  if(!node["use_bitplane_descriptors"].empty())
+    node["use_bitplane_descriptors"] >> useBitPlaneDescriptors;
 
   // convert dataType and gradType from string to int
   dataTypeINT = typeConvert(dataType);

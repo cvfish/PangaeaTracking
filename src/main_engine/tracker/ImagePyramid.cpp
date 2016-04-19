@@ -111,7 +111,7 @@ void ImagePyramid::deallocateMemory()
 
 void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
 {
-  // static int currFrame = imageSourceSettings.startFrame;
+  static int currFrame = imageSourceSettings.startFrame;
 
   int numImages = 1;
   if(imageSourceSettings.useMultiImages)
@@ -139,6 +139,22 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
           pCurrentGrayImage[i] = 0.299*pCurrentColorImageRGB[ shift + 3*i ] +
                                  0.587*pCurrentColorImageRGB[ shift + 3*i+1 ] +
                                  0.114*pCurrentColorImageRGB[ shift + 3*i+2 ];
+
+          // if( i == 709*m_nWidth + 706 )
+          //   {
+          //     cout << "term1 " << (int)pCurrentColorImageRGB[ shift + 3*i ]
+          //          << "term2 " << (int)pCurrentColorImageRGB[ shift + 3*i + 1]
+          //          << "term3 " << (int)pCurrentColorImageRGB[ shift + 3*i + 2] << endl;
+          //     double haha = 0.299*pCurrentColorImageRGB[ shift + 3*i ] +
+          //       0.587*pCurrentColorImageRGB[ shift + 3*i+1 ] +
+          //       0.114*pCurrentColorImageRGB[ shift + 3*i+2 ];
+
+          //     cout << "haha " << haha << endl;
+          //     cout << "grayScale" << (int)pCurrentGrayImage[i] << endl;
+          //     cout << "test " << (int)haha << endl;
+
+          //     double tt = 0.0;
+          //   }
         }
 
     }
@@ -173,7 +189,7 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
           tempColorImageRGB.convertTo(colorBufferImage, cv::DataType<Vec3d>::type, 1./255);
         }
 
-      // check the input images properly
+      // //check the input images properly
       // char imName[BUFFER_SIZE];
       // sprintf(imName, "%s/color_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
       //         currFrame, i);
@@ -182,6 +198,19 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
       // sprintf(imName, "%s/gray_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
       //         currFrame, i);
       // cv::imwrite(imName, grayBufferImage*255);
+
+      // cout << "double to int test " << (int)(1.6) << endl;
+
+      // //test pCurrentGrayImage
+      // cv::Mat tempByteImage(m_nHeight, m_nWidth, CV_8U, pCurrentGrayImage);
+      // sprintf(imName, "%s/original_gray_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
+      //         currFrame, i);
+      // cv::imwrite(imName, tempByteImage);
+
+      // cv::Mat tempColorImageBGR(m_nHeight, m_nWidth, CV_8UC3, &pCurrentColorImageBGR[ i*3*m_nHeight*m_nWidth ] );
+      // sprintf(imName, "%s/original_color_frame%04d_level%02d.png", trackerSettings.savePath.c_str(),
+      //         currFrame, i);
+      // cv::imwrite(imName, tempColorImageBGR);
 
       // the standard deviation of gaussian blur is fixed as 3
       int blurSize = trackerSettings.blurFilterSizes[i];
@@ -293,4 +322,14 @@ ImageLevel& ImagePyramid::getImageLevel(int nLevel)
 InternalIntensityImageType* ImagePyramid::getColorImageSplit(int nLevel)
 {
   return levels[nLevel].colorImageSplit;
+}
+
+IntensityImageType& ImagePyramid::getIntensityImageByte()
+{
+  return grayImageBYTE;
+}
+
+unsigned char* ImagePyramid::getCurrentGrayImage()
+{
+  return pCurrentGrayImage;
 }
