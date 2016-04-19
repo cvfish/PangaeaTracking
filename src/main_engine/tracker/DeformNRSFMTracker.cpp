@@ -116,6 +116,13 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
       errorOutput << std::left << setw(15) << "Frame," << std::left << setw(15) << "Level,"
                   << std::left << setw(15) << "Error" << endl;
 
+      std::stringstream errorOutputRegPath;
+      errorOutputRegPath << settings.savePath << "error_reg_output.txt";
+      errorOutputReg.open(errorOutputRegPath.str().c_str(), std::ofstream::trunc);
+
+      errorOutputReg << std::left << setw(15) << "Frame," << std::left << setw(15) << "Level,"
+                     << std::left << setw(15) << "Error" << endl;
+
       std::stringstream energyOutputForRPath;
       energyOutputForRPath << settings.savePath << "energy_output_for_R.txt";
       energyOutputForR.open(energyOutputForRPath.str().c_str(), std::ofstream::trunc);
@@ -124,13 +131,17 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
       errorOutputForRPath << settings.savePath << "error_output_for_R.txt";
       errorOutputForR.open(errorOutputForRPath.str().c_str(), std::ofstream::trunc);
 
+      std::stringstream errorOutputRegForRPath;
+      errorOutputRegForRPath << settings.savePath << "error_reg_output_for_R.txt";
+      errorOutputRegForR.open(errorOutputRegForRPath.str().c_str(), std::ofstream::trunc);
+
     }
 
   vector<std::string> temp({"DataTerm", "FeatureTerm", "TVTerm", "RotTVTerm", "ARAPTerm",
         "INEXTENTTerm", "DeformTerm", "TermporalTerm", "SumCost", "TotalCost"});
   costNames = std::move(temp);
 
-  meanError = 0;
+  meanError = 0; meanErrorReg = 0;
   if(trackerSettings.hasGT && !settings.scoresPath.empty())
     {
       // we will record the scores of all runned experiments here
@@ -160,6 +171,34 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
         }
 
       scoresOutput.open(scoresOutputPath.str().c_str(), std::ofstream::app);
+
+
+      std::stringstream scoresOutputRegPath;
+      scoresOutputRegPath << settings.scoresPath;
+
+      if( !bfs::exists( scoresOutputRegPath.str() ) )
+        bfs::create_directories( scoresOutputRegPath.str() );
+
+      scoresOutputRegPath << "scores_reg_output.txt";
+
+      // prints the file header
+      if(!bfs::exists(scoresOutputRegPath.str()))
+        {
+          scoresOutputReg.open(scoresOutputRegPath.str().c_str(), std::ofstream::trunc);
+
+          scoresOutputReg << std::left << setw(15) << "dataTermName" << ","
+                          << std::left << setw(15) << "featureTermName" << ","
+                          << std::left << setw(15) << "patchRadius" << ",";
+
+          for(int i = 0; i < costNames.size() - 2 ; ++i)
+            scoresOutputReg << std::left << setw(15) << costNames[i] << ",";
+
+          scoresOutputReg << std::left << setw(15) << "error" << endl;
+
+          scoresOutputReg.close();
+        }
+
+      scoresOutputReg.open(scoresOutputRegPath.str().c_str(), std::ofstream::app);
 
     }
 }
@@ -739,6 +778,7 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       for(int i = 0; i < problemWrapperGT.getLevelsNum(); ++i)
         {
           double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
+          double errorReg = ComputeRMSErrorReg(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
 
           // print error to errorOutputForR
           if(trackerSettings.hasGT)
@@ -747,10 +787,18 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
                               << std::left << setw(15) << error << endl;
               errorOutput << std::left << setw(15) << currentFrameNo << "," << std::left << setw(15) << i
                           << "," << std::left << setw(15) << error << endl;
+              errorOutputRegForR << std::left << setw(15) << currentFrameNo << std::left << setw(15) << i
+                                 << std::left << setw(15) << errorReg << endl;
+              errorOutputReg << std::left << setw(15) << currentFrameNo << "," << std::left << setw(15) << i
+                             << "," << std::left << setw(15) << errorReg << endl;
             }
 
           if(i == 0)
-            meanError += error;
+            {
+              meanError += error;
+              meanErrorReg += errorReg;
+            }
+
         }
     }
 
@@ -835,6 +883,30 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       scoresOutput << std::left << setw(15) << meanError << endl;
 
       scoresOutput.close();
+
+      // scores if we do registeration between results and ground truth
+      scoresOutputReg << std::left << setw(15) << dataTermName << ","
+                   << std::left << setw(15) << featureTermName << ",";
+
+      char bufferReg[BUFFER_SIZE];
+      sprintf(bufferReg, "patch_radius%02d", trackerSettings.neighborPatchRadius);
+      scoresOutputReg << std::left << setw(15) << buffer << ",";
+
+      // print the all the weights of the terms
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightPhotometric << ",";
+      scoresOutputReg << std::left << setw(15) << featureSettings.featureTermWeight << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightTV << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightRotTV << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightARAP << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightINEXTENT << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightDeform << ",";
+      scoresOutputReg << std::left << setw(15) << trackerSettings.weightTransPrior << ",";
+
+      meanErrorReg = meanErrorReg / (nFrame - imageSourceSettings.startFrame + 1);
+      scoresOutputReg << std::left << setw(15) << meanErrorReg << endl;
+
+      scoresOutputReg.close();
+
     }
 
   // print out memory usage
@@ -3320,6 +3392,40 @@ double DeformNRSFMTracker::ComputeRMSError(PangaeaMeshData& results,
     }
 
   return sqrt(diff_norm) / sqrt(gt_norm);
+
+}
+
+double DeformNRSFMTracker::ComputeRMSErrorReg(PangaeaMeshData& results,
+                                              PangaeaMeshData& resultsGT)
+{
+  //double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
+  ceresOutput << "+++++++++++++++" << endl;
+  ceresOutput << "Registeration for Computing Errors" << endl;
+
+  double pose[6] = {0,0,0,0,0,0};
+  KnownCorrespondencesICP(results, resultsGT, pose);
+
+  int numVertices = results.numVertices;
+  double gt_norm = 0;
+  double diff_norm = 0;
+  double diff;
+
+  double transPoint[3];
+  for(int i = 0; i < numVertices; ++i)
+    {
+      ceres::AngleAxisRotatePoint(pose, &(results.vertices[i][0]), transPoint);
+      for(int k = 0; k < 3; ++k)
+        {
+          transPoint[k] = transPoint[k] + pose[3+k];
+          diff = resultsGT.vertices[i][k] - transPoint[k];
+          diff_norm += diff * diff;
+          gt_norm += resultsGT.vertices[i][k] * resultsGT.vertices[i][k];
+        }
+    }
+
+  return sqrt(diff_norm) / sqrt(gt_norm);
+
+  ceresOutput << "+++++++++++++++" << endl;
 
 }
 

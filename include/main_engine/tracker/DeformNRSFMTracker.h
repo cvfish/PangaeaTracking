@@ -94,6 +94,8 @@ public:
   void AddGroundTruthVariableMask(ceres::Problem& problem);
 
   double ComputeRMSError(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
+  double ComputeRMSErrorReg(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
+
   void CheckNaN();
 
   //
@@ -226,8 +228,10 @@ private:
   std::ofstream ceresOutput;
   std::ofstream energyOutput;
   std::ofstream errorOutput;
+  std::ofstream errorOutputReg;
   std::ofstream energyOutputForR;
   std::ofstream errorOutputForR;
+  std::ofstream errorOutputRegForR;
 
   vector<std::string> costNames;
 
@@ -264,8 +268,10 @@ private:
 
   // recording the average error over the whole sequence
   double meanError;
-  std::ofstream scoresOutput;
+  double meanErrorReg;
 
+  std::ofstream scoresOutput;
+  std::ofstream scoresOutputReg;
 };
 
 #endif

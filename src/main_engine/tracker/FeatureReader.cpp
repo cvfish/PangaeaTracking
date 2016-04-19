@@ -279,21 +279,21 @@ void BPReader::getFeatureLevel(int channel,
 
           featureBufferImage(j, i) = testValue < currentValue;
 
-          if(j == 508 && i == 999)
-            {
-              cout << featureBufferImage(j, i) << " "
-                   << int(testValue) << " " << int(currentValue) << endl;
-            }
+          // if(j == 508 && i == 999)
+          //   {
+          //     cout << featureBufferImage(j, i) << " "
+          //          << int(testValue) << " " << int(currentValue) << endl;
+          //   }
         }
     }
 
   // print the channel offsets
-  cout << "channel offsets" << endl;
-  cout << channel << " " << dx[channel] << " " << dy[channel] << endl;
+  // cout << "channel offsets" << endl;
+  // cout << channel << " " << dx[channel] << " " << dy[channel] << endl;
 
-  char imName[1000];
+  // char imName[1000];
 
-  cv::Mat intensityImage(m_nHeight, m_nWidth, CV_8U, pCurrentGrayImage);
+  // cv::Mat intensityImage(m_nHeight, m_nWidth, CV_8U, pCurrentGrayImage);
 
   // sprintf(imName, "%s/gray_%06d.png", trackerSettings.savePath.c_str(), channel);
   // cv::imwrite(imName, intensityImage);
