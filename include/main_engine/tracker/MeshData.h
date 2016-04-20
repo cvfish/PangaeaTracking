@@ -20,6 +20,8 @@ public:
 
   void computeNormalsNeil();
 
+  vector<vector<double> >& getBoundingBox();
+
   // MeshData(const MeshData& d) = default;
   // MeshData& operator=(const MeshData& d) = default;
   // the two functions in the above doesn't work on the visual4,
@@ -118,8 +120,9 @@ public:
     return *this;
 	};
 
-
   ~MeshData(){};
+
+  vector<vector<double> > bBox;
 
   vector<vector<FloatType> > vertices;
   vector<vector<FloatType> > normals;
@@ -279,6 +282,48 @@ void MeshData<FloatType>::computeNormalsNeil()
 
 }
 
+template<typename FloatType>
+vector<vector<double> >& MeshData<FloatType>::getBoundingBox()
+{
+  if(bBox.empty())
+    {
+      FloatType xmin = std::numeric_limits<FloatType>::max();
+      FloatType ymin = std::numeric_limits<FloatType>::max();
+      FloatType zmin = std::numeric_limits<FloatType>::max();
+      FloatType xmax = std::numeric_limits<FloatType>::min();
+      FloatType ymax = std::numeric_limits<FloatType>::min();
+      FloatType zmax = std::numeric_limits<FloatType>::min();
+
+      for(int i = 0; i < vertices.size(); ++i)
+        {
+          if( vertices[i][0] > xmax )
+            xmax = vertices[i][0];
+          if( vertices[i][1] > ymax )
+            ymax = vertices[i][1];
+          if( vertices[i][2] > zmax )
+            zmax = vertices[i][2];
+
+          if( vertices[i][0] < xmin )
+            xmin = vertices[i][0];
+          if( vertices[i][1] < ymin )
+            ymin = vertices[i][1];
+          if( vertices[i][2] < zmin )
+            zmin = vertices[i][2];
+        }
+
+      bBox.resize(3);
+      // make bounding box 10 percent larger than the object
+      bBox[0].push_back( xmin - 0.05*(xmax - xmin) );
+      bBox[0].push_back( xmax + 0.05*(xmax - xmin) );
+      bBox[1].push_back( ymin - 0.05*(ymax - ymin) );
+      bBox[1].push_back( ymax + 0.05*(ymax - ymin) );
+      bBox[2].push_back( zmin - 0.05*(zmax - zmin) );
+      bBox[2].push_back( zmax + 0.05*(zmax - zmin) );
+    }
+
+  return bBox;
+
+}
 
 typedef MeshData<float> MeshDataf;
 typedef MeshData<double> MeshDatad;

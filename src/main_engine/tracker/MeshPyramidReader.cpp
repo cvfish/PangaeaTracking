@@ -49,6 +49,27 @@ MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings, int width,
                                                           settings.clockwise));
     }
 
+
+  double* center = currentMeshPyramid.levels[0].center;
+
+  cout << "print center coordinates" << endl;
+  cout << std::setprecision(15) << center[0] << " "
+       << std::setprecision(15) << center[1] << " "
+       << std::setprecision(15) << center[2] << endl;
+
+  vector<vector<double> > bBox = currentMeshPyramid.levels[0].getBoundingBox();
+
+  cout << "print out bounding boxes " << endl;
+
+  cout << std::setprecision(15) << bBox[0][0]  << " "
+       << std::setprecision(15) << bBox[1][0]  << " "
+       << std::setprecision(15) << bBox[2][0]  << endl;
+
+  cout << std::setprecision(15) << bBox[0][1]  << " "
+       << std::setprecision(15) << bBox[1][1]  << " "
+       << std::setprecision(15) << bBox[2][1]  << endl;
+
+
   // check the normals
   // double normals[3];
   // double normals_gt[3];
