@@ -397,6 +397,8 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
       outputInfoPyramid[i].meshData = templateMeshPyramid.levels[i];
       outputInfoPyramid[i].meshDataColorDiff = templateMeshPyramid.levels[i];
       outputInfoPyramid[i].meshDataColorDiffGT = templateMeshPyramid.levels[i];
+      outputInfoPyramid[i].meshDataFeatDiff = templateMeshPyramid.levels[i];
+      outputInfoPyramid[i].meshDataFeatDiffGT = templateMeshPyramid.levels[i];
 
       outputInfoPyramid[i].nRenderLevel = i;
 
@@ -510,7 +512,7 @@ void DeformNRSFMTracker::updateGT()
   memcpy(prevCamPoseGT, camPoseGT, 6*sizeof(double));
 
   // update current frame
-  loadGTMeshFromFile(currentFrameNo);
+  updateGTMeshFromFile(currentFrameNo);
 
   // have to do rigid registeration to get rigid transformation first
   // e.g. icp with known correspondences
@@ -545,9 +547,13 @@ void DeformNRSFMTracker::updateGT()
 
       meshFileGT << trackerSettings.meshPathGT << buffer;
 
-      PangaeaMeshIO::loadfromFile(meshFileGT.str(),
-                                  outputInfoPyramid[i].meshDataGT,
-                                  trackerSettings.clockwise);
+      // PangaeaMeshIO::loadfromFile(meshFileGT.str(),
+      //                             outputInfoPyramid[i].meshDataGT,
+      //                             trackerSettings.clockwise);
+
+      PangaeaMeshIO::updateFromFile(meshFileGT.str(),
+                                    outputInfoPyramid[i].meshDataGT,
+                                    trackerSettings.clockwise);
 
       UpdateRenderingDataFast(outputInfoPyramid[i], KK, outputInfoPyramid[i].meshDataGT, true);
 
@@ -569,12 +575,30 @@ void DeformNRSFMTracker::updateGT()
       InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(i);
       UpdateColorDiffGT(outputInfoPyramid[i], visibilityMask, color_image_split);
 
+      // just test the first channel of the feature images
+      FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(i);
+      int channel_num = feature_level.featureImageVec.size();
+
+      FeatureImageType& feature_image = feature_level.featureImageVec[0];
+      UpdateFeatureDiffGT(outputInfoPyramid[i], visibilityMask, feature_image);
     }
+
+}
+
+void DeformNRSFMTracker::updateGTMeshFromFile(int nFrame)
+{
+
+  currentMeshPyramidGT.updatePyramid(trackerSettings.meshPathGT,
+                                     trackerSettings.meshLevelFormatGT,
+                                     nFrame,
+                                     trackerSettings.meshLevelListGT,
+                                     trackerSettings.clockwise);
 
 }
 
 void DeformNRSFMTracker::loadGTMeshFromFile(int nFrame)
 {
+
   currentMeshPyramidGT = std::move(
                                    PangaeaMeshPyramid(trackerSettings.meshPathGT,
                                                       trackerSettings.meshLevelFormatGT,
@@ -600,12 +624,6 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
   TOCK("imagePreprocessing");
 
-  if(trackerSettings.hasGT)
-    updateGT();
-
-  // update camPose of previous frame
-  memcpy(prevCamPose, camPose, 6*sizeof(double));
-
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     {
 
@@ -630,8 +648,15 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       if(trackerSettings.hasGT)
         templateMeshPyramidGT.swapFeatures();
 
+
       TOCK("featurePreprocessing");
     }
+
+  if(trackerSettings.hasGT)
+    updateGT();
+
+  // update camPose of previous frame
+  memcpy(prevCamPose, camPose, 6*sizeof(double));
 
   int numOptimizationLevels = pStrategy->numOptimizationLevels;
 
@@ -1148,8 +1173,11 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
 
   // need to update the color diff
   InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
-
   UpdateColorDiff(output_info, visibility_mask, color_image_split);
+
+  FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(0);
+  FeatureImageType& feature_image = feature_level.featureImageVec[0];
+  UpdateFeatureDiff(output_info, visibility_mask, feature_image);
 
   // update previous deformation
   for(int i = 0; i < mesh_trans.size(); ++i)

@@ -511,3 +511,76 @@ void UpdateColorDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMa
       }
   }
 }
+
+void UpdateFeatureDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                       FeatureImageType& featureImage)
+{
+  for(int i = 0; i < outputInfo.meshData.numVertices; ++i) {
+
+    if(visibilityMask[i])
+      {
+        CoordinateType u = outputInfo.meshProj[i][0];
+        CoordinateType v = outputInfo.meshProj[i][1];
+
+        // compute the color for location (u,v)
+        CoordinateType interpolate_value;
+
+        SampleLinear(featureImage, v, u, &interpolate_value);
+
+        outputInfo.meshDataFeatDiff.colors[i][0] = abs(interpolate_value - outputInfo.meshData.featuresBuffer[i][0]);
+        outputInfo.meshDataFeatDiff.colors[i][1] = outputInfo.meshDataFeatDiff.colors[i][0];
+        outputInfo.meshDataFeatDiff.colors[i][2] = outputInfo.meshDataFeatDiff.colors[i][0];
+
+        // // test the values of ground truth color difference
+        // cout << outputInfo.meshDataColorDiffGT.colors[i][0] << " "
+        //      << abs(interpolate_value[0]) << " "
+        //      << outputInfo.meshDataGT.colors[i][0] << endl;
+
+      }
+    else // all occluded points set to black
+      {
+        outputInfo.meshDataFeatDiff.colors[i][0] = 0;
+        outputInfo.meshDataFeatDiff.colors[i][1] = 0;
+        outputInfo.meshDataFeatDiff.colors[i][2] = 1;
+      }
+
+  }
+
+}
+
+void UpdateFeatureDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                         FeatureImageType& featureImage)
+{
+
+    for(int i = 0; i < outputInfo.meshData.numVertices; ++i) {
+
+    if(visibilityMask[i])
+      {
+        CoordinateType u = outputInfo.meshProj[i][0];
+        CoordinateType v = outputInfo.meshProj[i][1];
+
+        // compute the color for location (u,v)
+        CoordinateType interpolate_value;
+
+        SampleLinear(featureImage, v, u, &interpolate_value);
+
+        outputInfo.meshDataFeatDiffGT.colors[i][0] = abs(interpolate_value - outputInfo.meshDataGT.featuresBuffer[i][0]);
+        outputInfo.meshDataFeatDiffGT.colors[i][1] = outputInfo.meshDataFeatDiffGT.colors[i][0];
+        outputInfo.meshDataFeatDiffGT.colors[i][2] = outputInfo.meshDataFeatDiffGT.colors[i][0];
+
+        // // test the values of ground truth color difference
+        // cout << outputInfo.meshDataColorDiffGT.colors[i][0] << " "
+        //      << abs(interpolate_value[0]) << " "
+        //      << outputInfo.meshDataGT.colors[i][0] << endl;
+
+      }
+    else // all occluded points set to black
+      {
+        outputInfo.meshDataFeatDiffGT.colors[i][0] = 0;
+        outputInfo.meshDataFeatDiffGT.colors[i][1] = 0;
+        outputInfo.meshDataFeatDiffGT.colors[i][2] = 1;
+      }
+
+  }
+
+}

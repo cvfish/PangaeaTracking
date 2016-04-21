@@ -349,6 +349,10 @@ void MeshPyramidReader::setMeshPyramid()
 
           outputInfoPyramid[i].meshDataColorDiff = outputInfoPyramid[i].meshData;
           outputInfoPyramid[i].meshDataColorDiffGT = outputInfoPyramid[i].meshDataColorDiff;
+
+          outputInfoPyramid[i].meshDataFeatDiff = outputInfoPyramid[i].meshData;
+          outputInfoPyramid[i].meshDataFeatDiffGT = outputInfoPyramid[i].meshDataFeatDiff;
+
           outputInfoPyramid[i].visibilityMaskGT = outputPropPyramid[i].visibilityMask;
 
         }

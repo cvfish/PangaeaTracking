@@ -297,26 +297,56 @@ void BasicGLPane::pangaeaMeshRender(TrackerOutputInfo& outputInfo, bool showText
                                     showGT, bool showEST, bool threshOn, GLfloat thresh)
 {
   if(showGT)
-  meshRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiffGT : outputInfo.meshDataGT,
-              showTexture, true, threshOn, thresh);
-  //  meshRender(outputInfo.meshDataGT, showTexture, true, threshOn, thresh);
-
+    {
+      if(m_pControlPanel->m_bFeatDiffMode)
+        meshRender(outputInfo.meshDataFeatDiffGT, showTexture, true, threshOn, thresh);
+      else{
+        if(m_pControlPanel->m_bColorDiffMode)
+          meshRender(outputInfo.meshDataColorDiffGT, showTexture, true, threshOn, thresh);
+        else
+          meshRender(outputInfo.meshDataGT, showTexture, true, threshOn, thresh);
+      }
+    }
 
   if(showEST)
-    meshRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiff : outputInfo.meshData,
-               showTexture, false, threshOn, thresh);
+    {
+      if(m_pControlPanel->m_bFeatDiffMode)
+        meshRender(outputInfo.meshDataFeatDiff, showTexture, false, threshOn, thresh);
+      else{
+        if(m_pControlPanel->m_bColorDiffMode)
+          meshRender(outputInfo.meshDataColorDiff, showTexture, false, threshOn, thresh);
+        else
+          meshRender(outputInfo.meshData, showTexture, false, threshOn, thresh);
+      }
+    }
 }
 
 void BasicGLPane::pangaeaPointRender(TrackerOutputInfo& outputInfo, bool showTexture, bool
                                      showGT, bool showEST, bool deletePoints, GLfloat thresh)
 {
   if(showGT)
-    pointRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiffGT : outputInfo.meshDataGT,
-                showTexture, true, deletePoints, thresh);
+    {
+      if(m_pControlPanel->m_bFeatDiffMode)
+        pointRender(outputInfo.meshDataFeatDiffGT, showTexture, true, deletePoints, thresh);
+      else{
+        if(m_pControlPanel->m_bColorDiffMode)
+          pointRender(outputInfo.meshDataColorDiffGT, showTexture, true, deletePoints, thresh);
+        else
+          pointRender(outputInfo.meshDataGT, showTexture, true, deletePoints, thresh);
+      }
+    }
 
   if(showEST)
-    pointRender(m_pControlPanel->m_bColorDiffMode ? outputInfo.meshDataColorDiff : outputInfo.meshData,
-                showTexture, false, deletePoints, thresh);
+    {
+      if(m_pControlPanel->m_bFeatDiffMode)
+        pointRender(outputInfo.meshDataFeatDiff, showTexture, false, deletePoints, thresh);
+      else{
+        if(m_pControlPanel->m_bColorDiffMode)
+          pointRender(outputInfo.meshDataColorDiff, showTexture, false, deletePoints, thresh);
+        else
+          pointRender(outputInfo.meshData, showTexture, false, deletePoints, thresh);
+      }
+    }
 }
 
 void BasicGLPane::meshRender(PangaeaMeshData& mesh, bool showTexture, bool isGT, bool threshOn, GLfloat thresh)

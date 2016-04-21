@@ -16,7 +16,8 @@ public:
   static void loadfromFile(const std::string& filename, MeshData<FloatType>& meshData,
                            bool clockwise = true);
 
-  static void updateFromFile(const std::string& filename, MeshData<FloatType>& meshData);
+  static void updateFromFile(const std::string& filename, MeshData<FloatType>& meshData,
+                             bool clockwise = true);
 
   static void writeToFile(const std::string& filename, const MeshData<FloatType>& meshData);
 
@@ -117,8 +118,9 @@ void MeshIO<FloatType>::loadfromFile(const std::string& filename,
   setupMeshFromFile(meshData);
 
 }
+
 template<class FloatType>
-void MeshIO<FloatType>::updateFromFile(const std::string& filename, MeshData<FloatType>& meshData)
+void MeshIO<FloatType>::updateFromFile(const std::string& filename, MeshData<FloatType>& meshData, bool clockwise)
 {
   bfs::path filePath(filename.c_str());
   //cout << filePath.extension().c_str() << endl;

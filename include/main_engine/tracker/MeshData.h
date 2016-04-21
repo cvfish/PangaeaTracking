@@ -359,6 +359,10 @@ struct TrackerOutputInfo
   PangaeaMeshData meshDataColorDiff;
   PangaeaMeshData meshDataColorDiffGT;
 
+  // feat difference mesh
+  PangaeaMeshData meshDataFeatDiff;
+  PangaeaMeshData meshDataFeatDiffGT;
+
   // 2d projections
   vector<vector<CoordinateType> > meshProj;
   vector<vector<CoordinateType> > meshProjGT;

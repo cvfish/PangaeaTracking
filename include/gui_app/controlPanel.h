@@ -49,6 +49,7 @@ public:
   wxCheckBox *m_pHideOcclusion;
   wxCheckBox *m_pOcclusionMode;
   wxCheckBox *m_pColorDiffMode;
+  wxCheckBox *m_pFeatDiffMode;
   wxCheckBox *m_pFlipNormsCheckBox;
   wxCheckBox *m_pRenderPropCheckBox;
   wxCheckBox *m_pShowNormalsBox;
@@ -99,6 +100,7 @@ public:
   bool m_bHideOcclusion;
   bool m_bOcclusionMode;
   bool m_bColorDiffMode;
+  bool m_bFeatDiffMode;
   bool m_bFlipNorm;
   bool m_bRenderProp;
   bool m_bShowNormals;

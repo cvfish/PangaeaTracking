@@ -1035,8 +1035,12 @@ inline PlyFile *ply_open_for_reading(
 	/* open the file for reading */
 
 	fp = fopen(filename, "rb");
-	if (fp == NULL)
-		return (NULL);
+
+  if(!fp)
+    {
+      cerr << "cannot open file " << filename << endl;
+      return NULL;
+    }
 
 	/* create the PlyFile data structure */
 

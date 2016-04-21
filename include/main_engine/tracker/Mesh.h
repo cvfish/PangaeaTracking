@@ -429,3 +429,9 @@ void UpdateColorDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask
 
 void UpdateColorDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
                        InternalIntensityImageType colorImageSplit[3]);
+
+void UpdateFeatureDiff(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                    FeatureImageType& featureImage);
+
+void UpdateFeatureDiffGT(TrackerOutputInfo& outputInfo, vector<bool>& visibilityMask,
+                      FeatureImageType& featureImage);

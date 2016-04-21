@@ -37,6 +37,8 @@ public:
   //void trackerInitSetup(TrackerOutputInfo& outputInfo);
 
   void loadGTMeshFromFile(int nFrame);
+  void updateGTMeshFromFile(int nFrame);
+
   void initializeGT();
   void updateGT();
 

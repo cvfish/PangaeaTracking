@@ -44,6 +44,7 @@ controlPanel::controlPanel(wxWindow *parent)
   m_bHideOcclusion(false),
   m_bOcclusionMode(false),
   m_bColorDiffMode(false),
+  m_bFeatDiffMode(false),
   m_bFlipNorm(false),
   m_bRenderProp(false),
   m_nRenderLevel(0),
@@ -97,6 +98,8 @@ controlPanel::controlPanel(wxWindow *parent)
   m_pOcclusionMode = new wxCheckBox(this,wxID_ANY,_("Show Occlusion"), wxPoint(5, index));
   index+=20;
   m_pColorDiffMode = new wxCheckBox(this,wxID_ANY,_("Show Color Diff"), wxPoint(5, index));
+  index+=20;
+  m_pFeatDiffMode = new wxCheckBox(this,wxID_ANY,_("Show Feat Diff"), wxPoint(5, index));
   index+=20;
   m_pFlipNormsCheckBox = new wxCheckBox(this,wxID_ANY,_("Flip Norms"), wxPoint(5, index));
   index+=20;
@@ -215,6 +218,7 @@ void controlPanel::Update(bool fromTracker)
   m_bHideOcclusion = m_pHideOcclusion->IsChecked();
   m_bOcclusionMode = m_pOcclusionMode->IsChecked();
   m_bColorDiffMode = m_pColorDiffMode->IsChecked();
+  m_bFeatDiffMode = m_pFeatDiffMode->IsChecked();
   m_bFlipNorm = m_pFlipNormsCheckBox->IsChecked();
   m_bShowNormals = m_pShowNormalsBox->IsChecked();
   m_bShowErrorHeatMap = m_pShowErrorHeatMap->IsChecked();

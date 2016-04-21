@@ -120,7 +120,7 @@ public:
 
   void swapFeatures();
   void updatePyramid(string meshPath, string meshLevelFormat, int frame,
-                     IntegerContainerType& meshLevelList);
+                     IntegerContainerType& meshLevelList, bool clockwise = true);
 
   // pyramid data, the finest level is level 0
   // and level number increases as we go up the pyramid
@@ -244,7 +244,10 @@ void MeshPyramid<FloatType>::swapFeatures()
 
 template<class FloatType>
 void MeshPyramid<FloatType>::updatePyramid(string meshPath,
-                                           string meshLevelFormat, int frame, IntegerContainerType& meshLevelList)
+                                           string meshLevelFormat,
+                                           int frame,
+                                           IntegerContainerType& meshLevelList,
+                                           bool clockwise)
 {
   // just do update, no memory allocation and much faster
   // load meshes
@@ -254,7 +257,7 @@ void MeshPyramid<FloatType>::updatePyramid(string meshPath,
       std::stringstream meshFile;
       sprintf(buffer, meshLevelFormat.c_str(), frame, meshLevelList[i]);
       meshFile << meshPath << buffer;
-      PangaeaMeshIO::updateFromFile(meshFile.str(), levels[i]);
+      PangaeaMeshIO::updateFromFile(meshFile.str(), levels[i], clockwise);
     }
 }
 
