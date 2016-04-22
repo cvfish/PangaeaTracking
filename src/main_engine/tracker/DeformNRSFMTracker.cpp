@@ -576,11 +576,13 @@ void DeformNRSFMTracker::updateGT()
       UpdateColorDiffGT(outputInfoPyramid[i], visibilityMask, color_image_split);
 
       // just test the first channel of the feature images
-      FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(i);
-      int channel_num = feature_level.featureImageVec.size();
-
-      FeatureImageType& feature_image = feature_level.featureImageVec[0];
-      UpdateFeatureDiffGT(outputInfoPyramid[i], visibilityMask, feature_image);
+      if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
+        {
+          FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(i);
+          int channel_num = feature_level.featureImageVec.size();
+          FeatureImageType& feature_image = feature_level.featureImageVec[0];
+          UpdateFeatureDiffGT(outputInfoPyramid[i], visibilityMask, feature_image);
+        }
     }
 
 }
@@ -1175,9 +1177,13 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
   InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
   UpdateColorDiff(output_info, visibility_mask, color_image_split);
 
-  FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(0);
-  FeatureImageType& feature_image = feature_level.featureImageVec[0];
-  UpdateFeatureDiff(output_info, visibility_mask, feature_image);
+
+  if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
+    {
+      FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(0);
+      FeatureImageType& feature_image = feature_level.featureImageVec[0];
+      UpdateFeatureDiff(output_info, visibility_mask, feature_image);
+    }
 
   // update previous deformation
   for(int i = 0; i < mesh_trans.size(); ++i)
