@@ -15,13 +15,17 @@ FeaturePyramid::FeaturePyramid()
   switch(featureSettings.featureType)
     {
     case FT_SIFT:
-      pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+        pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+        break;
     case FT_BITPLANE:
-      pFeatureReader = new BPReader;
+        pFeatureReader = new BPReader;
+        break;
     case FT_GRAYSCALE:
-      pFeatureReader = new GrayReader;
+        pFeatureReader = new GrayReader;
+        break;
     case FT_COLOR:
-      pFeatureReader = new ColorReader;
+        pFeatureReader = new ColorReader;
+        break;
     }
 
 }
@@ -118,12 +122,16 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage,
             {
             case FT_SIFT:
               pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+              break;
             case FT_BITPLANE:
               pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+              break;
             case FT_GRAYSCALE:
               pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+              break;
             case FT_COLOR:
               pFeatureReader->getFeatureLevel(j, pCurrentColorImage, featureBufferImage);
+              break;
             }
 
           // features reading test
