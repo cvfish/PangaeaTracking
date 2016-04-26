@@ -67,6 +67,7 @@ public:
 
   IntensityImageType& getIntensityImageByte();
   unsigned char* getCurrentGrayImage();
+  unsigned char* getColorImage();
 
 private:
 

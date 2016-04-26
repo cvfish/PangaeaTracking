@@ -97,22 +97,33 @@ ImageSourceType mapImageSourceType(std::string const& inString)
 {
   cout << inString << endl;
 
-    if (inString == "ImagesBuffer") return ALLIMAGESBUFFER;
-    if (inString == "ImageSequence") return IMAGESEQUENCE;
-    if (inString == "Video") return VIDEO;
-    if (inString == "Camera") return CAMERA;
+  if (inString == "ImagesBuffer") return ALLIMAGESBUFFER;
+  if (inString == "ImageSequence") return IMAGESEQUENCE;
+  if (inString == "Video") return VIDEO;
+  if (inString == "Camera") return CAMERA;
 }
 
 TrackingType mapTrackingType(std::string const& inString)
 {
   cout << inString << endl;
 
-    if (inString == "ShapesBuffer") return ALLSHAPESBUFFER;
-    if (inString == "ShapeSequence") return SHAPESEQUENCE;
-    if (inString == "DeformNRSFMTracker") return DEFORMNRSFM;
-    if (inString == "MeshSequence") return MESHSEQUENCE;
-    if (inString == "MeshPyramid") return MESHPYRAMID;
-    if (inString == "MeshBuffer") return MESHBUFFER;
+  if (inString == "ShapesBuffer") return ALLSHAPESBUFFER;
+  if (inString == "ShapeSequence") return SHAPESEQUENCE;
+  if (inString == "DeformNRSFMTracker") return DEFORMNRSFM;
+  if (inString == "MeshSequence") return MESHSEQUENCE;
+  if (inString == "MeshPyramid") return MESHPYRAMID;
+  if (inString == "MeshBuffer") return MESHBUFFER;
+}
+
+FeatureType mapFeatureType(std::string const& inString)
+{
+  cout << inString << endl;
+
+  if (inString == "sift") return FT_SIFT;
+  if (inString == "bitplane") return FT_BITPLANE;
+  if (inString == "gray") return FT_GRAYSCALE;
+  if (inString == "color") return FT_COLOR;
+
 }
 
 int typeConvert(string dataType)

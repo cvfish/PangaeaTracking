@@ -352,8 +352,9 @@ void DeformNRSFMTracker::setInitialMeshPyramid(PangaeaMeshPyramid& initMeshPyram
       pFeaturePyramid->setupCameraPyramid(m_nMeshLevels, camInfo);
 
       //need to update the number of channels for feature residuals
-      PE_RESIDUAL_NUM_ARRAY[PE_FEATURE] = featureSettings.channels;
-      PE_RESIDUAL_NUM_ARRAY[PE_FEATURE_NCC] = featureSettings.channels;
+      PE_RESIDUAL_NUM_ARRAY[PE_FEATURE] = featureSettings.channelsInUse;
+      PE_RESIDUAL_NUM_ARRAY[PE_FEATURE_NCC] = featureSettings.channelsInUse;
+
     }
 
   // setup visibilitymask pyramid
@@ -636,7 +637,11 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
       // prepare data in buffer
       //      pFeaturePyramid->setupPyramid(pImagePyramid->getIntensityImageByte(), string(buffer));
-      pFeaturePyramid->setupPyramid(pImagePyramid->getCurrentGrayImage(), string(buffer));
+      // pFeaturePyramid->setupPyramid(pImagePyramid->getCurrentGrayImage(), string(buffer));
+      pFeaturePyramid->setupPyramid(pImagePyramid->getCurrentGrayImage(),
+                                    pImagePyramid->getColorImage(),
+                                    string(buffer));
+
       // get new data from buffer
       pFeaturePyramid->updateData();
 
@@ -904,10 +909,19 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
         dataTermName = trackerSettings.errorType;
       if(trackerSettings.useFeatureImages)
         {
-          if(featureSettings.useBitPlaneDescriptors)
-            featureTermName = featureSettings.useNCC ? "bp_ncc" : "bp";
-          else
-            featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+          // if(featureSettings.useBitPlaneDescriptors)
+          //   featureTermName = featureSettings.useNCC ? "bp_ncc" : "bp";
+          // else
+          //   featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+
+          switch(featureSettings.featureType)
+            {
+            case FT_SIFT:
+              featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+            case FT_BITPLANE:
+              featureTermName = featureSettings.useNCC ? "bp_ncc" : "bp";
+            }
+
         }
 
       scoresOutput << std::left << setw(15) << dataTermName << ","

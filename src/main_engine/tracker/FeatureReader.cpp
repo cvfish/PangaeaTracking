@@ -2,6 +2,14 @@
 
 #include "main_engine/utils/settings.h"
 
+
+void FeatureReader::InitializeDB(int height, int width, int numChannels)
+{
+  m_nWidth = width;
+  m_nHeight = height;
+  m_nNumChannels = numChannels;
+}
+
 //// LMDB DataBase
 
 LMDBReader::LMDBReader(string folder)
@@ -185,16 +193,12 @@ void HDF5Reader::getFeatureLevel(string key, int channel,
 }
 
 
-BPReader::BPReader() {}
-
-BPReader::~BPReader() {}
-
-void BPReader::InitializeDB(int height, int width, int numChannels)
-{
-  m_nWidth = width;
-  m_nHeight = height;
-  m_nNumChannels = numChannels;
-}
+// void BPReader::InitializeDB(int height, int width, int numChannels)
+// {
+//   m_nWidth = width;
+//   m_nHeight = height;
+//   m_nNumChannels = numChannels;
+// }
 
 void BPReader::getFeatureLevel(int channel,
                                IntensityImageType& grayImageBYTE,
@@ -300,5 +304,48 @@ void BPReader::getFeatureLevel(int channel,
 
   // sprintf(imName, "%s/channel_%06d.png", trackerSettings.savePath.c_str(), channel);
   // cv::imwrite(imName, featureBufferImage*255);
+
+}
+
+
+// void GrayReader::InitializeDB(int height, int width, int numChannels)
+// {
+//   m_nWidth = width;
+//   m_nHeight = height;
+//   m_nNumChannels = numChannels;
+// }
+
+void GrayReader::getFeatureLevel(int channel,
+                                 unsigned char* pCurrentGrayImage,
+                                 FeatureImageType& featureBufferImage)
+{
+
+  // only one channel in this case
+  // featureBufferImage = cv::Mat(m_nHeight, m_nWidth, cv::DataType<CoordinateType>::type);
+
+  assert(channel == 0);
+
+  cv::Mat grayImageBYTE( m_nHeight, m_nWidth, CV_8U, pCurrentGrayImage );
+  grayImageBYTE.convertTo( featureBufferImage, cv::DataType<CoordinateType>::type, 1./255 );
+
+}
+
+
+void ColorReader::getFeatureLevel(int channel,
+                                  unsigned char* pCurrentColorImageRGB,
+                                  FeatureImageType& featureBufferImage)
+{
+
+  assert(channel < 3);
+
+  InternalColorImageType colorImage;
+  InternalIntensityImageType colorImageSplit[3];
+
+  cv::Mat tempColorImageRGB(m_nHeight, m_nWidth, CV_8UC3, pCurrentColorImageRGB );
+  tempColorImageRGB.convertTo(colorImage, cv::DataType<Vec3d>::type, 1./255);
+
+  cv::split(colorImage, colorImageSplit);
+
+  featureBufferImage = colorImageSplit[ channel ];
 
 }

@@ -94,9 +94,18 @@ enum TrackingType{
     DEFORMNRSFM
 };
 
+enum FeatureType{
+  FT_SIFT,
+  FT_BITPLANE,
+  FT_GRAYSCALE,
+  FT_COLOR
+};
+
 ImageSourceType mapImageSourceType(std::string const& inString);
 
 TrackingType mapTrackingType(std::string const& inString);
+
+FeatureType mapFeatureType(std::string const& inString);
 
 int typeConvert(string dataType);
 

@@ -12,7 +12,7 @@ public:
   FeatureReader(string featureFile){};
   virtual ~FeatureReader(){};
 
-  virtual void InitializeDB(int height, int width, int numChannels) = 0;
+  virtual void InitializeDB(int height, int width, int numChannels);
   virtual void ShutDownDB() = 0;
 
   virtual void getFeatureLevel(string key, int channel,
@@ -94,10 +94,10 @@ class BPReader : public FeatureReader
 
 public:
 
-  BPReader();
-  ~BPReader();
+  BPReader(){};
+  ~BPReader(){};
 
-  void InitializeDB(int height, int width, int numChannels);
+  // void InitializeDB(int height, int width, int numChannels);
   void ShutDownDB(){};
 
   void getFeatureLevel(string key, int channel,
@@ -106,6 +106,46 @@ public:
   void getFeatureLevel(int channel,
                        IntensityImageType& grayImageBYTE,
                        FeatureImageType& featureBufferImage);
+
+  void getFeatureLevel(int channel,
+                       unsigned char* pCurrentGrayImage,
+                       FeatureImageType& featureBufferImage);
+
+};
+
+class GrayReader: public FeatureReader
+{
+
+public:
+
+  GrayReader(){};
+  ~GrayReader(){};
+
+  // void InitializeDB(int height, int width, int numChannels);
+  void ShutDownDB(){};
+
+  void getFeatureLevel(string key, int channel,
+                       FeatureImageType& featureBufferImage){};
+
+  void getFeatureLevel(int channel,
+                       unsigned char* pCurrentGrayImage,
+                       FeatureImageType& featureBufferImage);
+
+};
+
+class ColorReader: public FeatureReader
+{
+
+public:
+
+  ColorReader(){};
+  ~ColorReader(){};
+
+  // void InitializeDB(int height, int width, int numChannels);
+  void ShutDownDB(){};
+
+  void getFeatureLevel(string key, int channel,
+                       FeatureImageType& featureBufferImage){};
 
   void getFeatureLevel(int channel,
                        unsigned char* pCurrentGrayImage,

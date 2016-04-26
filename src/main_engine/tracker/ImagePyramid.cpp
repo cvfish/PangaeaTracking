@@ -333,3 +333,8 @@ unsigned char* ImagePyramid::getCurrentGrayImage()
 {
   return pCurrentGrayImage;
 }
+
+unsigned char* ImagePyramid::getColorImage()
+{
+  return pCurrentColorImageRGB;
+}

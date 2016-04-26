@@ -669,6 +669,7 @@ FeatureSettings::FeatureSettings()
 {
 
   channels = 3;
+
   scalingFactor = 1.0;
 
   useNCC = false;
@@ -684,10 +685,10 @@ FeatureSettings::FeatureSettings()
   featureTermWeight = 0;
   featureHuberWidth = 0.1;
 
-  featureType = "sift";
+  featureTypeName = "sift";
   isFeatureAlreadyOnMesh = false;
 
-  useBitPlaneDescriptors = false;
+  // useBitPlaneDescriptors = false;
 
 }
 
@@ -696,6 +697,11 @@ void FeatureSettings::read(const cv::FileNode& node)
 
   if(!node["channels"].empty())
     node["channels"] >> channels;
+
+  if(!node["channels_in_use"].empty())
+    node["channels_in_use"] >> channelsInUse;
+  else
+    channelsInUse = channels;
 
   if(!node["scaling_factor"].empty())
     node["scaling_factor"] >> scalingFactor;
@@ -737,13 +743,15 @@ void FeatureSettings::read(const cv::FileNode& node)
     node["feature_huber_width"] >> featureHuberWidth;
 
   if(!node["feature_type"].empty())
-    node["feature_type"] >> featureType;
+    node["feature_type"] >> featureTypeName;
+
+  featureType = mapFeatureType(featureTypeName);
 
   if(!node["is_feature_on_mesh"].empty())
     node["is_feature_on_mesh"] >> isFeatureAlreadyOnMesh;
 
-  if(!node["use_bitplane_descriptors"].empty())
-    node["use_bitplane_descriptors"] >> useBitPlaneDescriptors;
+  // if(!node["use_bitplane_descriptors"].empty())
+  //   node["use_bitplane_descriptors"] >> useBitPlaneDescriptors;
 
   // convert dataType and gradType from string to int
   dataTypeINT = typeConvert(dataType);

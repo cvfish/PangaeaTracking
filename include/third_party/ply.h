@@ -433,7 +433,8 @@ inline PlyFile *ply_open_for_writing(
   delete name;
 
 	if (fp == NULL) {
-		return (NULL);
+    cerr << "cannot open file " << filename << endl;
+    return NULL;
 	}
 
 	/* create the actual PlyFile structure */

@@ -244,6 +244,7 @@ public:
 
   // parameters
   int channels;
+  int channelsInUse;
 
   bool useNCC;
 
@@ -277,12 +278,13 @@ public:
   // set this to true if you want to load mesh features
   // instead of updating the features using previous frame
   // set to false by default
-  string featureType;
+  string featureTypeName;
+  FeatureType featureType;
+
   bool isFeatureAlreadyOnMesh;
 
-
-  // use bit plane descriptors
-  bool useBitPlaneDescriptors;
+  // // use bit plane descriptors
+  // bool useBitPlaneDescriptors;
 
 };
 

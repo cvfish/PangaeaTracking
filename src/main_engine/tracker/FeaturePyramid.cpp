@@ -7,10 +7,23 @@ FeaturePyramid::FeaturePyramid()
    currLevels(NULL),
    currLevelsBuffer(NULL)
 {
-  if(featureSettings.useBitPlaneDescriptors)
-    pFeatureReader = new BPReader;
-  else
-    pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+  // if(featureSettings.useBitPlaneDescriptors)
+  //   pFeatureReader = new BPReader;
+  // else
+  //   pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+
+  switch(featureSettings.featureType)
+    {
+    case FT_SIFT:
+      pFeatureReader = new HDF5Reader(featureSettings.dbPath);
+    case FT_BITPLANE:
+      pFeatureReader = new BPReader;
+    case FT_GRAYSCALE:
+      pFeatureReader = new GrayReader;
+    case FT_COLOR:
+      pFeatureReader = new ColorReader;
+    }
+
 }
 
 FeaturePyramid::~FeaturePyramid()
@@ -26,7 +39,6 @@ void FeaturePyramid::create(int nW, int nH, int nChannels, int numLevels)
 {
   m_nWidth = nW;
   m_nHeight = nH;
-  m_nNumChannels = nChannels;
   m_nNumLevels = numLevels;
   m_bInitialized = false;
 
@@ -35,6 +47,13 @@ void FeaturePyramid::create(int nW, int nH, int nChannels, int numLevels)
   currLevelsBuffer = new FeatureLevel[numLevels];
 
   pFeatureReader->InitializeDB(nH, nW, nChannels);
+
+  m_nNumChannels = featureSettings.channelsInUse;
+
+  // print out the number of channels and used number
+  cout << "feature channels number" << " " << nChannels << endl;
+  cout << "number of used channels" << " " << m_nNumChannels << endl;
+
 }
 
 void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
@@ -70,7 +89,9 @@ void FeaturePyramid::setupCameraPyramid(int numLevels, CameraInfo& camInfo)
 }
 
 // void FeaturePyramid::setupPyramid(IntensityImageType& grayImageBYTE, string key)
-void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
+void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage,
+                                  unsigned char* pCurrentColorImage,
+                                  string key)
 {
 
   for(int i = 0; i < m_nNumLevels; ++i)
@@ -87,11 +108,24 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage, string key)
     {
       for(int i = 0; i < m_nNumLevels; ++i)
         {
-          if(featureSettings.useBitPlaneDescriptors)
-            //            pFeatureReader->getFeatureLevel(j, grayImageBYTE, featureBufferImage);
-            pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
-          else
-            pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+          // if(featureSettings.useBitPlaneDescriptors)
+          //   //            pFeatureReader->getFeatureLevel(j, grayImageBYTE, featureBufferImage);
+          //   pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+          // else
+          //   pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+
+          switch(featureSettings.featureType)
+            {
+            case FT_SIFT:
+              pFeatureReader->getFeatureLevel(key, j, featureBufferImage);
+            case FT_BITPLANE:
+              pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+            case FT_GRAYSCALE:
+              pFeatureReader->getFeatureLevel(j, pCurrentGrayImage, featureBufferImage);
+            case FT_COLOR:
+              pFeatureReader->getFeatureLevel(j, pCurrentColorImage, featureBufferImage);
+            }
+
           // features reading test
           // if(j == 1)
           //   {
