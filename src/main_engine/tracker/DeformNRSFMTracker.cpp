@@ -918,8 +918,10 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
             {
             case FT_SIFT:
               featureTermName = featureSettings.useNCC ? "feature_ncc" : "feature";
+              break;
             case FT_BITPLANE:
               featureTermName = featureSettings.useNCC ? "bp_ncc" : "bp";
+              break;
             }
 
         }
