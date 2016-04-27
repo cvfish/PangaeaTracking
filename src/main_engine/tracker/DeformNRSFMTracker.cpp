@@ -479,12 +479,13 @@ void DeformNRSFMTracker::initializeGT()
     {
       if(!trackerSettings.meshLevelFormatGTFF.empty())
         {
-        templateMeshPyramid = std::move(
-                                        PangaeaMeshPyramid(trackerSettings.meshLevelFormatGTFF,
-                                                           trackerSettings.meshVertexNum,
-                                                           trackerSettings.clockwise));
+          templateMeshPyramidGT = std::move(
+                                            PangaeaMeshPyramid(trackerSettings.meshLevelFormatGTFF,
+                                                               trackerSettings.meshVertexNum,
+                                                               trackerSettings.clockwise));
         }
-      templateMeshPyramidGT = currentMeshPyramidGT;
+      else
+        templateMeshPyramidGT = currentMeshPyramidGT;
     }
 
   meshRotPyramidGT = meshRotPyramid;
