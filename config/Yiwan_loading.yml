@@ -3,18 +3,24 @@ ImageSourceType: 'ImageSequence'
 TrackingType: 'MeshPyramid'
 #TrackingType: 'MeshBuffer'
 ImageSourceSettings:
-  dataPath: '../data/Yiwan/images/'
+  # dataPath: '../data/Yiwan/images/'
+  dataPath: '/home/cvfish/Work/code/github/PangaeaTracking/data/Yiwan/feature_images/sift/binSize2/'
   numFrames: 500
   width: 1920
   height: 1080
   startFrame: 1
+  imageFormat: 'sift%04d.png'
 MeshLoadingSettings:
-  meshPath: "../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/mesh_pyramid/"
-  meshFormat: "mesh%04d.obj"
-  meshPyramidFormat: "mesh%04d_level%02d.obj"
-  propPyramidFormat: "prop_mesh%04d_level%02d.obj"
-  meshLevelList: [0,1,2]
-#  meshLevelList: [0]
+#  meshPath: "../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/mesh_pyramid/"
+  meshPath: "/home/cvfish/Work/code/github/PangaeaTracking/results/yiwan_feature_mesh/mesh_pyramid/"
+#  meshFormat: "mesh%04d.obj"
+  meshFormat: "mesh%04d.ply"
+  # meshLevelFormat: "mesh%04d_level%02d.obj"
+  # propLeveldFormat: "prop_mesh%04d_level%02d.obj"
+#  meshLevelList: [0,1,2]
+  meshLevelFormat: "mesh%04d_level%02d.ply"
+  propLevelFormat: "prop_mesh%04d_level%02d.ply"
+  meshLevelList: [0]
   visibilityMask: 1
   loadProp: 0
   fastLoading: 0
