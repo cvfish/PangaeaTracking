@@ -37,13 +37,14 @@ void CCameraControl::setObjectCenter(double objectCenter[3])
 const float* CCameraControl::getModelViewMatrix()
 {
   // transformation in normal order, different from
-  // opengl operations
+  // opengl operations, when there is no rotation,
+  // we will transform P(x,y,z) to P(x,-y,-z)
+  // after modelview matrix transformation
   matrixView.identity();
-  // matrixView.translate(-(camTransX-center[0]),
-  //     -camTransY+center[1],-camTransZ+center[2]);
   matrixView.rotateX(180);
-  matrixView.translate(-(camTransX-center[0]),
-                       camTransY-center[1],camTransZ-center[2]);
+  matrixView.translate(camTransX+center[0],
+                       camTransY-center[1],
+                       camTransZ-center[2]);
 
   matrixModel.identity();
   matrixModel.translate(-center);

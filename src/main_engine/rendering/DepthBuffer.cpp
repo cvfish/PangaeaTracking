@@ -108,16 +108,16 @@ void DepthBuffer::renderMeshGL()
 
     double P[16];
     glGetDoublev(GL_PROJECTION_MATRIX, P);
-    
+
     float a = - Map<Matrix4d>(P)(2,2);
     float b = - Map<Matrix4d>(P)(2,3);
-    
+
     MatrixXfRow depthBuffer(H,W);
     MatrixXfRow depthBufferReverse(H,W);
     //    MatrixXfRow depthBufferReverseTest(H,W);
     glReadPixels(0, 0, W, H, GL_DEPTH_COMPONENT, GL_FLOAT, depthBuffer.data());
     depthBufferReverse = depthBuffer.colwise().reverse();
-    
+
     for_each(depthBufferReverse.data(), depthBufferReverse.data() + W*H, DepthConverter(a,b));
     _depthBufferMin = depthBufferReverse;
 
@@ -140,7 +140,7 @@ void DepthBuffer::renderMeshGL()
     // depthBufferReverse = depthBuffer.colwise().reverse();
     // for_each(depthBufferReverse.data(), depthBufferReverse.data() + W*H, DepthConverter(a,b));
     // _depthBufferMax = depthBufferReverse;
-    
+
 }
 
 void DepthBuffer::drawMeshGL()

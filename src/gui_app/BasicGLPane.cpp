@@ -79,7 +79,8 @@ void BasicGLPane::mouseMoved(wxMouseEvent& event)
         }
       else
         {
-          m_pCameraControl->camTransX += deltax;
+          // m_pCameraControl->camTransX += deltax;
+          m_pCameraControl->camTransX -= deltax;
           m_pCameraControl->camTransY -= deltay;
           Refresh(false);
         }
@@ -214,29 +215,14 @@ void BasicGLPane::render(wxPaintEvent& evt)
                  m_pCameraControl->cameraLoc.y,
                  m_pCameraControl->cameraLoc.z);
 
-  // if(m_pControlPanel->m_bShowSurface)
-  // pangaeaMeshRender(m_pMainFrame->outputInfo,
-  //     m_pControlPanel->m_bShowTexture?1:0,
-  //     m_pControlPanel->m_bShowGT,
-  //     m_pControlPanel->m_bShowEST,
-  //     m_pControlPanel->m_bDynamicThreshOn,
-  //     m_pControlPanel->m_nMaxPolyScale);
-
-  // if(m_pControlPanel->m_bShowPoints)
-  // pangaeaPointRender(m_pMainFrame->outputInfo,
-  //     m_pControlPanel->m_bShowTexture?1:0,
-  //     m_pControlPanel->m_bShowGT,
-  //     m_pControlPanel->m_bShowEST,
-  //     m_pControlPanel->m_bDeletePoints,
-  //     m_pControlPanel->m_nMaxPolyScale);
-
   //update mesh level
   if(m_pControlPanel->m_nRenderLevel != (*m_pMainFrame->pOutputInfo).nRenderLevel)
     {
       m_pControlPanel->m_nRenderLevel = (*m_pMainFrame->pOutputInfo).nRenderLevel;
       m_pControlPanel->m_pPyramidLevelSlider->SetValue(m_pControlPanel->m_nRenderLevel);
       m_pControlPanel->m_pPyramidLevelText->SetLabel(
-                                                     wxString::Format(wxT("Pyramid Level %d"), m_pControlPanel->m_nRenderLevel));
+                                                     wxString::Format(wxT("Pyramid Level %d"),
+                                                                      m_pControlPanel->m_nRenderLevel));
     }
 
   if(m_pControlPanel->m_bShowSurface)
