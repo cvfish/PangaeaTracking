@@ -9,6 +9,7 @@ ShapeSequenceReader::ShapeSequenceReader(ShapeLoadingSettings& settings, int
     m_nWidth = width * settings.shapeSamplingScale;
     m_nHeight = height * settings.shapeSamplingScale;
     m_colMajor = settings.shapeColMajor;
+    m_maskColMajor = settings.maskColMajor;
 
     startFrameNo = startFrame;
     currentFrameNo = startFrame;
@@ -82,7 +83,7 @@ void ShapeSequenceReader::Initialization()
 
     // load mask
     int numPnts = m_nWidth*m_nHeight;
-    if(useMask)        // column major mask
+    if(useMask)
     {
         maskImage.resize(numPnts);
         std::stringstream maskImagePath;
@@ -113,7 +114,7 @@ void ShapeSequenceReader::Initialization()
         }
     }
     //if mask is colMajor, convert it to row major and use it afterwards
-    if(m_colMajor)
+    if(m_maskColMajor)
     {
         vector<double> tempMaskImage;
         tempMaskImage.resize(numPnts);

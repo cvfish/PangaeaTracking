@@ -1,0 +1,20 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'MeshPyramid'
+ImageSourceSettings:
+  dataPath: '/cvfish/home/Work/data/cvlab/kinect_tshirt/kinect_tshirt/photo_metric/fr1_to_313/'
+#  numFrames: 313
+  numFrames: 3
+  width: 640
+  height: 480
+  isOrthoCamera: 0
+MeshLoadingSettings:
+  meshPath: '/home/cvfish/Work/code/github/PangaeaTracking/results/tshirt_depthMapInput/mesh_pyramid/'
+  meshFormat: "mesh%04d.obj"
+  meshLevelFormat: "mesh%04d_level%02d.ply"
+  propLeveldFormat: "prop_mesh%04d_level%02d.obj"
+  meshLevelList: [0]
+  visibilityMask: 1
+  loadProp: 0
+  fastLoading: 0
+  clockwise: 0

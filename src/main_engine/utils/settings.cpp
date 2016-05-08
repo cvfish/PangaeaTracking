@@ -171,6 +171,7 @@ ShapeLoadingSettings::ShapeLoadingSettings()
   solModelFile = "labelsSol_per3Dpnt.txt";
   shapeMaskFile = "mask.raw";
   labelColorFile = "colors_labels.txt";
+  maskColMajor = true;
   shapeColMajor = true;
   loadShapeMask = true;
   shapeSamplingScale = 0.25;
@@ -207,6 +208,9 @@ void ShapeLoadingSettings::read(const cv::FileNode& node)
 
   if(!node["loadShapeMask"].empty())
     node["loadShapeMask"] >> loadShapeMask;
+
+  if(!node["maskColMajor"].empty())
+    node["maskColMajor"] >> maskColMajor;
 
   if(!node["shapeColMajor"].empty())
     node["shapeColMajor"] >> shapeColMajor;

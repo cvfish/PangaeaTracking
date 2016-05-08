@@ -10,6 +10,7 @@ ShapesBufferReader::ShapesBufferReader(ShapeLoadingSettings& settings, int width
     m_nWidth = width * settings.shapeSamplingScale;
     m_nHeight = height * settings.shapeSamplingScale;
     m_colMajor = settings.shapeColMajor;
+    m_maskColMajor = settings.maskColMajor;
 
     startFrameNo = startFrame;
     currentFrameNo = startFrame;
@@ -90,7 +91,7 @@ void ShapesBufferReader::Initialization()
 
     int numPnts = m_nWidth * m_nHeight;
     // load mask
-    if(useMask)        // column major mask
+    if(useMask)
     {
         maskImage.resize(numPnts);
         std::stringstream maskImagePath;
@@ -120,7 +121,7 @@ void ShapesBufferReader::Initialization()
         }
     }
     // if mask is colMajor, convert it to row major and use it afterwards
-    if(m_colMajor)
+    if(m_maskColMajor)
     {
         vector<double> tempMaskImage;
         tempMaskImage.resize(numPnts);
@@ -530,7 +531,7 @@ bool ShapesBufferReader::trackFrame(int nFrame, unsigned char* pColorImageRGB,
 
     if(!setCurrentFrame(nFrame))
     return false;
-    
+
     if(!trackerInitialized)
     trackerInitSetup(outputInfo);
     else
@@ -608,7 +609,7 @@ void ShapesBufferReader::trackerInitSetup(TrackerOutputInfo& outputInfo)
 
     TOCK("setupShapeBufferRendering");
 
-    
+
 }
 
 void ShapesBufferReader::trackerUpdate(TrackerOutputInfo& outputInfo)

@@ -84,6 +84,7 @@ public:
 
   bool m_hasGT;
   bool m_colMajor;
+  bool m_maskColMajor;
 
   int m_nHeight;
   int m_nWidth;
@@ -180,6 +181,7 @@ public:
 
   bool m_hasGT;
   bool m_colMajor;
+  bool m_maskColMajor;
 
   int m_nHeight;
   int m_nWidth;

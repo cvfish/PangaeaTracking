@@ -1,0 +1,18 @@
+%YAML:1.0
+ImageSourceType: 'ImageSequence'
+TrackingType: 'ShapeSequence'
+ImageSourceSettings:
+  dataPath: '/cvfish/home/Work/data/cvlab/kinect_tshirt/kinect_tshirt/photo_metric/fr1_to_313/'
+#  numFrames: 313
+  numFrames: 10
+  width: 640
+  height: 480
+  isOrthoCamera: 0
+ShapeLoadingSettings:
+  resultsPath: '/home/cvfish/Work/code/github/PangaeaTracking/results/tshirt_depthMapInput/shapes/'
+  hasGT: 0
+  loadShapeMask: 1
+  shapeColMajor: 0
+  maskColMajor: 1
+  shapeSamplingScale: 1
+  shapeFormat: "shape_%04d.txt"

@@ -52,6 +52,8 @@ public:
 
   bool loadShapeMask;
   bool shapeColMajor;
+  bool maskColMajor;
+
   float shapeSamplingScale;
 
   int modelNum;
