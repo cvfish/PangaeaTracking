@@ -95,8 +95,12 @@ public:
   void AddGroundTruthConstantMask(ceres::Problem& problem);
   void AddGroundTruthVariableMask(ceres::Problem& problem);
 
-  double ComputeRMSError(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
-  double ComputeRMSErrorReg(PangaeaMeshData& results, PangaeaMeshData& resultsGT);
+  double ComputeRMSError(PangaeaMeshData& results,
+                         PangaeaMeshData& resultsGT,
+                         bool absError = false);
+  double ComputeRMSErrorReg(PangaeaMeshData& results,
+                            PangaeaMeshData& resultsGT,
+                            bool absError = false);
 
   void CheckNaN();
 
@@ -271,6 +275,9 @@ private:
   // recording the average error over the whole sequence
   double meanError;
   double meanErrorReg;
+
+  double meanAbsError;
+  double meanAbsErrorReg;
 
   std::ofstream scoresOutput;
   std::ofstream scoresOutputReg;

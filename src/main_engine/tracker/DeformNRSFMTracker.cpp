@@ -141,7 +141,7 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
         "INEXTENTTerm", "DeformTerm", "TermporalTerm", "SumCost", "TotalCost"});
   costNames = std::move(temp);
 
-  meanError = 0; meanErrorReg = 0;
+  meanError = 0; meanErrorReg = 0; meanAbsError = 0; meanAbsErrorReg = 0;
   if(trackerSettings.hasGT && !settings.scoresPath.empty())
     {
       // we will record the scores of all runned experiments here
@@ -165,7 +165,8 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
           for(int i = 0; i < costNames.size() - 2 ; ++i)
             scoresOutput << std::left << setw(15) << costNames[i] << ",";
 
-          scoresOutput << std::left << setw(15) << "error" << endl;
+          scoresOutput << std::left << setw(15) << "error" << ",";
+          scoresOutput << std::left << setw(15) << "abs_error" << endl;
 
           scoresOutput.close();
         }
@@ -193,7 +194,8 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
           for(int i = 0; i < costNames.size() - 2 ; ++i)
             scoresOutputReg << std::left << setw(15) << costNames[i] << ",";
 
-          scoresOutputReg << std::left << setw(15) << "error" << endl;
+          scoresOutputReg << std::left << setw(15) << "error" << ",";
+          scoresOutputReg << std::left << setw(15) << "abs_error" << endl;
 
           scoresOutputReg.close();
         }
@@ -829,6 +831,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
           double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
           double errorReg = ComputeRMSErrorReg(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
 
+          double errorAbs = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i], true);
+          double errorRegAbs = ComputeRMSErrorReg(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i], true);
+
           // print error to errorOutputForR
           if(trackerSettings.hasGT)
             {
@@ -846,6 +851,8 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
             {
               meanError += error;
               meanErrorReg += errorReg;
+              meanAbsError += errorAbs;
+              meanAbsErrorReg += errorRegAbs;
             }
 
         }
@@ -946,7 +953,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       scoresOutput << std::left << setw(15) << trackerSettings.weightTransPrior << ",";
 
       meanError = meanError / (nFrame - imageSourceSettings.startFrame + 1);
-      scoresOutput << std::left << setw(15) << meanError << endl;
+      scoresOutput << std::left << setw(15) << meanError << ",";
+      meanAbsError = meanAbsError / (nFrame - imageSourceSettings.startFrame + 1);
+      scoresOutput << std::left << setw(15) << meanAbsError << endl;
 
       scoresOutput.close();
 
@@ -969,7 +978,9 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
       scoresOutputReg << std::left << setw(15) << trackerSettings.weightTransPrior << ",";
 
       meanErrorReg = meanErrorReg / (nFrame - imageSourceSettings.startFrame + 1);
-      scoresOutputReg << std::left << setw(15) << meanErrorReg << endl;
+      scoresOutputReg << std::left << setw(15) << meanErrorReg << ",";
+      meanAbsErrorReg = meanAbsErrorReg / (nFrame - imageSourceSettings.startFrame + 1);
+      scoresOutputReg << std::left << setw(15) << meanAbsErrorReg << endl;
 
       scoresOutputReg.close();
 
@@ -3447,7 +3458,8 @@ void DeformNRSFMTracker::AddGroundTruthVariableMask(ceres::Problem& problem)
 }
 
 double DeformNRSFMTracker::ComputeRMSError(PangaeaMeshData& results,
-                                           PangaeaMeshData& resultsGT)
+                                           PangaeaMeshData& resultsGT,
+                                           bool absError)
 {
   int numVertices = results.numVertices;
   double gt_norm = 0;
@@ -3464,12 +3476,16 @@ double DeformNRSFMTracker::ComputeRMSError(PangaeaMeshData& results,
         }
     }
 
-  return sqrt(diff_norm) / sqrt(gt_norm);
+  if(absError)
+    return sqrt(diff_norm / numVertices);
+  else
+    return sqrt(diff_norm) / sqrt(gt_norm);
 
 }
 
 double DeformNRSFMTracker::ComputeRMSErrorReg(PangaeaMeshData& results,
-                                              PangaeaMeshData& resultsGT)
+                                              PangaeaMeshData& resultsGT,
+                                              bool absError)
 {
   //double error = ComputeRMSError(outputInfoPyramid[i].meshData, currentMeshPyramidGT.levels[i]);
   ceresOutput << "+++++++++++++++" << endl;
@@ -3496,7 +3512,10 @@ double DeformNRSFMTracker::ComputeRMSErrorReg(PangaeaMeshData& results,
         }
     }
 
-  return sqrt(diff_norm) / sqrt(gt_norm);
+  if(absError)
+    return sqrt(diff_norm / numVertices);
+  else
+    return sqrt(diff_norm) / sqrt(gt_norm);
 
   ceresOutput << "+++++++++++++++" << endl;
 
