@@ -148,22 +148,42 @@ void computeRot(vector<double>& template_vextex, vector<double>& vertex,
 {
     int num_neighbors = neighbors.size();
     MatrixXd Xt(3, num_neighbors), X(3, num_neighbors);
+
+    Map<VectorXd> w(weights.data(), num_neighbors);
+    Eigen::VectorXd w_normalized = w/w.sum();
+    Eigen::Vector3d Xt_mean, X_mean;
+
     for(int i = 0; i < num_neighbors; ++i)
     {
         for(int j = 0; j < 3; ++j)
         {
-            Xt(j,i) = weights[i] * (
-                template_vextex[j] - template_nbor_vertices[ neighbors[i] ][j]);
-
-            X(j,i) = weights[i] * (
-                vertex[j] - nbor_vertices[ neighbors[i] ][j]);
+            Xt(j,i) = template_vextex[j] - template_nbor_vertices[ neighbors[i] ][j];
+            X(j,i) = vertex[j] - nbor_vertices[ neighbors[i] ][j];
 
             if(deform)
             X(j,i) += Xt(j,i);
         }
     }
 
-    Eigen::Matrix3d sigma = Xt * X.transpose();
+    // std::cout << Xt << endl;
+    // std::cout << X << endl;
+
+    for(int i=0; i<3; ++i) {
+      Xt_mean(i) = (Xt.row(i).array()*w_normalized.transpose().array()).sum();
+      X_mean(i) = (X.row(i).array()*w_normalized.transpose().array()).sum();
+    }
+
+    Xt.colwise() -= Xt_mean;
+    X.colwise() -= X_mean;
+
+    // std::cout << Xt_mean << endl;
+    // std::cout << X_mean << endl;
+    // std::cout << Xt << endl;
+    // std::cout << X << endl;
+    // std::cout << w_normalized << endl;
+
+    Eigen::Matrix3d sigma = Xt * w_normalized.asDiagonal() * X.transpose();
+
     Eigen::JacobiSVD<Eigen::Matrix3d> svd(sigma, Eigen::ComputeFullU | Eigen::ComputeFullV);
     Eigen::Matrix3d Rot;
 

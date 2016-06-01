@@ -56,6 +56,13 @@ void BasicGLPane::mouseMoved(wxMouseEvent& event)
         {
           m_pCameraControl->camAngleX += deltay*0.5;
           m_pCameraControl->camAngleY += deltax*0.5;
+
+          // m_pCameraControl->matrixModelRotation.rotateX( deltay*0.5 );
+          // m_pCameraControl->matrixModelRotation.rotateY( deltax*0.5 );
+
+          m_pCameraControl->matrixModelRotation.rotateY( deltax*0.5 );
+          m_pCameraControl->matrixModelRotation.rotateX( deltay*0.5 );
+
           Refresh(false);
         }
     }
@@ -85,6 +92,7 @@ void BasicGLPane::mouseMoved(wxMouseEvent& event)
           Refresh(false);
         }
     }
+
 
   m_nX = event.GetX();
   m_nY = event.GetY();

@@ -794,6 +794,13 @@ template<class FloatType>
 void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<FloatType>& meshData)
 {
   bfs::path filePath(filename.c_str());
+
+  // create the output folder when necessary
+  bfs::path fileFolder = filePath.parent_path();
+
+  if(!bfs::exists( fileFolder ))
+    bfs::create_directories( fileFolder );
+
   if(filePath.extension().compare(std::string(".off")) == 0) {
     writeToOFF(filename,meshData);
   } else if(filePath.extension().compare(std::string(".ply")) == 0){

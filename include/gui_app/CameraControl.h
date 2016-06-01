@@ -12,31 +12,33 @@ class CCameraControl
 {
 public:
 
-        float camAngleX;
-        float camAngleY;
-        float camAngleZ;
-        float camTransX;
-        float camTransY;
-        float camTransZ;
+  float camAngleX;
+  float camAngleY;
+  float camAngleZ;
+  float camTransX;
+  float camTransY;
+  float camTransZ;
 
-        Matrix4 matrixView;     // for camera
-        Matrix4 matrixModel;    // for object
-        Matrix4 matrixModelView;
+  Matrix4 matrixView;     // for camera
+  Matrix4 matrixModel;    // for object
+  Matrix4 matrixModelView;
 
-        Vector3 center;
-        Vector4 cameraLoc;
+  Matrix4 matrixModelRotation; // rotation
+
+  Vector3 center;
+  Vector4 cameraLoc;
 
 public:
 
-        CCameraControl();       //inits the values (Position: (0|0|0) Target: (0|0|-1) )
-        void Reset();    // resets values to init
-        void setObjectCenter(double objectCenter[3]);
-        // anyway, we need to computed the reprojections of 3d points
-        // void setTrackingPose(CoordinateType trackingRot[9],
-        //     trackingTrans[3]);
-        const float* getModelViewMatrix();
-        
-        
+  CCameraControl();       //inits the values (Position: (0|0|0) Target: (0|0|-1) )
+  void Reset();    // resets values to init
+  void setObjectCenter(double objectCenter[3]);
+  // anyway, we need to computed the reprojections of 3d points
+  // void setTrackingPose(CoordinateType trackingRot[9],
+  //     trackingTrans[3]);
+  const float* getModelViewMatrix();
+
+
 };
 
 #endif

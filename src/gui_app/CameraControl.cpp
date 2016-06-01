@@ -20,6 +20,7 @@ void CCameraControl::Reset()
 
   matrixView.identity();
   matrixModel.identity();
+  matrixModelRotation.identity();
 
   cameraLoc.x = 0;
   cameraLoc.y = 0;
@@ -41,17 +42,22 @@ const float* CCameraControl::getModelViewMatrix()
   // we will transform P(x,y,z) to P(x,-y,-z)
   // after modelview matrix transformation
   matrixView.identity();
-  matrixView.rotateX(180);
+
   matrixView.translate(camTransX+center[0],
-                       camTransY-center[1],
-                       camTransZ-center[2]);
+                       -camTransY+center[1],
+                       -camTransZ+center[2]);
+
+  matrixView.rotateX(180);
 
   matrixModel.identity();
   matrixModel.translate(-center);
-  matrixModel.rotateZ(camAngleZ);
-  matrixModel.rotateX(camAngleX);
-  matrixModel.rotateY(camAngleY);
-  matrixModelView = matrixView*matrixModel;
+
+  // matrixModel.rotateZ(camAngleZ);
+  // matrixModel.rotateX(camAngleX);
+  // matrixModel.rotateY(camAngleY);
+  // matrixModelView = matrixView*matrixModel;
+
+  matrixModelView = matrixView * matrixModelRotation * matrixModel;
 
   Matrix4 matrixModelViewInv;
   matrixModelViewInv = matrixModelView;

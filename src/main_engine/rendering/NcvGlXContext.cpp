@@ -22,7 +22,7 @@ namespace ncv
 
 		return false;
 	}
-    
+
 	GlXOffscreenContext::GlXOffscreenContext(uint width, uint height) :
 		_display(NULL),
 		_fbConfig(None),
