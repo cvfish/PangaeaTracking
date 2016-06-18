@@ -5,6 +5,9 @@
 
 CCameraControl::CCameraControl()
 {
+  rotX = 0;
+  rotY = 0;
+
   Reset();
 }
 
@@ -51,6 +54,9 @@ const float* CCameraControl::getModelViewMatrix()
 
   matrixModel.identity();
   matrixModel.translate(-center);
+
+  matrixModel.rotateX(rotX);
+  matrixModel.rotateY(rotY);
 
   // matrixModel.rotateZ(camAngleZ);
   // matrixModel.rotateX(camAngleX);

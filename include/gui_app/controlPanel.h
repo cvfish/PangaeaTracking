@@ -71,6 +71,11 @@ public:
   wxStaticText *m_pPyramidLevelText;
   wxSlider *m_pPyramidLevelSlider;
 
+  wxStaticText *m_pRotationXText;
+  wxStaticText *m_pRotationYText;
+  wxSlider *m_pRotationXSlider;
+  wxSlider *m_pRotationYSlider;
+
   int m_nRenderLevel;   // pyramid level rendering
   bool m_nRenderProp;   // render type, whether rendering propagation result
 
@@ -128,6 +133,9 @@ public:
   int m_nOverlaySize;
 
   MainFrame* m_pMainFrame;
+
+  int m_nRotX;
+  int m_nRotY;
 
 private:
 

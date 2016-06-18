@@ -244,6 +244,9 @@ MeshLoadingSettings::MeshLoadingSettings()
 	clockwise = true;
 
   rigidRendering = false;
+
+  minDist = 0;
+  maxDist = 5;
 }
 
 void MeshLoadingSettings::read(const cv::FileNode& node)
@@ -290,6 +293,12 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
 
   if(!node["rigidRendering"].empty())
     node["rigidRendering"] >> rigidRendering;
+
+  if(!node["minDist"].empty())
+    node["minDist"] >> minDist;
+
+  if(!node["maxDist"].empty())
+    node["maxDist"] >> maxDist;
 }
 
 TrackerSettings::TrackerSettings()

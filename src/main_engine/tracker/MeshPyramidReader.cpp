@@ -442,6 +442,9 @@ void MeshPyramidReader::setMeshPyramid()
 
 void MeshPyramidReader::setErrorWithGT()
 {
+  double maxError = meshLoadingSettings.maxDist;
+  double minError = meshLoadingSettings.minDist;
+
   for(int i = 0; i < m_nNumMeshLevels; ++i)
     {
 
@@ -449,8 +452,9 @@ void MeshPyramidReader::setErrorWithGT()
       double diff_range;
       double sum_square_diff;
       double normalized_diff;
-      double minError = std::numeric_limits<double>::max();
-      double maxError = std::numeric_limits<double>::min();
+      double ratio;
+      // double minError = std::numeric_limits<double>::max();
+      // double maxError = std::numeric_limits<double>::min();
 
       int numVertices = outputInfoPyramid[i].meshData.vertices.size();
       outputInfoPyramid[i].meshData.diffWithGT.resize(numVertices);
@@ -462,64 +466,42 @@ void MeshPyramidReader::setErrorWithGT()
           for(int k = 0; k < 3; ++k)
             diff[k] = currentMeshPyramidGT.levels[i].vertices[j][k] - currentMeshPyramid.levels[i].vertices[j][k];
 
+
           sum_square_diff = (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]);
 
-          outputInfoPyramid[i].meshData.diffWithGT[j][0] =  sum_square_diff;
-          outputInfoPyramid[i].meshData.diffWithGT[j][1] =  0;
-          outputInfoPyramid[i].meshData.diffWithGT[j][2] =  0;
+          normalized_diff = min( max( sqrt(sum_square_diff) , minError), maxError);
 
-          if(minError > sum_square_diff)
-            minError = sum_square_diff;
-          if(maxError < sum_square_diff)
-            maxError = sum_square_diff;
+          diff_range = maxError - minError;
+          ratio = 2 * (normalized_diff - minError) / diff_range;
+
+          outputInfoPyramid[i].meshData.diffWithGT[j][0] = max(ratio - 1, 0.0);
+          outputInfoPyramid[i].meshData.diffWithGT[j][2] = max(1 - ratio, 0.0);
+          outputInfoPyramid[i].meshData.diffWithGT[j][1] = 1 - abs(ratio - 1);
+
+          // if( j == 0)
+          //   {
+          //     cout << "vertex " << currentMeshPyramid.levels[i].vertices[j][0] << " "
+          //          << currentMeshPyramid.levels[i].vertices[j][1] << " "
+          //          << currentMeshPyramid.levels[i].vertices[j][2] << endl;
+          //     cout << "center vertex " << currentMeshPyramid.levels[i].center[0] << " "
+          //          << currentMeshPyramid.levels[i].center[1] << " "
+          //          << currentMeshPyramid.levels[i].center[2] << endl;
+
+          //     cout << "gt_vertex " << currentMeshPyramidGT.levels[i].vertices[j][0] << " "
+          //          << currentMeshPyramidGT.levels[i].vertices[j][1] << " "
+          //          << currentMeshPyramidGT.levels[i].vertices[j][2] << endl;
+          //     cout << "gt_center vertex" << currentMeshPyramidGT.levels[i].center[0] << " "
+          //          << currentMeshPyramidGT.levels[i].center[1] << " "
+          //          << currentMeshPyramidGT.levels[i].center[2] << endl;
+
+          //     cout << "squared_diff " << sum_square_diff << endl;
+          //     cout << "normalized_diff " << normalized_diff << endl;
+          //     cout << "ratio " << ratio << " rgb " << max(ratio - 1, 0.0) << " "
+          //          << max(1-ratio, 0.0) << " " << 1 - abs(ratio - 1) << endl;
+          //   }
+
         }
 
-      diff_range = maxError - minError;
-
-      if(diff_range == 0)
-        {
-          for(int j = 0; j < numVertices; ++j)
-            outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;
-        }
-      else
-        {
-
-          for(int j = 0; j < numVertices; ++j)
-            {
-              normalized_diff = outputInfoPyramid[i].meshData.diffWithGT[j][0] /diff_range;
-              // if(normalized_diff <= 1.0/3)
-              //   {
-              //     // interpolation between blue and green
-              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
-              //     outputInfoPyramid[i].meshData.diffWithGT[j][2] = normalized_diff*3;      // set blue channel
-              //   }
-              // else if(normalized_diff > 1.0/3 && normalized_diff <= 2.0/3)
-              //   {
-              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;                      // reset red channel
-              //     outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*3 - 1;  // set blue channel
-              //   }
-              // else if(normalized_diff > 2.0/3)
-              //   {
-              //     outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*3 - 2;  // set red channel
-              //   }
-              if(normalized_diff <= 1.0/2)
-                {
-                  // interpolation between blue and green
-                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = 0;
-                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = normalized_diff*2;
-                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = 1-normalized_diff*2;
-                }
-              else
-                {
-                  // interpolation between green and red
-                  outputInfoPyramid[i].meshData.diffWithGT[j][0] = normalized_diff*2-1;
-                  outputInfoPyramid[i].meshData.diffWithGT[j][1] = 2-2*normalized_diff;
-                  outputInfoPyramid[i].meshData.diffWithGT[j][2] = 0;
-                }
-
-            }
-          // normalize the diff of vertices over the whole mesh
-        }
     }
 }
 

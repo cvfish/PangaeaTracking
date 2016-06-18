@@ -209,6 +209,10 @@ void BasicGLPane::render(wxPaintEvent& evt)
   glLoadIdentity();
   glLoadMatrixf(&PMatrix[0][0]);
 
+  // update side view rotation
+  m_pCameraControl->rotX = m_pControlPanel->m_nRotX;
+  m_pCameraControl->rotY = m_pControlPanel->m_nRotY;
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glLoadMatrixf(m_pCameraControl->getModelViewMatrix());
@@ -277,10 +281,8 @@ void BasicGLPane::initLighting(bool spot,GLfloat ambient,GLfloat spot1,GLfloat s
     glLightfv(GL_LIGHT0, GL_DIFFUSE,zeros);
 
   glLightfv(GL_LIGHT0, GL_POSITION, orientation);
-  glLightfv(GL_LIGHT0, GL_SPECULAR,zeros);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, zeros);
 
-  glLightfv(GL_LIGHT0, GL_POSITION, orientation);
-  glLightfv(GL_LIGHT0, GL_SPECULAR,zeros);
   glEnable(GL_COLOR_MATERIAL);
 
   glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
@@ -445,14 +447,18 @@ void BasicGLPane::renderHelper(PangaeaMeshData& mesh, int faceID, bool showTextu
 
               if(m_pControlPanel->m_bShowNormals)
                 {
-                  //glColor3f(sqrt(mesh.normals[offset][0] / 2.0 + 0.5),
-                  //	sqrt(mesh.normals[offset][1] / 2.0 + 0.5),
-                  //	sqrt(mesh.normals[offset][2] / 2.0 + 0.5));
-                  glColor3f(
-                            (mesh.normals[offset][0] + 1.0f) / 2.0,
-                            (mesh.normals[offset][1] + 1.0f) / 2.0,
-                            (mesh.normals[offset][2] + 1.0f) / 2.0
-                            );
+                  if(m_pControlPanel->m_bFlipNorm)
+                    glColor3f(
+                              (mesh.normals[offset][1] + 1.0f) / 2.0,
+                              (mesh.normals[offset][0] + 1.0f) / 2.0,
+                              (mesh.normals[offset][2] + 1.0f) / 2.0
+                              );
+                  else
+                    glColor3f(
+                              (-mesh.normals[offset][1] + 1.0f) / 2.0,
+                              (-mesh.normals[offset][0] + 1.0f) / 2.0,
+                              (-mesh.normals[offset][2] + 1.0f) / 2.0
+                              );
                 }
 
               if(!isGT && m_pControlPanel->m_bShowErrorHeatMap && mesh.diffWithGT.size() > 0)

@@ -1205,7 +1205,6 @@ void DeformNRSFMTracker::UpdateResultsLevel(int level)
   InternalIntensityImageType* color_image_split = pImagePyramid->getColorImageSplit(level);
   UpdateColorDiff(output_info, visibility_mask, color_image_split);
 
-
   if(trackerSettings.useFeatureImages && featureSettings.featureTermWeight > 0)
     {
       FeatureLevel& feature_level = pFeaturePyramid->getCurrFeatureLevel(0);
@@ -3771,6 +3770,7 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
       // update the features in template mesh
       PangaeaMeshData& templateMesh = templateMeshPyramid.levels[i];
       AttachFeatureToMesh(&prevMesh, &featureLevel, &camInfo, visibilityMask, &templateMesh);
+      outputInfoPyramid[i].meshData.featuresBuffer = templateMesh.featuresBuffer;
 
       // update the features in ground truth template mesh
       if( trackerSettings.hasGT &&  i < currentMeshPyramidGT.levels.size() )
@@ -3779,6 +3779,7 @@ void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
           PangaeaMeshData& templateMeshGT =  templateMeshPyramidGT.levels[i];
           PangaeaMeshData& prevMeshGT = currentMeshPyramidGT.levels[i];
           AttachFeatureToMesh(&prevMeshGT, &featureLevel, &camInfo, visibilityMaskGT, &templateMeshGT);
+          outputInfoPyramid[i].meshDataGT.featuresBuffer = templateMeshGT.featuresBuffer;
         }
 
     }

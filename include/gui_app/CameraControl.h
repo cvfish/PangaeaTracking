@@ -28,6 +28,10 @@ public:
   Vector3 center;
   Vector4 cameraLoc;
 
+  // for side view rendering
+  int rotX;
+  int rotY;
+
 public:
 
   CCameraControl();       //inits the values (Position: (0|0|0) Target: (0|0|-1) )

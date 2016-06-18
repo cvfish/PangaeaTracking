@@ -89,6 +89,9 @@ public:
 
   // doing rigid rendering for the first frame
   bool rigidRendering;
+
+  double minDist;
+  double maxDist;
 };
 
 class TrackerSettings

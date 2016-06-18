@@ -138,6 +138,15 @@ controlPanel::controlPanel(wxWindow *parent)
 
   m_pVisTolRatioText = new wxStaticText(this, wxID_ANY, _("Depth Tolerance Ratio 10/1000"), wxPoint(5, index));
   index+=20;
+
+  m_pRotationXText = new wxStaticText(this, wxID_ANY, _("Rotation X 0/360"), wxPoint(5, index));
+  m_pRotationYText = new wxStaticText(this, wxID_ANY, _("Rotation Y 0/360"), wxPoint(100, index));
+  index+=20;
+  m_pRotationXSlider = new wxSlider(this, wxID_ANY, 0, 0, 360, wxPoint(5, index-10), wxSize(200,20));
+  index+=10;
+  m_pRotationYSlider = new wxSlider(this, wxID_ANY, 0, 0, 360, wxPoint(5, index-10), wxSize(200,20));
+
+  index+=20;
   m_pVisTolRatioSlider = new wxSlider(this, wxID_ANY, 10, 1, 1000, wxPoint(5,index-10), wxSize(200,40));
   index+=40;
   m_pPyramidLevelText = new wxStaticText(this, wxID_ANY, _("Pyramid Level 0"), wxPoint(5, index));
@@ -236,6 +245,11 @@ void controlPanel::Update(bool fromTracker)
   m_pOverlaySizeText->SetLabel(wxString::Format(wxT("Overlay Size %d"), m_nOverlaySize));
   m_pPntSizeText->SetLabel(wxString::Format(wxT("Point Size %d"), m_nPntSize));
   m_pFrameSlider->SetLabel(wxString::Format(wxT("Frame %d"), m_nCurrentFrame));
+
+  m_nRotX = m_pRotationXSlider->GetValue();
+  m_nRotY = m_pRotationYSlider->GetValue();
+  m_pRotationXText->SetLabel(wxString::Format(wxT("Rotation X %d/360"), m_nRotX));
+  m_pRotationYText->SetLabel(wxString::Format(wxT("Rotation Y %d/360"), m_nRotY));
 
   if(m_nRenderLevel != m_pPyramidLevelSlider->GetValue() ||
      m_bRenderProp != m_pRenderPropCheckBox->IsChecked() )
