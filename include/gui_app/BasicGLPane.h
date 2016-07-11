@@ -40,6 +40,7 @@ public:
   void pointRender(PangaeaMeshData& mesh, bool showTexture, bool isGT, bool threshOn, GLfloat thresh);
 
   void renderHelper(PangaeaMeshData& mesh, int faceID, bool showTexture, bool isGT);
+  void renderPoint(PangaeaMeshData& mesh, int pointID, bool showTexture, bool isGT);
 
   wxGLContext* m_pGLContext;
   CCameraControl* m_pCameraControl;

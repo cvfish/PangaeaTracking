@@ -359,16 +359,31 @@ void BasicGLPane::meshRender(PangaeaMeshData& mesh, bool showTexture, bool isGT,
     }
   glEnd();
 
-  // if(m_pControlPanel->m_bShowEdges)
-  // {
-  //      for(int i = 0; i < mesh.numFaces; ++i)
-  //      {
-  //          glBegin(GL_LINE_LOOP);
-  //          // renderHelper(mesh, i, showTexture, isGT);
-  //          renderHelper(mesh, i, 0, isGT);
-  //          glEnd();
-  //      }
-  // }
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+  glColor3f(0.1, 0.1, 0.2);
+  if(m_pControlPanel->m_bShowEdges)
+  {
+       for(int i = 0; i < mesh.numFaces; ++i)
+       {
+         // glBegin(GL_LINE_LOOP);
+         // renderHelper(mesh, i, 0, isGT);
+         // glEnd();
+         glLineWidth(1.0f);
+         glBegin(GL_LINE_LOOP);
+         for(int j = 0; j < 3; ++j)
+           {
+             glVertex3f( mesh.vertices[ mesh.facesVerticesInd[i][j] ][0],
+                         mesh.vertices[ mesh.facesVerticesInd[i][j] ][1],
+                         mesh.vertices[ mesh.facesVerticesInd[i][j] ][2]);
+           }
+         glEnd();
+       }
+  }
 
 }
 
@@ -376,22 +391,29 @@ void BasicGLPane::pointRender(PangaeaMeshData& mesh, bool showTexture, bool isGT
 {
   glPointSize(m_pControlPanel->m_nPntSize);
 
-  for(int i = 0; i < mesh.numFaces; ++i)
-    {
-      if(m_pControlPanel->m_bShowEdges)
-        glBegin(GL_LINE_LOOP);
-      else
-        glBegin(GL_POINTS);
+  // for(int i = 0; i < mesh.numFaces; ++i)
+  //   {
+  //     if(m_pControlPanel->m_bShowEdges)
+  //       glBegin(GL_LINE_LOOP);
+  //     else
+  //       glBegin(GL_POINTS);
 
-      if(deletePoints && !checksize( &mesh.vertices[ mesh.facesVerticesInd[i][0] ][0],
-                                     &mesh.vertices[ mesh.facesVerticesInd[i][1] ][0],
-                                     &mesh.vertices[ mesh.facesVerticesInd[i][2] ][0],
-                                     exp(thresh)))
-        continue;
+  //     if(deletePoints && !checksize( &mesh.vertices[ mesh.facesVerticesInd[i][0] ][0],
+  //                                    &mesh.vertices[ mesh.facesVerticesInd[i][1] ][0],
+  //                                    &mesh.vertices[ mesh.facesVerticesInd[i][2] ][0],
+  //                                    exp(thresh)))
+  //       continue;
 
-      renderHelper(mesh, i, showTexture, isGT);
-      glEnd();
-    }
+  //     renderHelper(mesh, i, showTexture, isGT);
+  //     glEnd();
+  //   }
+
+  glBegin(GL_POINTS);
+
+  for(int i = 0; i < mesh.numVertices; ++i)
+    renderPoint(mesh, i, showTexture, isGT);
+
+  glEnd();
 
 }
 
@@ -409,78 +431,84 @@ void BasicGLPane::renderHelper(PangaeaMeshData& mesh, int faceID, bool showTextu
 
   for(int k = 0; k < 3; ++k)
     {
-      int offset = mesh.facesVerticesInd[faceID][k];
+      int pointID = mesh.facesVerticesInd[faceID][k];
+      renderPoint(mesh, pointID, showTexture, isGT);
+    }
 
-      if(m_pControlPanel->m_bFlipNorm)
-        glNormal3f( -mesh.normals[offset][0],
-                    -mesh.normals[offset][1],
-                    -mesh.normals[offset][2]);
-      else
-        glNormal3f( mesh.normals[offset][0],
-                    mesh.normals[offset][1],
-                    mesh.normals[offset][2]);
+}
 
-      if(m_pControlPanel->m_bOcclusionMode)
-        {
-          // if(m_pMainFrame->outputInfo.visibilityMask[offset]) //visiblle
-          if((*m_pMainFrame->pOutputInfo).visibilityMask[offset]) //visiblle
-            glColor3f(1.0, 0.0, 0.0);
-          else
-            glColor3f(0.0, 0.0, 1.0);
-        }
+void BasicGLPane::renderPoint(PangaeaMeshData& mesh, int pointID, bool showTexture, bool isGT)
+{
+
+  if(m_pControlPanel->m_bFlipNorm)
+    glNormal3f( -mesh.normals[pointID][0],
+                -mesh.normals[pointID][1],
+                -mesh.normals[pointID][2]);
+  else
+    glNormal3f( mesh.normals[pointID][0],
+                mesh.normals[pointID][1],
+                mesh.normals[pointID][2]);
+
+  if(m_pControlPanel->m_bOcclusionMode)
+    {
+      // if(m_pMainFrame->outputInfo.visibilityMask[pointID]) //visiblle
+      if((*m_pMainFrame->pOutputInfo).visibilityMask[pointID]) //visiblle
+        glColor3f(1.0, 0.0, 0.0);
+      else
+        glColor3f(0.0, 0.0, 1.0);
+    }
+  else
+    {
+      if(showTexture)
+        glColor3f( mesh.colors[pointID][0],
+                   mesh.colors[pointID][1],
+                   mesh.colors[pointID][2]);
       else
         {
-          if(showTexture)
-            glColor3f( mesh.colors[offset][0],
-                       mesh.colors[offset][1],
-                       mesh.colors[offset][2]);
+          if(isGT)
+            glColor3f( mesh.modelColors[ mesh.modelLabels[pointID] ][1],
+                       mesh.modelColors[ mesh.modelLabels[pointID] ][0],
+                       mesh.modelColors[ mesh.modelLabels[pointID] ][2]);
           else
+            glColor3f( mesh.modelColors[ mesh.modelLabels[pointID] ][0],
+                       mesh.modelColors[ mesh.modelLabels[pointID] ][1],
+                       mesh.modelColors[ mesh.modelLabels[pointID] ][2]);
+
+          if(m_pControlPanel->m_bShowNormals)
             {
-              if(isGT)
-                glColor3f( mesh.modelColors[ mesh.modelLabels[offset] ][1],
-                           mesh.modelColors[ mesh.modelLabels[offset] ][0],
-                           mesh.modelColors[ mesh.modelLabels[offset] ][2]);
+              if(m_pControlPanel->m_bFlipNorm)
+                glColor3f(
+                          (mesh.normals[pointID][1] + 1.0f) / 2.0,
+                          (mesh.normals[pointID][0] + 1.0f) / 2.0,
+                          (mesh.normals[pointID][2] + 1.0f) / 2.0
+                          );
               else
-                glColor3f( mesh.modelColors[ mesh.modelLabels[offset] ][0],
-                           mesh.modelColors[ mesh.modelLabels[offset] ][1],
-                           mesh.modelColors[ mesh.modelLabels[offset] ][2]);
-
-              if(m_pControlPanel->m_bShowNormals)
-                {
-                  if(m_pControlPanel->m_bFlipNorm)
-                    glColor3f(
-                              (mesh.normals[offset][1] + 1.0f) / 2.0,
-                              (mesh.normals[offset][0] + 1.0f) / 2.0,
-                              (mesh.normals[offset][2] + 1.0f) / 2.0
-                              );
-                  else
-                    glColor3f(
-                              (-mesh.normals[offset][1] + 1.0f) / 2.0,
-                              (-mesh.normals[offset][0] + 1.0f) / 2.0,
-                              (-mesh.normals[offset][2] + 1.0f) / 2.0
-                              );
-                }
-
-              if(!isGT && m_pControlPanel->m_bShowErrorHeatMap && mesh.diffWithGT.size() > 0)
-                {
-                  glColor3f(
-                            mesh.diffWithGT[offset][0],
-                            mesh.diffWithGT[offset][1],
-                            mesh.diffWithGT[offset][2]
-                            );
-                }
-
-              // // show the gray edges
-              // glColor3f( 0, 0, 0);
-
+                glColor3f(
+                          (-mesh.normals[pointID][1] + 1.0f) / 2.0,
+                          (-mesh.normals[pointID][0] + 1.0f) / 2.0,
+                          (-mesh.normals[pointID][2] + 1.0f) / 2.0
+                          );
             }
 
+          if(!isGT && m_pControlPanel->m_bShowErrorHeatMap && mesh.diffWithGT.size() > 0)
+            {
+              glColor3f(
+                        mesh.diffWithGT[pointID][0],
+                        mesh.diffWithGT[pointID][1],
+                        mesh.diffWithGT[pointID][2]
+                        );
+            }
+
+          // // show the gray edges
+          // glColor3f( 0, 0, 0);
+
         }
 
-      glVertex3f( mesh.vertices[offset][0],
-                  mesh.vertices[offset][1],
-                  mesh.vertices[offset][2]);
     }
+
+  glVertex3f( mesh.vertices[pointID][0],
+              mesh.vertices[pointID][1],
+              mesh.vertices[pointID][2]);
 
 }
 
