@@ -340,7 +340,16 @@ void MainEngine::LoadInitialMeshUVD()
           tempColorImageRGB.convertTo(colorImage, cv::DataType<Vec3d>::type, 1./255);
 
           int blurSize = trackerSettings.blurFilterSizes[i];
-          if(blurSize > 0)
+
+          double blurSigma;
+          if(trackerSettings.blurSigmaSizes.size() > 0)
+            blurSigma = trackerSettings.blurSigmaSizes[i];
+          else
+            blurSigma = -1;
+
+          if(trackerSettings.useSigmaOnly)
+            cv::GaussianBlur(colorImage, colorImage, cv::Size(0, 0), blurSigma);
+          else if(blurSize > 0)
             cv::GaussianBlur(colorImage, colorImage, cv::Size(blurSize, blurSize), 3);
 
           PangaeaMeshIO::createMeshFromDepth(templateMesh, colorImage,

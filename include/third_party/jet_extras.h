@@ -76,7 +76,7 @@ struct Chain {
                            const FunctionType dfdx[kNumArgs],
                            const ArgumentType x[kNumArgs]) {
     // In the default case of scalars, there's nothing to do since there are no
-    // derivatives to propagate. 
+    // derivatives to propagate.
     return f;
   }
 };

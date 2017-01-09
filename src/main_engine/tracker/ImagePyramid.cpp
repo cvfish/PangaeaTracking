@@ -219,7 +219,18 @@ void ImagePyramid::setupPyramid(unsigned char* pColorImageRGB, int numLevels)
       else
         blurSigma = -1;
 
-      if(blurSize > 0)
+      if(trackerSettings.useSigmaOnly && blurSigma > 0){
+        cv::GaussianBlur(grayBufferImage,
+                         blurGrayBufferImage,
+                         cv::Size(0, 0),
+                         blurSigma);
+
+        cv::GaussianBlur(colorBufferImage,
+                         blurColorBufferImage,
+                         cv::Size(0, 0),
+                         blurSigma);
+      }
+      else if(blurSize > 0)
         {
           cv::GaussianBlur(grayBufferImage,
                            blurGrayBufferImage,

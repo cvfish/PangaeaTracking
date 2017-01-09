@@ -143,6 +143,8 @@ public:
   std::string linearSolver;
   int numOptimizationLevels;
   int numOptimizationLevelsToDo;
+
+  bool useSigmaOnly;
   IntegerContainerType blurFilterSizes;
   CoordinateContainerType blurSigmaSizes;
 
@@ -271,6 +273,7 @@ public:
   string keyNameFormat;
 
   // feature image stuff
+  bool useSigmaOnly;
   IntegerContainerType blurFeatureFilterSizes;
   CoordinateContainerType blurFeatureSigmaSizes;
   IntegerContainerType featurePyramidSamplingFactors;

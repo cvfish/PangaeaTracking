@@ -152,7 +152,13 @@ void FeaturePyramid::setupPyramid(unsigned char* pCurrentGrayImage,
           // cout << "blur size: " << blurSize << endl;
           // cout << "blur sigma: " << blurSigma << endl;
 
-          if(blurSize > 0){
+          if(featureSettings.useSigmaOnly && blurSigma > 0){
+            cv::GaussianBlur(featureBufferImage,
+                             blurBufferImage,
+                             cv::Size(0, 0),
+                             blurSigma);
+          }
+          else if(blurSize > 0){
             cv::GaussianBlur(featureBufferImage,
                              blurBufferImage,
                              cv::Size(blurSize, blurSize),

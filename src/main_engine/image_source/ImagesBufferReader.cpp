@@ -10,12 +10,12 @@ ImagesBufferReader::ImagesBufferReader(ImageSourceSettings& settings)
     imgFormat = settings.imageFormat;
 
     currentFrameNo = startFrameNo;
-    
+
     // for loop load all the images
     nFrameStep = settings.frameStep;
     int bufferSize = (totalFrameNo - startFrameNo)/nFrameStep + 1;
     m_vImages.resize(bufferSize);
-    
+
     nFrameStep = settings.frameStep;
     char buffer[BUFFER_SIZE];
     for(int i = startFrameNo; i <= totalFrameNo; i = i + nFrameStep)
@@ -105,7 +105,7 @@ void ImagesBufferReader::readUVDImage(DepthImageType& uImage, DepthImageType& vI
                 uImage(i,j) = j+1;
                 vImage(i,j) = i+1;
             }
-        }        
+        }
     }
     // ReadRawDepth(data_path,"refX.raw",m_nWidth,m_nHeight,uImage);
     // ReadRawDepth(data_path,"refY.raw",m_nWidth,m_nHeight,vImage);
@@ -116,7 +116,7 @@ void ImagesBufferReader::readUVDImage(DepthImageType& uImage, DepthImageType& vI
     imagePath << data_path.str() << "mask.png";
     IntensityImageType maskImage = cv::imread(imagePath.str().c_str(),0);
     maskImage.convertTo( maskImageAux, cv::DataType<CoordinateType>::type);
-    
+
 }
 
 void ImagesBufferReader::ReadRawDepth(std::stringstream& data_path, std::string filename,

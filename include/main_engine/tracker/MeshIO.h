@@ -19,7 +19,7 @@ public:
   static void updateFromFile(const std::string& filename, MeshData<FloatType>& meshData,
                              bool clockwise = true);
 
-  static void writeToFile(const std::string& filename, const MeshData<FloatType>& meshData);
+  static void writeToFile(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII);
 
   // create mesh from grid aligned 3d points
   static void createMeshFromDepth(MeshData<FloatType>& meshData,
@@ -68,8 +68,8 @@ private:
 	/* Write Functions													    */
 	/************************************************************************/
 
-	static void writeToPLY(const std::string& filename, const MeshData<FloatType>& meshData);
-  static void writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData);
+	static void writeToPLY(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII);
+  static void writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII);
 
 	static void writeToOFF(const std::string& filename, const MeshData<FloatType>& meshData) {};
 
@@ -791,7 +791,7 @@ void MeshIO<FloatType>::updateFromOBJ(const std::string& filename,
 }
 
 template<class FloatType>
-void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<FloatType>& meshData)
+void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII = false)
 {
   bfs::path filePath(filename.c_str());
 
@@ -805,7 +805,7 @@ void MeshIO<FloatType>::writeToFile(const std::string& filename, const MeshData<
     writeToOFF(filename,meshData);
   } else if(filePath.extension().compare(std::string(".ply")) == 0){
     if(meshData.featuresBuffer.size() == 0)
-      writeToPLY(filename,meshData);
+      writeToPLY(filename,meshData, saveASCII);
     else
       writeToWithFeaturePLY(filename,meshData);
   } else if(filePath.extension().compare(std::string(".obj")) == 0){
@@ -867,7 +867,7 @@ void MeshIO<FloatType>::writeToOBJ(const std::string& filename,
 }
 
 template<class FloatType>
-void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<FloatType>& meshData)
+void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII = false)
 {
 	PlyFile *ply;
 	float version;
@@ -876,11 +876,10 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 	/* (the file will be called "test.ply" because the routines */
 	/*  enforce the .ply filename extension) */
 
-#ifdef PLY_SAVE_ASCII
-	ply = ply_open_for_writing(filename.c_str(), 2, ply::elem_names, PLY_ASCII, &version);
-#else
-	ply = ply_open_for_writing(filename.c_str(), 2, ply::elem_names, PLY_BINARY_LE, &version);
-#endif
+  if(saveASCII)
+    ply = ply_open_for_writing(filename.c_str(), 2, ply::elem_names, PLY_ASCII, &version);
+  else
+    ply = ply_open_for_writing(filename.c_str(), 2, ply::elem_names, PLY_BINARY_LE, &version);
 
 	/* describe what properties go into the vertex and face elements */
 
@@ -940,7 +939,7 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 }
 
 template<class FloatType>
-void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData)
+void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const MeshData<FloatType>& meshData, bool saveASCII = false)
 {
 	PlyFile *ply;
 	float version;
@@ -949,11 +948,10 @@ void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const
 	/* (the file will be called "test.ply" because the routines */
 	/*  enforce the .ply filename extension) */
 
-#ifdef PLY_SAVE_ASCII
-	ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_ASCII, &version);
-#else
-	ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_BINARY_LE, &version);
-#endif
+  if(saveASCII)
+    ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_ASCII, &version);
+  else
+    ply = ply_open_for_writing(filename.c_str(), 3, ply::elem_names, PLY_BINARY_LE, &version);
 
 	/* describe what properties go into the vertex and face elements */
 

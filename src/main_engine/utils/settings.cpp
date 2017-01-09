@@ -340,6 +340,7 @@ TrackerSettings::TrackerSettings()
   numLinearSolverThreads = 8;
   numThreads = 8;
   isMinimizerProgressToStdout = true;
+  useSigmaOnly = false;
 
   // debugging
   saveResults = false;
@@ -506,6 +507,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 
   if(!node["blurSigmaSize (at each level)"].empty())
     node["blurSigmaSize (at each level)"] >> blurSigmaSizes;
+
+  if(!node["useSigmaOnly (compute kernel size inside)"].empty())
+    node["useSigmaOnly (compute kernel size inside)"] >> useSigmaOnly;
 
   if(!node["imagePyramidSamplingFactors (at each level)"].empty())
     node["imagePyramidSamplingFactors (at each level)"] >> imagePyramidSamplingFactors;
@@ -695,6 +699,7 @@ FeatureSettings::FeatureSettings()
   dbPath = "/home/cvfish/Work/code/github/PangaeaTracking/data/Yiwan/feature_images/sift/binSize2_jpg_lmdb";
   keyNameFormat = "sift%04d";
 
+  useSigmaOnly = false;
   featureTermWeight = 0;
   featureHuberWidth = 0.1;
 
@@ -742,6 +747,9 @@ void FeatureSettings::read(const cv::FileNode& node)
 
   if(!node["blurFeatureSigmaSize (at each level)"].empty())
     node["blurFeatureSigmaSize (at each level)"] >> blurFeatureSigmaSizes;
+
+  if(!node["useSigmaOnly (compute kernel size inside)"].empty())
+    node["useSigmaOnly (compute kernel size inside)"] >> useSigmaOnly;
 
   if(!node["featurePyramidSamplingFactors (at each level)"].empty())
     node["featurePyramidSamplingFactors (at each level)"] >> featurePyramidSamplingFactors;

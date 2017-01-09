@@ -509,8 +509,8 @@ class ResidualImageProjectionDynamic
 public:
 
   ResidualImageProjectionDynamic(double weight, double* pValue, double* pVertex,
-                          const CameraInfo* pCamera, const Level* pFrame,
-                          dataTermErrorType PE_TYPE=PE_INTENSITY):
+                                 const CameraInfo* pCamera, const Level* pFrame,
+                                 dataTermErrorType PE_TYPE=PE_INTENSITY):
     weight(weight),
     pValue(pValue),
     pVertex(pVertex),
@@ -689,8 +689,9 @@ public:
         ceres::AngleAxisRotatePoint( &(rotations[ i ][ 0 ]), diff_vertex, rot_diff_vertex );
 
         for(int index = 0; index < 3; ++index)
-          v[index] += neighborWeights[i] * (rot_diff_vertex[ index ]
-                                            + neighborVertices[ i ][ index ] + trans[ i ][ index] );
+          v[index] += neighborWeights[i] * (rot_diff_vertex[ index ] +
+                                            neighborVertices[ i ][ index ] +
+                                            trans[ i ][ index] );
       }
 
     ceres::AngleAxisRotatePoint( rigid_rot, v , p);
@@ -904,9 +905,9 @@ public:
             ceres::AngleAxisRotatePoint( &(rotations[ parameterIndices[j] ][ 0 ]), diff_vertex, rot_diff_vertex );
 
             for(int index = 0; index < 3; ++index)
-              p[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ]
-                                                      + pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ]
-                                                      + trans[ parameterIndices[j] ][ index] );
+              p[index] += coarseNeighborWeights[j] * (rot_diff_vertex[ index ] +
+                                                      pNeighborMesh->vertices[ coarseNeighborIndices[j] ][ index ] +
+                                                      trans[ parameterIndices[j] ][ index] );
           }
 
         startPos = endPos;

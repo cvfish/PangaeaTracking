@@ -2999,11 +2999,9 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
 
       ceres::LossFunction* pTVLossFunction = NULL;
 
-      if(trackerSettings.tvTukeyWidth)
-        {
+      if(trackerSettings.tvTukeyWidth){
           pTVLossFunction = new ceres::TukeyLoss(trackerSettings.tvTukeyWidth);
-        }else if(trackerSettings.tvHuberWidth)
-        {
+        }else if(trackerSettings.tvHuberWidth){
           pTVLossFunction = new ceres::HuberLoss(trackerSettings.tvHuberWidth);
         }
       ceres::ScaledLoss* tvScaledLoss = new ceres::ScaledLoss(
@@ -3014,8 +3012,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
       AddTotalVariationCost(problem, tvScaledLoss);
       //AddTotalVariationCost(problem, NULL);
 
-      if(useProblemWrapper)
-        {
+      if(useProblemWrapper){
           if(modeGT)
             problemWrapperGT.addRegTermLoss(currLevel, tvScaledLoss);
           else
@@ -3027,14 +3024,12 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
 
   // rotation total variation term
   // arap has to be turned on, otherwise there is no rotation variable
-  if(weightParaLevel.arapTermWeight &&  weightParaLevel.tvRotTermWeight)
-    {
+  if(weightParaLevel.arapTermWeight &&  weightParaLevel.tvRotTermWeight){
       //TICK("SetupRotTVCost"  + std::to_string( currLevel ) );
 
       ceres::LossFunction* pRotTVLossFunction = NULL;
 
-      if(trackerSettings.tvRotHuberWidth)
-        {
+      if(trackerSettings.tvRotHuberWidth){
           pRotTVLossFunction = new ceres::HuberLoss(trackerSettings.tvRotHuberWidth);
         }
       ceres::ScaledLoss* tvRotScaledLoss = new ceres::ScaledLoss(
@@ -3044,8 +3039,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
 
       AddRotTotalVariationCost(problem, tvRotScaledLoss);
 
-      if(useProblemWrapper)
-        {
+      if(useProblemWrapper){
           if(modeGT)
             problemWrapperGT.addRegTermLoss(currLevel, tvRotScaledLoss);
           else
@@ -3067,8 +3061,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
                                                                 ceres::TAKE_OWNERSHIP);
       AddARAPCost(problem, arapScaledLoss);
 
-      if(useProblemWrapper)
-        {
+      if(useProblemWrapper){
           if(modeGT)
             problemWrapperGT.addRegTermLoss(currLevel, arapScaledLoss);
           else
@@ -3090,8 +3083,7 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
                                                                     ceres::TAKE_OWNERSHIP);
       AddInextentCost(problem, inextentScaledLoss);
 
-      if(useProblemWrapper)
-        {
+      if(useProblemWrapper){
           if(modeGT)
             problemWrapperGT.addRegTermLoss(currLevel, inextentScaledLoss);
           else
@@ -3128,7 +3120,8 @@ void DeformNRSFMTracker::RegTermsSetup(ceres::Problem& problem, WeightPara& weig
   // cout << "translation and rotation parameter: " << weightParaLevel.transWeight
   //      << " " << weightParaLevel.rotWeight << endl;
   if(weightParaLevel.transWeight || weightParaLevel.rotWeight)
-    AddTemporalMotionCost(problem, sqrt(weightParaLevel.rotWeight),
+    AddTemporalMotionCost(problem,
+                          sqrt(weightParaLevel.rotWeight),
                           sqrt(weightParaLevel.transWeight));
 }
 
@@ -3708,47 +3701,6 @@ void DeformNRSFMTracker::SaveThread(TrackerOutputInfo** pOutputInfoRendering)
         SaveData();
     }
 }
-
-// void DeformNRSFMTracker::LoadFeaturesToMeshPyramid()
-// {
-//   // load features to template mesh
-//   char buffer[BUFFER_SIZE];
-//   std::string fileName;
-
-//   for(int i = 0; i < m_nMeshLevels; ++i)
-//     {
-//       // assume that feature file has a corresponding name with the mesh
-//       PangaeaMeshData& templateMesh = templateMeshPyramid.levels[i];
-//       PangaeaMeshData& templateMeshGT = templateMeshPyramidGT.levels[i];
-
-//       if(trackerSettings.meshLevelFormat.empty())
-//         {
-//           // load mesh from obj, off or ply file,
-//           // no pyramid in this case
-//           remove_file_extension(trackerSettings.meshFile, fileName);
-//           fileName = fileName + std::to_string('_') + featureSettings.featureType + std::to_string('.txt');
-
-//         }
-//       else
-//         {
-//           std::stringstream meshFile;
-//           sprintf(buffer,
-//                   trackerSettings.meshLevelFormat.c_str(),
-//                   trackerSettings.meshVertexNum[i]);
-//           meshFile << buffer;
-
-//           remove_file_extension(meshFile.str(), fileName);
-//           fileName = fileName + std::to_string('_') + featureSettings.featureType + std::to_string('.txt');
-//         }
-
-//       PangaeaMeshIO::loadFeatures(fileName,
-//                                   featureSettings.channels,
-//                                   templateMesh);
-
-//       templateMeshGT.featuresBuffer = templateMesh.featuresBuffer;
-
-//     }
-// }
 
 void DeformNRSFMTracker::AttachFeaturesToMeshPyramid()
 {

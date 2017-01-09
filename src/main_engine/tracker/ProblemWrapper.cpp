@@ -136,37 +136,6 @@ void ProblemWrapper::addRegTermCost(int nLevel, ceres::CostFunction* pCostFuncti
   regTermCostFunctions[nLevel].push_back(pCostFunction);
 }
 
-// void ProblemWrapper::addTVTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   tvTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-// void ProblemWrapper::addRotTVTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   rotTVTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-// void ProblemWrapper::addARAPTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   arapTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-// void ProblemWrapper::addINEXTENTTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   inextentTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-// void ProblemWrapper::addDeformTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   deformTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-// void ProblemWrapper::addTemporalTermCost(int nLevel, ceres::CostFunction* pCostFunction)
-// {
-//   temporalTermCostFunctions[nLevel].push_back(pCostFunction);
-// }
-
-
 void ProblemWrapper::addDataTermLoss(int nLevel, ceres::LossFunction* pLossFunction)
 {
   dataTermLossFunctions[nLevel].push_back(pLossFunction);
@@ -181,11 +150,6 @@ void ProblemWrapper::addRegTermLoss(int nLevel, ceres::LossFunction* pLossFuncti
 {
   regTermLossFunctions[nLevel].push_back(pLossFunction);
 }
-
-// void addLossFunction(int nLevel, ceres::LossFunction* pLossFunction)
-// {
-//   lossFunctions[nLevel].push_back(pLossFunction);
-// }
 
 // clear terms
 void ProblemWrapper::clearDataTerm(int nLevel)
@@ -385,7 +349,6 @@ void ProblemWrapper::getAllCost(int nLevel, double cost[7], double* total_cost, 
   getTotalEnergy(nLevel, total_cost);
 
 }
-
 
 // clear cost functions
 void ProblemWrapper::clearDataTermCost(int nLevel)

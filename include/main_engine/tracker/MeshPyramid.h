@@ -233,7 +233,8 @@ MeshPyramid<FloatType>::MeshPyramid(string meshPath, string meshLevelFormat,
 template<class FloatType>
 void MeshPyramid<FloatType>::swapFeatures()
 {
-
+  // has to do this because initially features were loaded to featuresBuffer
+  // or attached to featuresBuffer
   for(int i = 0; i < numLevels; ++i)
     {
       if(levels[i].featuresBuffer.size() > 0)
