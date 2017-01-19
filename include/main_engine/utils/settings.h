@@ -92,6 +92,11 @@ public:
 
   double minDist;
   double maxDist;
+
+  // set to 0 if we don't do any alignment, 1 for computing translation only,
+  // 2 for computing rigid transformation
+  int doAlign;
+
 };
 
 class TrackerSettings

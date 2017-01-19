@@ -247,6 +247,9 @@ MeshLoadingSettings::MeshLoadingSettings()
 
   minDist = 0;
   maxDist = 5;
+
+  // by default we do not do any alignment
+  doAlign = 0;
 }
 
 void MeshLoadingSettings::read(const cv::FileNode& node)
@@ -299,6 +302,10 @@ void MeshLoadingSettings::read(const cv::FileNode& node)
 
   if(!node["maxDist"].empty())
     node["maxDist"] >> maxDist;
+
+  if(!node["doAlign"].empty())
+    node["doAlign"] >> doAlign;
+
 }
 
 TrackerSettings::TrackerSettings()

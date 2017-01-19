@@ -1,7 +1,9 @@
 #include "main_engine/tracker/TrackingEngine.h"
+#include "main_engine/tracker/residual_util.h"
 
-MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings, int width,
-                                     int height, double K[3][3], int startFrame, int numTrackingFrames): trackerInitialized(false)
+MeshPyramidReader::MeshPyramidReader(MeshLoadingSettings& settings,
+                                     int width, int height, double K[3][3],
+                                     int startFrame, int numTrackingFrames): trackerInitialized(false)
 {
   m_nWidth = width;
   m_nHeight = height;
@@ -458,6 +460,48 @@ void MeshPyramidReader::setErrorWithGT()
 
       int numVertices = outputInfoPyramid[i].meshData.vertices.size();
       outputInfoPyramid[i].meshData.diffWithGT.resize(numVertices);
+
+      if(meshLoadingSettings.doAlign == 1){
+
+        double transGT[3] = {0, 0, 0};
+        double transCur[3] = {0, 0, 0};
+        double transDiff[3];
+
+        for(int j = 0; j < numVertices; ++j){
+          for(int k = 0; k < 3; ++k){
+            transGT[k] += currentMeshPyramidGT.levels[i].vertices[j][k];
+            transCur[k] += currentMeshPyramid.levels[i].vertices[j][k];
+          }
+        }
+
+        // compute the difference between GT and current mesh
+        for(int k = 0; k < 3; ++k){
+          transDiff[k] = (transGT[k] - transCur[k]) / numVertices;
+        }
+
+        // add back the difference to current mesh
+        for(int j = 0; j < numVertices; ++j){
+          for(int k = 0; k < 3; ++k){
+            currentMeshPyramid.levels[i].vertices[j][k] += transDiff[k];
+          }
+        }
+
+      }
+
+      if(meshLoadingSettings.doAlign == 2){
+
+        double transPoint[3];
+        double pose[6] = {0,0,0,0,0,0};
+        KnownCorrespondencesICP(currentMeshPyramid.levels[i], currentMeshPyramidGT.levels[i], pose);
+
+        for(int j = 0; j < numVertices; ++j){
+          ceres::AngleAxisRotatePoint(pose, &(currentMeshPyramid.levels[i].vertices[j][0]), transPoint);
+          for(int k = 0; k < 3; ++k){
+            currentMeshPyramid.levels[i].vertices[j][k] = transPoint[k] + pose[3+k];
+          }
+        }
+
+      }
 
       for(int j = 0; j < numVertices; ++j)
         {

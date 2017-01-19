@@ -1053,58 +1053,58 @@ void DeformNRSFMTracker::AddConstantMask(ceres::Problem& problem, baType BA)
     }
 }
 
-void DeformNRSFMTracker::KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
-                                                PangaeaMeshData& currentMesh,
-                                                double pose[6])
-{
+// void DeformNRSFMTracker::KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
+//                                                  PangaeaMeshData& currentMesh,
+//                                                  double pose[6])
+// {
 
-  int numVertices = templateMesh.numVertices;
+//   int numVertices = templateMesh.numVertices;
 
-  ceres::Problem problemICP;
+//   ceres::Problem problemICP;
 
-  // ceresOutput << "initial pose " << endl;
-  // for(int i = 0; i < 6; ++i)
-  //   ceresOutput << pose[i] << " ";
-  // ceresOutput << endl;
+//   // ceresOutput << "initial pose " << endl;
+//   // for(int i = 0; i < 6; ++i)
+//   //   ceresOutput << pose[i] << " ";
+//   // ceresOutput << endl;
 
-  for(int i = 0; i < numVertices; ++i)
-    {
-      ResidualKnownICP* pResidual = new ResidualKnownICP(1,
-                                                         &templateMesh.vertices[i][0],
-                                                         &currentMesh.vertices[i][0]);
+//   for(int i = 0; i < numVertices; ++i)
+//     {
+//       ResidualKnownICP* pResidual = new ResidualKnownICP(1,
+//                                                          &templateMesh.vertices[i][0],
+//                                                          &currentMesh.vertices[i][0]);
 
-      ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>* cost_function =
-        new ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>(pResidual);
+//       ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>* cost_function =
+//         new ceres::AutoDiffCostFunction<ResidualKnownICP, 3, 3, 3>(pResidual);
 
-      problemICP.AddResidualBlock(
-                                  cost_function,
-                                  NULL,
-                                  &pose[0],
-                                  &pose[3]);
+//       problemICP.AddResidualBlock(
+//                                   cost_function,
+//                                   NULL,
+//                                   &pose[0],
+//                                   &pose[3]);
 
-      // ceresOutput << " point " << i << " difference " <<
-      //   templateMesh.vertices[i][0] - currentMesh.vertices[i][0] << " " <<
-      //   templateMesh.vertices[i][1] - currentMesh.vertices[i][1] << " " <<
-      //   templateMesh.vertices[i][2] - currentMesh.vertices[i][2] << endl;
+//       // ceresOutput << " point " << i << " difference " <<
+//       //   templateMesh.vertices[i][0] - currentMesh.vertices[i][0] << " " <<
+//       //   templateMesh.vertices[i][1] - currentMesh.vertices[i][1] << " " <<
+//       //   templateMesh.vertices[i][2] - currentMesh.vertices[i][2] << endl;
 
-    }
+//     }
 
-  ceres::Solver::Options options;
-  ceres::Solver::Summary summary;
+//   ceres::Solver::Options options;
+//   ceres::Solver::Summary summary;
 
-  options.num_threads = trackerSettings.numThreads;
-  options.max_num_iterations = 10;
+//   options.num_threads = trackerSettings.numThreads;
+//   options.max_num_iterations = 10;
 
-  ceres::Solve(options, &problemICP, &summary);
+//   ceres::Solve(options, &problemICP, &summary);
 
-  //
-  ceresOutput << "+++++++++++++++++" << endl;
-  ceresOutput << "ICP Optimization" << endl;
-  ceresOutput << "Frame" << " " << currentFrameNo << std::endl;
-  ceresOutput << summary.FullReport() << std::endl;
-  ceresOutput << "+++++++++++++++++" << endl;
+//   //
+//   ceresOutput << "+++++++++++++++++" << endl;
+//   ceresOutput << "ICP Optimization" << endl;
+//   ceresOutput << "Frame" << " " << currentFrameNo << std::endl;
+//   ceresOutput << summary.FullReport() << std::endl;
+//   ceresOutput << "+++++++++++++++++" << endl;
 
-}
+// }
 
 
 void DeformNRSFMTracker::GetDeformation(PangaeaMeshData& templateMesh,

@@ -621,7 +621,6 @@ private:
   dataTermErrorType PE_TYPE;
 };
 
-
 // ResidualImageProjection from coarse level deformation,
 class ResidualImageProjectionCoarse
 {
@@ -1176,7 +1175,6 @@ public:
   const double* pPrevTrans;
 
 };
-
 
 class EnergyCallback: public ceres::IterationCallback
 {

@@ -79,7 +79,7 @@ private:
 
   template<typename VertexType>
   static void ply_read_vertices(PlyFile *_ply, int _vertex_type, int _num_vertices,
-	  MeshData<FloatType>& meshData);
+                                MeshData<FloatType>& meshData);
 
 };
 
@@ -140,15 +140,15 @@ void MeshIO<FloatType>::updateFromFile(const std::string& filename, MeshData<Flo
 template<class FloatType>
 template<typename VertexType>
 void MeshIO<FloatType>::ply_read_vertices(PlyFile *_ply, int _vertex_type, int _num_vertices,
-	MeshData<FloatType>& meshData)
+                                          MeshData<FloatType>& meshData)
 {
 	/* set up for getting vertex elements */
 	for (int i = 0; i < ply::n_vprops[_vertex_type]; i++)
-	{
-		PlyProperty* prop = ply::get_vertex_property(_vertex_type, i);
+    {
+      PlyProperty* prop = ply::get_vertex_property(_vertex_type, i);
 
-		ply_get_property(_ply, ply::elem_names[0], prop);
-	}
+      ply_get_property(_ply, ply::elem_names[0], prop);
+    }
 
 	meshData.vertices.resize(_num_vertices);
 	meshData.colors.resize(_num_vertices);
@@ -223,7 +223,7 @@ void MeshIO<FloatType>::loadFeatures(const std::string& filename,
   while( fscanf(fp, "%s", buf) != EOF ) {
     for(int i = 0; i < featureChannels; ++i) {
       fscanf(fp, "%f", &vertFeatures[i]);
-      }
+    }
     meshData.featuresBuffer.push_back(vertFeatures);
   }
 
@@ -268,26 +268,26 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 			vertex_type = ply::get_vertex_type(plist, nprops);
 
 			switch (vertex_type)
-			{
-			case PLY_VERTEX_RGB:
-				ply_read_vertices<ply::VertexColor>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_NORMAL_RGB:
-				ply_read_vertices<ply::VertexNormalColor>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_RGBA:
-				ply_read_vertices<ply::VertexColorAlpha>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_NORMAL_RGBA:
-				ply_read_vertices<ply::VertexNormalColorAlpha>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			default:
-				break;
-			}
+        {
+        case PLY_VERTEX_RGB:
+          ply_read_vertices<ply::VertexColor>(ply, vertex_type, num_vertices,
+                                              meshData);
+          break;
+        case PLY_VERTEX_NORMAL_RGB:
+          ply_read_vertices<ply::VertexNormalColor>(ply, vertex_type, num_vertices,
+                                                    meshData);
+          break;
+        case PLY_VERTEX_RGBA:
+          ply_read_vertices<ply::VertexColorAlpha>(ply, vertex_type, num_vertices,
+                                                   meshData);
+          break;
+        case PLY_VERTEX_NORMAL_RGBA:
+          ply_read_vertices<ply::VertexNormalColorAlpha>(ply, vertex_type, num_vertices,
+                                                         meshData);
+          break;
+        default:
+          break;
+        }
 		}
 
 		/* if we're on face elements, read them in */
@@ -296,9 +296,9 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 
 			/* set up for getting face elements */
 			for (int i = 0; i < nprops; i++)
-			{
-				ply_get_property(ply, elem_name, &ply::face_props[i]);
-			}
+        {
+          ply_get_property(ply, elem_name, &ply::face_props[i]);
+        }
 
 			meshData.facesVerticesInd.resize(num_faces);
 
@@ -310,9 +310,9 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 
 				vector<unsigned int> f;
 				for (int k = 0; k < face.nverts; k++)
-				{
-					f.push_back(face.verts[k]);
-				}
+          {
+            f.push_back(face.verts[k]);
+          }
 				meshData.facesVerticesInd[j] = f;
 			}
 		}
@@ -356,9 +356,9 @@ void MeshIO<FloatType>::loadFromPLY(const std::string& filename,
 	ply_close(ply);
 
 	for (int i = 0; i < nelems; i++)
-	{
-		delete elist[i];
-	}
+    {
+      delete elist[i];
+    }
 	delete[] elist;
 
   meshData.numVertices = meshData.vertices.size();
@@ -671,26 +671,26 @@ void MeshIO<FloatType>::updateFromPLY(const std::string& filename,
 			vertex_type = ply::get_vertex_type(plist, nprops);
 
 			switch (vertex_type)
-			{
-			case PLY_VERTEX_RGB:
-				ply_read_vertices<ply::VertexColor>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_NORMAL_RGB:
-				ply_read_vertices<ply::VertexNormalColor>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_RGBA:
-				ply_read_vertices<ply::VertexColorAlpha>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			case PLY_VERTEX_NORMAL_RGBA:
-				ply_read_vertices<ply::VertexNormalColorAlpha>(ply, vertex_type, num_vertices,
-					meshData);
-				break;
-			default:
-				break;
-			}
+        {
+        case PLY_VERTEX_RGB:
+          ply_read_vertices<ply::VertexColor>(ply, vertex_type, num_vertices,
+                                              meshData);
+          break;
+        case PLY_VERTEX_NORMAL_RGB:
+          ply_read_vertices<ply::VertexNormalColor>(ply, vertex_type, num_vertices,
+                                                    meshData);
+          break;
+        case PLY_VERTEX_RGBA:
+          ply_read_vertices<ply::VertexColorAlpha>(ply, vertex_type, num_vertices,
+                                                   meshData);
+          break;
+        case PLY_VERTEX_NORMAL_RGBA:
+          ply_read_vertices<ply::VertexNormalColorAlpha>(ply, vertex_type, num_vertices,
+                                                         meshData);
+          break;
+        default:
+          break;
+        }
 		}
 
 	}
@@ -705,9 +705,9 @@ void MeshIO<FloatType>::updateFromPLY(const std::string& filename,
 	ply_close(ply);
 
 	for (int i = 0; i < nelems; i++)
-	{
-		delete elist[i];
-	}
+    {
+      delete elist[i];
+    }
 	delete[] elist;
 
   if(vertex_type == PLY_VERTEX_RGBA || vertex_type == PLY_VERTEX_RGB)
@@ -887,17 +887,17 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 	ply_element_count(ply, ply::elem_names[0], num_vertices);
 	int vertex_type = 1;
 	for (int i = 0; i < ply::n_vprops[vertex_type]; i++)
-	{
-		PlyProperty* prop = ply::get_vertex_property(vertex_type, i);
-		ply_describe_property(ply, ply::elem_names[0], prop);
-	}
+    {
+      PlyProperty* prop = ply::get_vertex_property(vertex_type, i);
+      ply_describe_property(ply, ply::elem_names[0], prop);
+    }
 
 	int num_faces = meshData.numFaces;
 	ply_element_count(ply, ply::elem_names[1], num_faces);
 	for (int i = 0; i < ply::n_fprops; i++)
-	{
-		ply_describe_property(ply, ply::elem_names[1], &ply::face_props[i]);
-	}
+    {
+      ply_describe_property(ply, ply::elem_names[1], &ply::face_props[i]);
+    }
 
 	/* we have described exactly what we will put in the file, so */
 	/* we are now done with the header info */
@@ -925,14 +925,14 @@ void MeshIO<FloatType>::writeToPLY(const std::string& filename, const MeshData<F
 	ply::Face f;
 	f.verts = new int[10];
 	for (int i = 0; i < num_faces; i++)
-	{
-		f.nverts = (unsigned char)meshData.facesVerticesInd[i].size();
-		for (int j = 0; j < f.nverts; j++)
-		{
-			f.verts[j] = meshData.facesVerticesInd[i][j];
-		}
-		ply_put_element(ply, (void *)&f);
-	}
+    {
+      f.nverts = (unsigned char)meshData.facesVerticesInd[i].size();
+      for (int j = 0; j < f.nverts; j++)
+        {
+          f.verts[j] = meshData.facesVerticesInd[i][j];
+        }
+      ply_put_element(ply, (void *)&f);
+    }
 
 	/* close the PLY file */
 	ply_close(ply);
@@ -959,17 +959,17 @@ void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const
 	ply_element_count(ply, ply::elem_names[0], num_vertices);
 	int vertex_type = 1;
 	for (int i = 0; i < ply::n_vprops[vertex_type]; i++)
-	{
-		PlyProperty* prop = ply::get_vertex_property(vertex_type, i);
-		ply_describe_property(ply, ply::elem_names[0], prop);
-	}
+    {
+      PlyProperty* prop = ply::get_vertex_property(vertex_type, i);
+      ply_describe_property(ply, ply::elem_names[0], prop);
+    }
 
 	int num_faces = meshData.numFaces;
 	ply_element_count(ply, ply::elem_names[1], num_faces);
 	for (int i = 0; i < ply::n_fprops; i++)
-	{
-		ply_describe_property(ply, ply::elem_names[1], &ply::face_props[i]);
-	}
+    {
+      ply_describe_property(ply, ply::elem_names[1], &ply::face_props[i]);
+    }
 
   int num_features = meshData.featuresBuffer.size();
   int channels = meshData.featuresBuffer[0].size();
@@ -1008,14 +1008,14 @@ void MeshIO<FloatType>::writeToWithFeaturePLY(const std::string& filename, const
 	ply::Face f;
 	f.verts = new int[10];
 	for (int i = 0; i < num_faces; i++)
-	{
-		f.nverts = (unsigned char)meshData.facesVerticesInd[i].size();
-		for (int j = 0; j < f.nverts; j++)
-		{
-			f.verts[j] = meshData.facesVerticesInd[i][j];
-		}
-		ply_put_element(ply, (void *)&f);
-	}
+    {
+      f.nverts = (unsigned char)meshData.facesVerticesInd[i].size();
+      for (int j = 0; j < f.nverts; j++)
+        {
+          f.verts[j] = meshData.facesVerticesInd[i][j];
+        }
+      ply_put_element(ply, (void *)&f);
+    }
 
   /* set up feature properties */
   ply_put_element_setup(ply, ply::elem_names[2]);
@@ -1080,23 +1080,31 @@ void MeshIO<FloatType>::createMeshFromDepth(MeshData<FloatType>& meshData,
   for(int j = 0; j < m_nHeight - radius; ++j)
     {
       for(int i = 0; i < m_nWidth - radius; ++ i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i),&pResults[0]+3*(j*m_nWidth+radius+i),
-                 &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i), true);
+        compnorm(&pResults[0] + 3*(j*m_nWidth+i),
+                 &pResults[0] + 3*(j*m_nWidth+radius+i),
+                 &pResults[0] + 3*((j+radius)*m_nWidth+i),
+                 &pNormals[0] + 3*(j*m_nWidth+i), true);
 
       for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i-radius), &pResults[0]+3*(j*m_nWidth+i),
-                 &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i), true);
+        compnorm(&pResults[0] + 3*(j*m_nWidth+i-radius),
+                 &pResults[0] + 3*(j*m_nWidth+i),
+                 &pResults[0] + 3*((j+radius)*m_nWidth+i),
+                 &pNormals[0] + 3*(j*m_nWidth+i), true);
     }
 
   for (int j = m_nHeight-radius; j < m_nHeight; ++j)
     {
       for(int i = 0; i < m_nWidth-radius; ++i)
-        compnorm(&pResults[0]+3*((j-radius)*m_nWidth+i), &pResults[0]+3*(j*m_nWidth+radius+i),
-                 &pResults[0]+3*(j*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i), true);
+        compnorm(&pResults[0] + 3*((j-radius)*m_nWidth+i),
+                 &pResults[0] + 3*(j*m_nWidth+radius+i),
+                 &pResults[0] + 3*(j*m_nWidth+i),
+                 &pNormals[0] + 3*(j*m_nWidth+i), true);
 
       for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i), &pResults[0]+3*(j*m_nWidth-radius+i),
-                 &pResults[0]+3*((j-radius)*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i), true);
+        compnorm(&pResults[0] + 3*(j*m_nWidth+i),
+                 &pResults[0] + 3*(j*m_nWidth-radius+i),
+                 &pResults[0] + 3*((j-radius)*m_nWidth+i),
+                 &pNormals[0] + 3*(j*m_nWidth+i), true);
     }
 
   createMeshFromPoints(meshData, m_nHeight, m_nWidth, pResults, pNormals,
@@ -1160,27 +1168,35 @@ void MeshIO<FloatType>::createMeshFromDepth(MeshData<FloatType>& meshData,
 
   unsigned int radius = 1;
 
-  for(int j = 0; j < m_nHeight - radius; ++j)
-    {
-      for(int i = 0; i < m_nWidth - radius; ++ i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i),&pResults[0]+3*(j*m_nWidth+radius+i),
-                 &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i), true);
+  for(int j = 0; j < m_nHeight - radius; ++j){
 
-      for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i-radius), &pResults[0]+3*(j*m_nWidth+i),
-                 &pResults[0]+3*((j+radius)*m_nWidth+i),&pNormals[0]+3*(j*m_nWidth+i), true);
-    }
+    for(int i = 0; i < m_nWidth - radius; ++ i)
+      compnorm(&pResults[0] + 3*(j*m_nWidth+i),
+               &pResults[0] + 3*(j*m_nWidth+radius+i),
+               &pResults[0] + 3*((j+radius)*m_nWidth+i),
+               &pNormals[0] + 3*(j*m_nWidth+i), true);
 
-  for (int j = m_nHeight-radius; j < m_nHeight; ++j)
-    {
-      for(int i = 0; i < m_nWidth-radius; ++i)
-        compnorm(&pResults[0]+3*((j-radius)*m_nWidth+i), &pResults[0]+3*(j*m_nWidth+radius+i),
-                 &pResults[0]+3*(j*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i), true);
+    for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
+      compnorm(&pResults[0] + 3*(j*m_nWidth+i-radius),
+               &pResults[0] + 3*(j*m_nWidth+i),
+               &pResults[0] + 3*((j+radius)*m_nWidth+i),
+               &pNormals[0] + 3*(j*m_nWidth+i), true);
+  }
 
-      for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
-        compnorm(&pResults[0]+3*(j*m_nWidth+i), &pResults[0]+3*(j*m_nWidth-radius+i),
-                 &pResults[0]+3*((j-radius)*m_nWidth+i), &pNormals[0]+3*(j*m_nWidth+i), true);
-    }
+  for (int j = m_nHeight-radius; j < m_nHeight; ++j){
+
+    for(int i = 0; i < m_nWidth-radius; ++i)
+      compnorm(&pResults[0] + 3*((j-radius)*m_nWidth+i),
+               &pResults[0] + 3*(j*m_nWidth+radius+i),
+               &pResults[0] + 3*(j*m_nWidth+i),
+               &pNormals[0] + 3*(j*m_nWidth+i), true);
+
+    for(int i = m_nWidth-radius; i !=m_nWidth; ++i)
+      compnorm(&pResults[0] + 3*(j*m_nWidth+i),
+               &pResults[0] + 3*(j*m_nWidth-radius+i),
+               &pResults[0] + 3*((j-radius)*m_nWidth+i),
+               &pNormals[0] + 3*(j*m_nWidth+i), true);
+  }
 
   createMeshFromPoints(meshData, m_nHeight, m_nWidth, pResults, pNormals,
                        pColors, maskVector, modelLabels, modelColors);
@@ -1267,32 +1283,6 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
         }
     }
 
-  // for(int k = 0; k < rows*cols; ++k)
-  // {
-  //     if(maskImage[k])
-  //     {
-  //         // if(maskImage[k] > 0 && maskImage[k] < 255)
-  //         // std::cout << maskImage[k] << std::endl;
-  //         for(int ind = 0; ind < 3; ++ind)
-  //         {
-  //             Points3d[ind] = pPointsImage[ 3*k + ind ];
-  //             Normals3d[ind] = pNormalsImage[ 3*k + ind ];
-  //             Colors3d[ind] = pColorsImage[ 3*k + ind ];
-  //             center[ind] += pPointsImage[ 3*k + ind];
-  //         }
-
-  //         meshData.vertices.push_back(Points3d);
-  //         meshData.normals.push_back(Normals3d);
-  //         meshData.colors.push_back(Colors3d);
-  //         meshData.modelLabels.push_back(modelLabels[k]);
-  //         // gray = 0.299*Colors3d[0] + 0.587*Colors3d[1] + 0.114*Colors3d[2];
-  //         // meshData.grays.push_back(gray);
-  //         pPntsInd[k] = pntsId;
-  //         ++pntsId;
-  //     }
-  //     // }
-  // }
-
   // calculate the center value of the mesh
   for(int ind = 0; ind < 3; ++ind)
     meshData.center[ind] = center[ind] / pntsId;
@@ -1320,8 +1310,8 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                   j > 0 && maskImage[left])
                 {
                   triVerticesInd[0] = pPntsInd[self];
-                  triVerticesInd[1] = pPntsInd[left];
-                  triVerticesInd[2] = pPntsInd[upper];
+                  triVerticesInd[1] = pPntsInd[upper];
+                  triVerticesInd[2] = pPntsInd[left];
                   meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
               // triangle (i,j), (i-1,j), (i,j+1)
@@ -1329,8 +1319,8 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                   j < cols-1 && maskImage[right])
                 {
                   triVerticesInd[0] = pPntsInd[self];
-                  triVerticesInd[1] = pPntsInd[upper];
-                  triVerticesInd[2] = pPntsInd[right];
+                  triVerticesInd[1] = pPntsInd[right];
+                  triVerticesInd[2] = pPntsInd[upper];
                   meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
               // triangle (i,j), (i+1,j), (i,j-1)
@@ -1338,8 +1328,8 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                  j > 0 && maskImage[left])
                 {
                   triVerticesInd[0] = pPntsInd[self];
-                  triVerticesInd[1] = pPntsInd[lower];
-                  triVerticesInd[2] = pPntsInd[left];
+                  triVerticesInd[1] = pPntsInd[left];
+                  triVerticesInd[2] = pPntsInd[lower];
                   meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
               // triangle (i,j), (i,j+1), (i+1,j)
@@ -1347,8 +1337,8 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
                  j < cols && maskImage[right])
                 {
                   triVerticesInd[0] = pPntsInd[self];
-                  triVerticesInd[1] = pPntsInd[right];
-                  triVerticesInd[2] = pPntsInd[lower];
+                  triVerticesInd[1] = pPntsInd[lower];
+                  triVerticesInd[2] = pPntsInd[right];
                   meshData.facesVerticesInd.push_back(triVerticesInd);
                 }
               // add all possible neighbors, in this case, some edges may not necessarily
@@ -1367,29 +1357,7 @@ void MeshIO<FloatType>::createMeshFromPoints(MeshData<FloatType>& meshData, int 
     }
 
   meshData.numFaces = meshData.facesVerticesInd.size();
-  // // add neighborhood vertices
-  // meshData.adjVerticesInd.resize(meshData.numVertices);
-  // for(int face = 0; face < meshData.numFaces; ++face)
-  // {
-  //     int vertexNum = meshData.facesVerticesInd[face].size();
-  //     for(int ind = 0; ind < vertexNum; ++ind)
-  //     {
-  //         for(int offset = 1; offset < vertexNum; ++offset)
-  //         {
-  //             meshData.adjVerticesInd[ meshData.facesVerticesInd[face][ind] ].push_back( meshData.facesVerticesInd[face]
-  //                     [ ind + offset >= vertexNum ? ind + offset - vertexNum : ind + offset ] );
-  //         }
-  //     }
-  // }
 
-  // // remove redundant vertices index.
-  // for(int vertex=0; vertex < meshData.numVertices; ++vertex)
-  // {
-  //     vector<unsigned int>& adjVertex = meshData.adjVerticesInd[vertex];
-  //     std::sort( adjVertex.begin(), adjVertex.end() );
-  //     vector<unsigned int>::iterator end_unique = std::unique( adjVertex.begin(), adjVertex.end() );
-  //     adjVertex.erase(end_unique, adjVertex.end());
-  // }
 }
 
 template<class FloatType>

@@ -75,9 +75,9 @@ public:
   void AddVariableMask(ceres::Problem& problem, baType BA);
   void AddConstantMask(ceres::Problem& problem, baType BA);
 
-  void KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
-                              PangaeaMeshData& currentMesh,
-                              double camPose[6]);
+  // void KnownCorrespondencesICP(PangaeaMeshData& templateMesh,
+  //                             PangaeaMeshData& currentMesh,
+  //                             double camPose[6]);
 
   void GetDeformation(PangaeaMeshData& templateMesh,
                       PangaeaMeshData& currentMesh,

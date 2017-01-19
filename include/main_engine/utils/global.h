@@ -79,19 +79,19 @@ typedef Matrix<double, Dynamic, Dynamic, RowMajor> MatrixXdRow;
 #define BUFFER_SIZE 1000
 
 enum ImageSourceType{
-    ALLIMAGESBUFFER,
-    IMAGESEQUENCE,
-    VIDEO,
-    CAMERA
+  ALLIMAGESBUFFER,
+  IMAGESEQUENCE,
+  VIDEO,
+  CAMERA
 };
 
 enum TrackingType{
-    ALLSHAPESBUFFER,
-    SHAPESEQUENCE,
-    MESHSEQUENCE,
-    MESHPYRAMID,
-    MESHBUFFER,
-    DEFORMNRSFM
+  ALLSHAPESBUFFER,
+  SHAPESEQUENCE,
+  MESHSEQUENCE,
+  MESHPYRAMID,
+  MESHBUFFER,
+  DEFORMNRSFM
 };
 
 enum FeatureType{
@@ -120,93 +120,93 @@ int typeSize(string dataType);
 #define SafeDeleteArray(x) if(x) {delete []x; x = NULL; }
 
 bool existenceTest(string meshPath, string meshLevelFormat,
-    int frame, IntegerContainerType& meshLevelList);
+                   int frame, IntegerContainerType& meshLevelList);
 
 bool pointInTriangleTest2(double* pointP, double* pointA, double* pointB, double* pointC);
 
 double triangleArea(double* pointA, double* pointB, double* pointC);
 
 bool visibilityTest(double* vertex, double* center, double* normal,
-    double* vertex1, double* vertex2, double* vertex3);
+                    double* vertex1, double* vertex2, double* vertex3);
 
 void computeRot(vector<double>& template_vextex, vector<double>& vertex,
-    vector<vector<double> >& template_nbor_mesh, vector<vector<double > >& nbor_mesh,
-    vector<unsigned int>& neighbors, vector<double>& weights,
-    vector<double>& output_rot, bool deform = false);
+                vector<vector<double> >& template_nbor_mesh, vector<vector<double > >& nbor_mesh,
+                vector<unsigned int>& neighbors, vector<double>& weights,
+                vector<double>& output_rot, bool deform = false);
 
 // template functions
 template<typename FloatType>
 FloatType mynorm(FloatType* loc)
 {
-    return sqrt(loc[0]*loc[0]+loc[1]*loc[1]+loc[2]*loc[2]);
+  return sqrt(loc[0]*loc[0]+loc[1]*loc[1]+loc[2]*loc[2]);
 }
 
 template<typename FloatType>
 void flipnorm(FloatType* normals, int num)
 {
-    for(int i = 0; i < num; ++i)
+  for(int i = 0; i < num; ++i)
     normals[i] *= -1;
 }
 
 template<typename FloatType>
 void compnorm(FloatType* ver1,  FloatType* ver2, FloatType* ver3, FloatType* location,
-	bool clockwise)
+              bool clockwise)
 {
-    // compute normals assume that the normal at each point
-    //   is defined by the triangle consisting of the previous two
-    //   points + current point.
-    //   (p1-p3) x (p1-p2)
+  // compute normals assume that the normal at each point
+  //   is defined by the triangle consisting of the previous two
+  //   points + current point.
+  //   (p1-p3) x (p1-p2)
 
 	FloatType norm[3];
 	FloatType a[3];
 	FloatType b[3];
 
 	if (clockwise)
-	{
-		a[0] = ver1[0] - ver3[0];
-		a[1] = ver1[1] - ver3[1];
-		a[2] = ver1[2] - ver3[2];
+    {
+      a[0] = ver1[0] - ver3[0];
+      a[1] = ver1[1] - ver3[1];
+      a[2] = ver1[2] - ver3[2];
 
-		b[0] = ver1[0] - ver2[0];
-		b[1] = ver1[1] - ver2[1];
-		b[2] = ver1[2] - ver2[2];
-	}
+      b[0] = ver1[0] - ver2[0];
+      b[1] = ver1[1] - ver2[1];
+      b[2] = ver1[2] - ver2[2];
+    }
 	else	// Anti-clockwsie
-	{
-		a[0] = ver1[0] - ver2[0];
-		a[1] = ver1[1] - ver2[1];
-		a[2] = ver1[2] - ver2[2];
+    {
+      a[0] = ver1[0] - ver2[0];
+      a[1] = ver1[1] - ver2[1];
+      a[2] = ver1[2] - ver2[2];
 
-		b[0] = ver1[0] - ver3[0];
-		b[1] = ver1[1] - ver3[1];
-		b[2] = ver1[2] - ver3[2];
-	}
+      b[0] = ver1[0] - ver3[0];
+      b[1] = ver1[1] - ver3[1];
+      b[2] = ver1[2] - ver3[2];
+    }
 
-    norm[0] = a[1]*b[2] - a[2]*b[1];
-    norm[1] = a[2]*b[0] - a[0]*b[2];
-    norm[2] = a[0]*b[1] - a[1]*b[0];
+  norm[0] = a[1]*b[2] - a[2]*b[1];
+  norm[1] = a[2]*b[0] - a[0]*b[2];
+  norm[2] = a[0]*b[1] - a[1]*b[0];
 
 	if (norm[1] * norm[1] + norm[2] * norm[2] + norm[0] * norm[0] != FloatType(0))
     {
-		FloatType temp = FloatType(1.0f) / sqrt(norm[1] * norm[1] + norm[2] * norm[2] + norm[0] * norm[0]);
-        norm[0] *= temp;
-        norm[1] *= temp;
-        norm[2] *= temp;
+      FloatType temp = FloatType(1.0f) / sqrt(norm[1] * norm[1] + norm[2] * norm[2] + norm[0] * norm[0]);
+      norm[0] *= temp;
+      norm[1] *= temp;
+      norm[2] *= temp;
     }
 
-    location[0] = norm[0];
-    location[1] = norm[1];
-    location[2] = norm[2];
+  location[0] = norm[0];
+  location[1] = norm[1];
+  location[2] = norm[2];
 }
 
 template<typename FloatType>
 bool checksize(FloatType* location1, FloatType* location2, FloatType* location3, GLfloat thresh)
 {
-    if((abs(location1[0] - location2[0]) + abs(location1[0] - location3[0]) > thresh*100) ||
-        (abs(location1[1] - location2[1]) + abs(location1[1] - location3[1]) > thresh*100) ||
-        (abs(location1[2] - location2[2]) + abs(location1[2] - location3[2]) > thresh*100))
+  if((abs(location1[0] - location2[0]) + abs(location1[0] - location3[0]) > thresh*100) ||
+     (abs(location1[1] - location2[1]) + abs(location1[1] - location3[1]) > thresh*100) ||
+     (abs(location1[2] - location2[2]) + abs(location1[2] - location3[2]) > thresh*100))
     return false;
-    else
+  else
     return true;
 }
 
@@ -261,7 +261,7 @@ void SampleLinear( const TImage & intensityImage,
   const T im22 = T(intensityImage(y2, x2));
 
   sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
-           (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
+                   (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
 
 }
 
@@ -296,7 +296,7 @@ void SampleLinear( const TImage & intensityImage,
   const T im22 = T(intensityImage(y2, x2));
 
   sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
-           (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
+                   (1 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
 
   //Sample gradient x
   const T gradx11 = T(intensityGradientX(y1, x1));
@@ -305,7 +305,7 @@ void SampleLinear( const TImage & intensityImage,
   const T gradx22 = T(intensityGradientX(y2, x2));
 
   sample[1] =(     dy  * ( dx * gradx11 + (1.0 - dx) * gradx12 ) +
-           (1 - dy) * ( dx * gradx21 + (1.0 - dx) * gradx22 ));
+                   (1 - dy) * ( dx * gradx21 + (1.0 - dx) * gradx22 ));
 
   //Sample gradient y
   const T grady11 = T(intensityGradientY(y1, x1));
@@ -314,7 +314,7 @@ void SampleLinear( const TImage & intensityImage,
   const T grady22 = T(intensityGradientY(y2, x2));
 
   sample[2] =(     dy  * ( dx * grady11 + (1.0 - dx) * grady12 ) +
-           (1 - dy) * ( dx * grady21 + (1.0 - dx) * grady22 ));
+                   (1 - dy) * ( dx * grady21 + (1.0 - dx) * grady22 ));
 }
 
 

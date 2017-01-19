@@ -1,5 +1,7 @@
 #pragma once
 
+#include "./Mesh.h"
+
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 
@@ -38,3 +40,5 @@ private:
   double* pTarget;
 
 };
+
+void KnownCorrespondencesICP(PangaeaMeshData& templateMesh, PangaeaMeshData& currentMesh, double pose[6]);
