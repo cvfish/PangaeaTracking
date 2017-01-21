@@ -397,6 +397,8 @@ TrackerSettings::TrackerSettings()
 	// original implementation of Pangaea
 	clockwise = true;
 
+  cropMask = false;
+
   // patch optimization stuff
   // by default the radius of patch is 1, if radius of patch is zero then
   // the patch only includes itself, one single point
@@ -653,6 +655,9 @@ void TrackerSettings::read(const cv::FileNode& node)
 	// Read if faces are defined clockwise or anti-clockwise
 	if(!node["clockwise"].empty())
     node["clockwise"] >> clockwise;
+
+  if(!node["use_crop_mask"].empty())
+    node["use_crop_mask"] >> cropMask;
 
   if(!node["neighbor_patch_radius"].empty())
     node["neighbor_patch_radius"] >> neighborPatchRadius;

@@ -144,6 +144,9 @@ public:
 	// Faces of the mesh are defined clockwise or not (anti-clockwise)
 	bool clockwise;
 
+  // use cropped mask
+  bool cropMask;
+
   // ceres parameter
   std::string linearSolver;
   int numOptimizationLevels;

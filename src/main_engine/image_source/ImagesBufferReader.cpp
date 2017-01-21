@@ -113,7 +113,12 @@ void ImagesBufferReader::readUVDImage(DepthImageType& uImage, DepthImageType& vI
 
     // read in maskImage
     std::stringstream imagePath;
-    imagePath << data_path.str() << "mask.png";
+
+    if(trackerSettings.cropMask)
+      imagePath << data_path.str() << "mask_crop.png";
+    else
+      imagePath << data_path.str() << "mask.png";
+
     IntensityImageType maskImage = cv::imread(imagePath.str().c_str(),0);
     maskImage.convertTo( maskImageAux, cv::DataType<CoordinateType>::type);
 
