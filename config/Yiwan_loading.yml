@@ -12,8 +12,10 @@ ImageSourceSettings:
 MeshLoadingSettings:
   meshPath: "../data/Yiwan/results/arap1_tv0.05_deform0.2_trans100000/mesh_pyramid/"
   meshFormat: "mesh%04d.obj"
-  meshLevelFormat: "mesh%04d_level%02d.obj"
-  propLeveldFormat: "prop_mesh%04d_level%02d.obj"
+  # meshLevelFormat: "mesh%04d_level%02d.obj"
+  # propLeveldFormat: "prop_mesh%04d_level%02d.obj"
+  meshLevelFormat: "mesh%04d_level%02d.ply"
+  propLeveldFormat: "prop_mesh%04d_level%02d.ply"
   meshLevelList: [0]
   visibilityMask: 1
   loadProp: 0
