@@ -1,4 +1,4 @@
-#PangaeaTracking
+# PangaeaTracking
 
 This is the implementation of the following ICCV2015 paper:
 
@@ -10,9 +10,9 @@ For more information about this work, please visit the [project website](http://
 This github repository is maintained by Rui Yu (R.Yu@cs.ucl.ac.uk).
 Contact me if you have any questions.
 
-#1. Building the System
+# 1. Building the System
 
-###1.1 Requirements
+### 1.1 Requirements
 
 PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party libraries are needed for compiling PangaeaTracking.
 
@@ -38,7 +38,7 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
   - Boost
     available at http://www.boost.org/
 
-###1.2 Build Process
+### 1.2 Build Process
 
   To compile the system, do the following:
 
@@ -46,16 +46,16 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
   ./build.sh
 ```
 
-#2. Data
+# 2. Data
 
 One example sequence is available at [google drive](https://drive.google.com/drive/folders/0B8-9V4y1N7pxZExaMlE3bnc3Mzg).
 
-#3. Examples
+# 3. Examples
 
 After building PangaeaTracking and preparing the data, you are ready to run the scripts in examples folder.
 Check examples/Yiwan.sh for usage.
 
-#4. GUI Usage
+# 4. GUI Usage
 
 For rotating the 3d model in 2d image plane, use the middle mouse button.
 
