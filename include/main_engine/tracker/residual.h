@@ -78,324 +78,324 @@ void BackProjection(const CameraInfo* pCamera, const Level* pFrame, T* u, T* v, 
   ImageLevel* pImageLevel = (ImageLevel*)pFrame;
 
   T currentValue;
-//   currentValue = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,u[0], v[0]);
+  currentValue = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,u[0], v[0]);
 
-//   backProj[2] = currentValue;
+  backProj[2] = currentValue;
 
-//   if(pCamera->isOrthoCamera)
-//     {
-//       backProj[0] = u[0]; backProj[1] = v[0];
-//     }else
-//     {
-//       backProj[0] = backProj[2] * (pCamera->invKK[0][0]*u[0] + pCamera->invKK[0][2]);
-//       backProj[1] = backProj[2] * (pCamera->invKK[1][1]*v[0] + pCamera->invKK[1][2]);
-//     }
+  if(pCamera->isOrthoCamera)
+    {
+      backProj[0] = u[0]; backProj[1] = v[0];
+    }else
+    {
+      backProj[0] = backProj[2] * (pCamera->invKK[0][0]*u[0] + pCamera->invKK[0][2]);
+      backProj[1] = backProj[2] * (pCamera->invKK[1][1]*v[0] + pCamera->invKK[1][2]);
+    }
 
-// }
+}
 
-// // patch based score estimation
-// template<typename T>
-// void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, T* pScore)
-// {
+// patch based score estimation
+template<typename T>
+void nccScore(vector<T>& neighborValues, vector<T>& projValues, int k1, int k2, T* pScore)
+{
 
-//   T neighborMean, projMean, neighborSTD, projSTD;
-//   neighborMean = T(0.0); projMean = T(0.0);
-//   neighborSTD = T(0.0); projSTD = T(0.0);
+  T neighborMean, projMean, neighborSTD, projSTD;
+  neighborMean = T(0.0); projMean = T(0.0);
+  neighborSTD = T(0.0); projSTD = T(0.0);
 
-//   T my_epsilon = T(0.00001);
+  T my_epsilon = T(0.00001);
 
-//   pScore[0] = T(0.0);
+  pScore[0] = T(0.0);
 
-//   int num = neighborValues.size() / k1;
-//   for(int i = 0; i < num; ++i)
-//     {
-//       neighborMean += neighborValues[ k1*i + k2 ];
-//       projMean += projValues[ k1*i+k2 ];
-//     }
+  int num = neighborValues.size() / k1;
+  for(int i = 0; i < num; ++i)
+    {
+      neighborMean += neighborValues[ k1*i + k2 ];
+      projMean += projValues[ k1*i+k2 ];
+    }
 
-//   neighborMean = neighborMean / T(num);
-//   projMean = projMean / T(num);
+  neighborMean = neighborMean / T(num);
+  projMean = projMean / T(num);
 
 
-//   //// pScore[0] = neighborMean - projMean;
+  //// pScore[0] = neighborMean - projMean;
 
-//   for(int i = 0; i < num; ++i)
-//     {
-//       neighborSTD += (neighborValues[k1*i + k2] - neighborMean) *
-//         (neighborValues[k1*i + k2] - neighborMean);
-//       projSTD += (projValues[k1*i + k2] - projMean) *
-//         (projValues[k1*i + k2] - projMean);
-//     }
+  for(int i = 0; i < num; ++i)
+    {
+      neighborSTD += (neighborValues[k1*i + k2] - neighborMean) *
+        (neighborValues[k1*i + k2] - neighborMean);
+      projSTD += (projValues[k1*i + k2] - projMean) *
+        (projValues[k1*i + k2] - projMean);
+    }
 
-//   //pScore[0] = neighborSTD - projSTD;
+  //pScore[0] = neighborSTD - projSTD;
 
-//   neighborSTD = sqrt(neighborSTD + my_epsilon);
-//   projSTD = sqrt(projSTD + my_epsilon);
+  neighborSTD = sqrt(neighborSTD + my_epsilon);
+  projSTD = sqrt(projSTD + my_epsilon);
 
-//   //////  pScore[0] = neighborSTD - projSTD;
+  //////  pScore[0] = neighborSTD - projSTD;
 
-//   for(int i = 0; i < num; ++i)
-//     {
-//       pScore[0] += (neighborValues[k1*i + k2] - neighborMean) / neighborSTD *
-//         (projValues[k1*i + k2] - projMean) / projSTD;
-//     }
+  for(int i = 0; i < num; ++i)
+    {
+      pScore[0] += (neighborValues[k1*i + k2] - neighborMean) / neighborSTD *
+        (projValues[k1*i + k2] - projMean) / projSTD;
+    }
 
-//   // if(ceres::IsNaN(pScore[0]))
-//   //   {
-//   //     int haha = 0;
-//   //     haha = haha + 1;
-//   //     cout << "gradient is nan " << haha << endl;
-//   //   }
+  // if(ceres::IsNaN(pScore[0]))
+  //   {
+  //     int haha = 0;
+  //     haha = haha + 1;
+  //     cout << "gradient is nan " << haha << endl;
+  //   }
 
-//   //pScore[0] = T(0.0);
+  //pScore[0] = T(0.0);
 
-// }
+}
 
-// template<typename T>
-// void getPatchScore(vector<T>& neighborValues, vector<T>& projValues,
-//                    T* pScore, int numChannels)
-// {
+template<typename T>
+void getPatchScore(vector<T>& neighborValues, vector<T>& projValues,
+                   T* pScore, int numChannels)
+{
 
-//   for(int i = 0; i < numChannels; ++i)
-//     nccScore(neighborValues, projValues, numChannels, i, pScore+i);
+  for(int i = 0; i < numChannels; ++i)
+    nccScore(neighborValues, projValues, numChannels, i, pScore+i);
 
-// }
+}
 
-// template<typename T>
-// void getValue(const CameraInfo* pCamera, const Level* pFrame,
-//               T* p, T* value, const dataTermErrorType& PE_TYPE)
-// {
+template<typename T>
+void getValue(const CameraInfo* pCamera, const Level* pFrame,
+              T* p, T* value, const dataTermErrorType& PE_TYPE)
+{
 
-//   T transformed_r, transformed_c;
+  T transformed_r, transformed_c;
 
-//   IntrinsicProjection(pCamera, p, &transformed_c, &transformed_r);
+  IntrinsicProjection(pCamera, p, &transformed_c, &transformed_r);
 
-//   T templateValue, currentValue;
+  T templateValue, currentValue;
 
-//   if( transformed_r >= T(0.0) && transformed_r < T(pCamera->height) &&
-//       transformed_c >= T(0.0) && transformed_c < T(pCamera->width))
-//     {
-//       switch(PE_TYPE)
-//         {
-//         case PE_INTENSITY:
-//         case PE_NCC:
-//           {
+  if( transformed_r >= T(0.0) && transformed_r < T(pCamera->height) &&
+      transformed_c >= T(0.0) && transformed_c < T(pCamera->width))
+    {
+      switch(PE_TYPE)
+        {
+        case PE_INTENSITY:
+        case PE_NCC:
+          {
 
-//             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-//             value[0] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
-//                                                                                  transformed_c,
-//                                                                                  transformed_r );
-//             break;
-//           }
-//         case PE_COLOR:
-//         case PE_COLOR_NCC:
-//           {
-//             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-//             for(int i = 0; i < 3; ++i)
-//               {
-//                 value[i] = SampleWithoutDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
-//                                                                                      transformed_c,
-//                                                                                      transformed_r );
-//               }
-//             break;
-//           }
-//         case PE_DEPTH:   // point-to-point error
-//           {
-//             // depth value of the point
-//             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-//             BackProjection(pCamera, pImageLevel, &transformed_c, &transformed_r, value);
+            ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+            value[0] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
+                                                                                 transformed_c,
+                                                                                 transformed_r );
+            break;
+          }
+        case PE_COLOR:
+        case PE_COLOR_NCC:
+          {
+            ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+            for(int i = 0; i < 3; ++i)
+              {
+                value[i] = SampleWithoutDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
+                                                                                     transformed_c,
+                                                                                     transformed_r );
+              }
+            break;
+          }
+        case PE_DEPTH:   // point-to-point error
+          {
+            // depth value of the point
+            ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+            BackProjection(pCamera, pImageLevel, &transformed_c, &transformed_r, value);
 
-//             for(int i = 0; i < 3; ++i)
-//               value[i] = value[i] - p[i];
+            for(int i = 0; i < 3; ++i)
+              value[i] = value[i] - p[i];
 
-//             break;
-//           }
-//         case PE_DEPTH_PLANE: // point-to-plane error
-//           {
-//             //
-//             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-//             BackProjection(pCamera, pImageLevel, &transformed_c, &transformed_r, value);
+            break;
+          }
+        case PE_DEPTH_PLANE: // point-to-plane error
+          {
+            //
+            ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+            BackProjection(pCamera, pImageLevel, &transformed_c, &transformed_r, value);
 
-//             // normals at back projection point
-//             T normals_at_bp[3];
-//             for(int i = 0; i < 3; ++i)
-//               {
+            // normals at back projection point
+            T normals_at_bp[3];
+            for(int i = 0; i < 3; ++i)
+              {
 
-//                 normals_at_bp[i] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
-//                                                                                              transformed_c,
-//                                                                                              transformed_r );
-//                 value[i] = normals_at_bp[i] * (value[i] - p[i]);
-//               }
-//             break;
-//           }
-//         case PE_FEATURE:
-//         case PE_FEATURE_NCC:
-//           {
-//             //
-//             FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
-//             int numChannels = pFeatureLevel->featureImageVec.size();
-//             for(int i = 0; i < numChannels; ++i)
-//               {
-//                 value[i] = SampleWithoutDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
-//                                                                         transformed_c,
-//                                                                         transformed_r);
-//               }
-//             break;
-//           }
-//         }
-//     }
+                normals_at_bp[i] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
+                                                                                             transformed_c,
+                                                                                             transformed_r );
+                value[i] = normals_at_bp[i] * (value[i] - p[i]);
+              }
+            break;
+          }
+        case PE_FEATURE:
+        case PE_FEATURE_NCC:
+          {
+            //
+            FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+            int numChannels = pFeatureLevel->featureImageVec.size();
+            for(int i = 0; i < numChannels; ++i)
+              {
+                value[i] = SampleWithoutDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
+                                                                        transformed_c,
+                                                                        transformed_r);
+              }
+            break;
+          }
+        }
+    }
 
-// }
+}
 
-// template<typename T>
-// void getResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
-//                  double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
-// {
-//   vector<T> projValues;
-//   int numChannels;
+template<typename T>
+void getResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
+                 double* pValue, T* p, T* residuals, const dataTermErrorType& PE_TYPE)
+{
+  vector<T> projValues;
+  int numChannels;
 
-//   numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
+  numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
 
-//   projValues.resize( numChannels );
+  projValues.resize( numChannels );
 
-//   getValue(pCamera, pFrame, p, &projValues[0], PE_TYPE);
+  getValue(pCamera, pFrame, p, &projValues[0], PE_TYPE);
 
-//   switch(PE_TYPE)
-//     {
-//     case PE_INTENSITY:
-//     case PE_COLOR:
-//     case PE_FEATURE:
-//       {
-//         for(int i = 0; i < numChannels; ++i)
-//           residuals[i] = T(weight) * (pValue[i] - projValues[i]);
-//       }
-//       break;
-//     case PE_DEPTH:
-//     case PE_DEPTH_PLANE:
-//       {
-//         for(int i = 0; i < numChannels; ++i)
-//           residuals[i] = T(weight) * projValues[i];
-//       }
-//       break;
-//     }
-// }
+  switch(PE_TYPE)
+    {
+    case PE_INTENSITY:
+    case PE_COLOR:
+    case PE_FEATURE:
+      {
+        for(int i = 0; i < numChannels; ++i)
+          residuals[i] = T(weight) * (pValue[i] - projValues[i]);
+      }
+      break;
+    case PE_DEPTH:
+    case PE_DEPTH_PLANE:
+      {
+        for(int i = 0; i < numChannels; ++i)
+          residuals[i] = T(weight) * projValues[i];
+      }
+      break;
+    }
+}
 
-// template<typename T>
-// void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
-//                       const PangaeaMeshData* pMesh, vector<T>& neighborVertices,
-//                       int numNeighbors, const vector<unsigned int>& neighbors, T* residuals,
-//                       const dataTermErrorType& PE_TYPE=PE_NCC)
-// {
-//   vector<T> neighborValues;
-//   vector<T> projValues;
-//   vector<T> score;
+template<typename T>
+void getPatchResidual(double weight, const CameraInfo* pCamera, const Level* pFrame,
+                      const PangaeaMeshData* pMesh, vector<T>& neighborVertices,
+                      int numNeighbors, const vector<unsigned int>& neighbors, T* residuals,
+                      const dataTermErrorType& PE_TYPE=PE_NCC)
+{
+  vector<T> neighborValues;
+  vector<T> projValues;
+  vector<T> score;
 
-//   T my_epsilon = T(0.00001);
-//   int numChannels;
+  T my_epsilon = T(0.00001);
+  int numChannels;
 
-//   numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
-//   double* pValue = NULL;
+  numChannels = PE_RESIDUAL_NUM_ARRAY[ PE_TYPE ];
+  double* pValue = NULL;
 
-//   neighborValues.resize( numChannels * numNeighbors );
-//   projValues.resize( numChannels * numNeighbors );
+  neighborValues.resize( numChannels * numNeighbors );
+  projValues.resize( numChannels * numNeighbors );
 
-//   for(int i = 0; i < numNeighbors; ++i)
-//     {
-//       getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_TYPE);
-//       getValueFromMesh( pMesh, PE_TYPE, neighbors[i], &pValue );
-//       for(int k = 0; k < numChannels; ++k)
-//         neighborValues[ numChannels*i + k] = T( pValue[k] );
-//     }
+  for(int i = 0; i < numNeighbors; ++i)
+    {
+      getValue(pCamera, pFrame, &neighborVertices[3*i], &projValues[numChannels*i], PE_TYPE);
+      getValueFromMesh( pMesh, PE_TYPE, neighbors[i], &pValue );
+      for(int k = 0; k < numChannels; ++k)
+        neighborValues[ numChannels*i + k] = T( pValue[k] );
+    }
 
-//   // compare the values of projValues and neighborValues
-//   // cout << "neighborValues" << " ";
-//   // for(int i = 0; i < numNeighbors; ++i)
-//   //   {
-//   //     cout << ceres::JetOps<T>::GetScalar(neighborValues[i]) << " ";
-//   //   }
-//   // cout << endl;
+  // compare the values of projValues and neighborValues
+  // cout << "neighborValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  //   {
+  //     cout << ceres::JetOps<T>::GetScalar(neighborValues[i]) << " ";
+  //   }
+  // cout << endl;
 
-//   // cout << "projValues" << " ";
-//   // for(int i = 0; i < numNeighbors; ++i)
-//   // {
-//   //   cout << ceres::JetOps<T>::GetScalar(projValues[i]) << " ";
-//   // }
-//   // cout << endl;
+  // cout << "projValues" << " ";
+  // for(int i = 0; i < numNeighbors; ++i)
+  // {
+  //   cout << ceres::JetOps<T>::GetScalar(projValues[i]) << " ";
+  // }
+  // cout << endl;
 
-//   // get the residual for two different cases, with or without NCC
-//   // without NCC: just sum the square differences between residual or of all the pixels in the patch
-//   // with NCC: estimate the normalized cross-correlation
-//   if(PE_TYPE == PE_INTENSITY ||
-//      PE_TYPE == PE_COLOR ||
-//      PE_TYPE == PE_FEATURE)
-//     {
-//       for(int i = 0; i < numChannels; ++i){
-//         residuals[i] = T(0.0);
-//         for(int j = 0; j < numNeighbors; ++j)
-//           {
-//             residuals[i] += T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] ) *
-//               T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] );
-//           }
-//         residuals[i] = sqrt( residuals[i] + my_epsilon );
-//       }
-//     }
-//   else{
-//     score.resize(numChannels);
-//     getPatchScore(neighborValues, projValues, &score[0], numChannels);
-//     for(int i = 0; i < numChannels; ++i)
-//       {
-//         //        cout << "ncc scores: " << ceres::JetOps<T>::GetScalar(score[i]) << endl;
-//         residuals[i] = T(weight) * (T(1.0) - score[i]);
-//       }
-//   }
+  // get the residual for two different cases, with or without NCC
+  // without NCC: just sum the square differences between residual or of all the pixels in the patch
+  // with NCC: estimate the normalized cross-correlation
+  if(PE_TYPE == PE_INTENSITY ||
+     PE_TYPE == PE_COLOR ||
+     PE_TYPE == PE_FEATURE)
+    {
+      for(int i = 0; i < numChannels; ++i){
+        residuals[i] = T(0.0);
+        for(int j = 0; j < numNeighbors; ++j)
+          {
+            residuals[i] += T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] ) *
+              T(weight) * (projValues[ numChannels*j + i ] - neighborValues[ numChannels*j + i ] );
+          }
+        residuals[i] = sqrt( residuals[i] + my_epsilon );
+      }
+    }
+  else{
+    score.resize(numChannels);
+    getPatchScore(neighborValues, projValues, &score[0], numChannels);
+    for(int i = 0; i < numChannels; ++i)
+      {
+        //        cout << "ncc scores: " << ceres::JetOps<T>::GetScalar(score[i]) << endl;
+        residuals[i] = T(weight) * (T(1.0) - score[i]);
+      }
+  }
 
-// }
+}
 
-// // need to write a new ResidualImageProjection(ResidualImageInterpolationProjection)
-// // for a data term similar to dynamicFusion
-// // optional parameters: vertex value(will be needed if we are using photometric)
-// // paramters: vertex position, neighboring weights, pCamera and pFrame
-// // optimization: rotation, translation and neighboring transformations
-// // (split up rotation and translation)
-// // several things we could try here:
-// // fix the number of neighbors, if we use knn nearest neighbors
-// // or use variable number of neighbors, if we use neighbors in a certain radius range
-// // arap term of dynamicFusion can be implemented as usual
+// need to write a new ResidualImageProjection(ResidualImageInterpolationProjection)
+// for a data term similar to dynamicFusion
+// optional parameters: vertex value(will be needed if we are using photometric)
+// paramters: vertex position, neighboring weights, pCamera and pFrame
+// optimization: rotation, translation and neighboring transformations
+// (split up rotation and translation)
+// several things we could try here:
+// fix the number of neighbors, if we use knn nearest neighbors
+// or use variable number of neighbors, if we use neighbors in a certain radius range
+// arap term of dynamicFusion can be implemented as usual
 
-// // Image Projection residual covers all the possible projection cases
-// // Including gray, rgb, point-to-point and point-to-plane error
-// // For different pyramid level, just change the pCamera and pFrame accordingly,
-// // make sure that pCamera and pFrame are consistent
+// Image Projection residual covers all the possible projection cases
+// Including gray, rgb, point-to-point and point-to-plane error
+// For different pyramid level, just change the pCamera and pFrame accordingly,
+// make sure that pCamera and pFrame are consistent
 
-// class ResidualImageProjection
-// {
-// public:
+class ResidualImageProjection
+{
+public:
 
-//   ResidualImageProjection(double weight, double* pValue, double* pVertex,
-//                           const CameraInfo* pCamera, const Level* pFrame,
-//                           dataTermErrorType PE_TYPE=PE_INTENSITY):
-//     weight(weight),
-//     pValue(pValue),
-//     pVertex(pVertex),
-//     pCamera(pCamera),
-//     pFrame(pFrame),
-//     PE_TYPE(PE_TYPE),
-//     optimizeDeformation(true)
-//   {
-//     // check the consistency between camera and images
+  ResidualImageProjection(double weight, double* pValue, double* pVertex,
+                          const CameraInfo* pCamera, const Level* pFrame,
+                          dataTermErrorType PE_TYPE=PE_INTENSITY):
+    weight(weight),
+    pValue(pValue),
+    pVertex(pVertex),
+    pCamera(pCamera),
+    pFrame(pFrame),
+    PE_TYPE(PE_TYPE),
+    optimizeDeformation(true)
+  {
+    // check the consistency between camera and images
 
-//     if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
-//       {
-//         FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
-//         assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
-//         assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
-//       }
-//     else
-//       {
-//         ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-//         assert(pCamera->width == pImageLevel->grayImage.cols);
-//         assert(pCamera->height == pImageLevel->grayImage.rows);
-//       }
+    if(PE_TYPE == PE_FEATURE || PE_TYPE == PE_FEATURE_NCC)
+      {
+        FeatureLevel* pFeatureLevel = (FeatureLevel*)pFrame;
+        assert(pCamera->width == pFeatureLevel->featureImageVec[0].cols);
+        assert(pCamera->height == pFeatureLevel->featureImageVec[0].rows);
+      }
+    else
+      {
+        ImageLevel* pImageLevel = (ImageLevel*)pFrame;
+        assert(pCamera->width == pImageLevel->grayImage.cols);
+        assert(pCamera->height == pImageLevel->grayImage.rows);
+      }
 
 
   }
