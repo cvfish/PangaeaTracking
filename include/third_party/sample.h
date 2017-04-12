@@ -55,53 +55,53 @@ T SampleWithDerivative(const TImage & intensityImage,
   return ceres::Chain< PixelType, 2, T >::Rule( sample[0], sample + 1, xy );
 }
 
-// // compute the derivative exactly, without checking the gradient image
-// template< typename T, class TImage >
-// T SampleWithoutDerivative(const TImage & intensityImage,
-//                           const T & x,
-//                           const T & y)
-// {
-//   typedef TImage ImageType;
-//   typedef typename ImageType::value_type PixelType;
+// compute the derivative exactly, without checking the gradient image
+template< typename T, class TImage >
+T SampleWithoutDerivative(const TImage & intensityImage,
+                          const T & x,
+                          const T & y)
+{
+  typedef TImage ImageType;
+  typedef typename ImageType::value_type PixelType;
 
-//   PixelType scalar_x = ceres::JetOps<T>::GetScalar(x);
-//   PixelType scalar_y = ceres::JetOps<T>::GetScalar(y);
-//   PixelType sample[3];
-//   PixelType dx, dy;
+  PixelType scalar_x = ceres::JetOps<T>::GetScalar(x);
+  PixelType scalar_y = ceres::JetOps<T>::GetScalar(y);
+  PixelType sample[3];
+  PixelType dx, dy;
 
-//   // T scalar_x = ceres::JetOps<T>::GetScalar(x);
-//   // T scalar_y = ceres::JetOps<T>::GetScalar(y);
-//   // T sample[3];
-//   // T dx, dy;
+  // T scalar_x = ceres::JetOps<T>::GetScalar(x);
+  // T scalar_y = ceres::JetOps<T>::GetScalar(y);
+  // T sample[3];
+  // T dx, dy;
 
-//   int x1, y1, x2, y2;
+  int x1, y1, x2, y2;
 
-//   LinearInitAxis(scalar_y, intensityImage.rows, &y1, &y2, &dy);
-//   LinearInitAxis(scalar_x, intensityImage.cols,  &x1, &x2, &dx);
+  LinearInitAxis(scalar_y, intensityImage.rows, &y1, &y2, &dy);
+  LinearInitAxis(scalar_x, intensityImage.cols,  &x1, &x2, &dx);
 
-//   //Sample intensity
-//   const PixelType im11 = PixelType(intensityImage(y1, x1));
-//   const PixelType im12 = PixelType(intensityImage(y1, x2));
-//   const PixelType im21 = PixelType(intensityImage(y2, x1));
-//   const PixelType im22 = PixelType(intensityImage(y2, x2));
+  //Sample intensity
+  const PixelType im11 = PixelType(intensityImage(y1, x1));
+  const PixelType im12 = PixelType(intensityImage(y1, x2));
+  const PixelType im21 = PixelType(intensityImage(y2, x1));
+  const PixelType im22 = PixelType(intensityImage(y2, x2));
 
-//   //Sample value
-//   sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
-//                    (1.0 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
+  //Sample value
+  sample[0] =(     dy  * ( dx * im11 + (1.0 - dx) * im12 ) +
+                   (1.0 - dy) * ( dx * im21 + (1.0 - dx) * im22 ));
 
-//   //Sample gradient, x direction
-//   sample[1] = -dy * im11 + dy * im12 - (1.0-dy) * im21 + (1.0-dy) * im22;
+  //Sample gradient, x direction
+  sample[1] = -dy * im11 + dy * im12 - (1.0-dy) * im21 + (1.0-dy) * im22;
 
-//   // y direction
-//   sample[2] = -dx * im11 - (1.0-dx) * im12 + dx * im21 + (1.0-dx) * im22;
+  // y direction
+  sample[2] = -dx * im11 - (1.0-dx) * im12 + dx * im21 + (1.0-dx) * im22;
 
 
-//   // ceres chain rule to put manually computed gradient with autodiff together
-//   T xy[2] = {x, y};
+  // ceres chain rule to put manually computed gradient with autodiff together
+  T xy[2] = {x, y};
 
-//   // return ceres::Chain< T, 2, T >::Rule( sample[0], sample + 1, xy );
-//   return ceres::Chain< PixelType, 2, T >::Rule( sample[0], sample + 1, xy );
+  // return ceres::Chain< T, 2, T >::Rule( sample[0], sample + 1, xy );
+  return ceres::Chain< PixelType, 2, T >::Rule( sample[0], sample + 1, xy );
 
-// }
+}
 
 #endif  // SAMPLE_H_

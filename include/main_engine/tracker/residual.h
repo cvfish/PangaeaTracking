@@ -78,10 +78,10 @@ void BackProjection(const CameraInfo* pCamera, const Level* pFrame, T* u, T* v, 
   ImageLevel* pImageLevel = (ImageLevel*)pFrame;
 
   T currentValue;
-  currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,
-                                                                        pImageLevel->depthGradXImage,
-                                                                        pImageLevel->depthGradYImage, u[0], v[0]);
-  // currentValue = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,u[0], v[0]);
+  // currentValue = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,
+  //                                                                       pImageLevel->depthGradXImage,
+  //                                                                       pImageLevel->depthGradYImage, u[0], v[0]);
+  currentValue = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthImage,u[0], v[0]);
 
   backProj[2] = currentValue;
 
@@ -185,14 +185,14 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
           {
 
             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
-            value[0] = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
-                                                                              pImageLevel->gradXImage,
-                                                                              pImageLevel->gradYImage,
-                                                                              transformed_c,
-                                                                              transformed_r );
-            // value[0] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
-            //                                                                      transformed_c,
-            //                                                                      transformed_r );
+            // value[0] = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
+            //                                                                   pImageLevel->gradXImage,
+            //                                                                   pImageLevel->gradYImage,
+            //                                                                   transformed_c,
+            //                                                                   transformed_r );
+            value[0] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
+                                                                                 transformed_c,
+                                                                                 transformed_r );
           }
         case PE_COLOR:
         case PE_COLOR_NCC:
@@ -200,14 +200,14 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             ImageLevel* pImageLevel = (ImageLevel*)pFrame;
             for(int i = 0; i < 3; ++i)
               {
-                value[i] = SampleWithDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
-                                                                                  pImageLevel->colorImageGradXSplit[i],
-                                                                                  pImageLevel->colorImageGradYSplit[i],
-                                                                                  transformed_c,
-                                                                                  transformed_r );
-                // value[i] = SampleWithoutDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
-                //                                                                      transformed_c,
-                //                                                                      transformed_r );
+                // value[i] = SampleWithDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
+                //                                                                   pImageLevel->colorImageGradXSplit[i],
+                //                                                                   pImageLevel->colorImageGradYSplit[i],
+                //                                                                   transformed_c,
+                //                                                                   transformed_r );
+                value[i] = SampleWithoutDerivative< T, InternalIntensityImageType >( pImageLevel->colorImageSplit[i],
+                                                                                     transformed_c,
+                                                                                     transformed_r );
 
               }
             break;
@@ -233,14 +233,14 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             T normals_at_bp[3];
             for(int i = 0; i < 3; ++i)
               {
-                normals_at_bp[i] = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
-                                                                                          pImageLevel->depthNormalImageGradXSplit[i],
-                                                                                          pImageLevel->depthNormalImageGradYSplit[i],
-                                                                                          transformed_c,
-                                                                                          transformed_r );
-                // normals_at_bp[i] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
-                //                                                                              transformed_c,
-                //                                                                              transformed_r );
+                // normals_at_bp[i] = SampleWithDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
+                //                                                                           pImageLevel->depthNormalImageGradXSplit[i],
+                //                                                                           pImageLevel->depthNormalImageGradYSplit[i],
+                //                                                                           transformed_c,
+                //                                                                           transformed_r );
+                normals_at_bp[i] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->depthNormalImageSplit[i],
+                                                                                             transformed_c,
+                                                                                             transformed_r );
                 value[i] = normals_at_bp[i] * (value[i] - p[i]);
               }
             break;
@@ -253,14 +253,14 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             int numChannels = pFeatureLevel->featureImageVec.size();
             for(int i = 0; i < numChannels; ++i)
               {
-                value[i] = SampleWithDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
-                                                                     pFeatureLevel->featureImageGradXVec[i],
-                                                                     pFeatureLevel->featureImageGradYVec[i],
-                                                                     transformed_c,
-                                                                     transformed_r);
-                // value[i] = SampleWithoutDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
-                //                                                         transformed_c,
-                //                                                         transformed_r);
+                // value[i] = SampleWithDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
+                //                                                      pFeatureLevel->featureImageGradXVec[i],
+                //                                                      pFeatureLevel->featureImageGradYVec[i],
+                //                                                      transformed_c,
+                //                                                      transformed_r);
+                value[i] = SampleWithoutDerivative<T, FeatureImageType>(pFeatureLevel->featureImageVec[i],
+                                                                        transformed_c,
+                                                                        transformed_r);
               }
           }
         }

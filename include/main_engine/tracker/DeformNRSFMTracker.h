@@ -281,6 +281,8 @@ private:
 
   std::ofstream scoresOutput;
   std::ofstream scoresOutputReg;
+
+  std::ofstream rigidMtionOutput;
 };
 
 #endif

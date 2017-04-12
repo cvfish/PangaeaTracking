@@ -357,6 +357,7 @@ TrackerSettings::TrackerSettings()
   scoresPath = "";
 
   energyOutputFile = "energy_output.txt";
+  rigidMotionFile = "rigid_motion.txt";
 
   saveMesh = false;
   //  meshFormat = "mesh%04d.obj";
@@ -416,6 +417,8 @@ TrackerSettings::TrackerSettings()
   printEnergyGT = false;
   computeError = false;
 
+  // print rigid motion
+  printRigidMotion = false;
   // savePLY = false;
 }
 
@@ -689,6 +692,12 @@ void TrackerSettings::read(const cv::FileNode& node)
 
   if(!node["meshLevelListGT"].empty())
     node["meshLevelListGT"] >> meshLevelListGT;
+
+  if(!node["printRigidMotion"].empty())
+    node["printRigidMotion"] >> printRigidMotion;
+
+  if(!node["rigidMotionFile"].empty())
+    node["rigidMotionFile"] >> rigidMotionFile;
 
   // if(!node["save_ply"].empty())
   //   node["save_ply"] >> savePLY;

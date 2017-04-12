@@ -1,32 +1,32 @@
 /*
 
-Header for PLY polygon files.
+  Header for PLY polygon files.
 
-- Greg Turk, March 1994
+  - Greg Turk, March 1994
 
-A PLY file contains a single polygonal _object_.
+  A PLY file contains a single polygonal _object_.
 
-An object is composed of lists of _elements_.  Typical elements are
-vertices, faces, edges and materials.
+  An object is composed of lists of _elements_.  Typical elements are
+  vertices, faces, edges and materials.
 
-Each type of element for a given object has one or more _properties_
-associated with the element type.  For instance, a vertex element may
-have as properties three floating-point values x,y,z and three unsigned
-chars for red, green and blue.
+  Each type of element for a given object has one or more _properties_
+  associated with the element type.  For instance, a vertex element may
+  have as properties three floating-point values x,y,z and three unsigned
+  chars for red, green and blue.
 
----------------------------------------------------------------
+  ---------------------------------------------------------------
 
-Copyright (c) 1994 The Board of Trustees of The Leland Stanford
-Junior University.  All rights reserved.
+  Copyright (c) 1994 The Board of Trustees of The Leland Stanford
+  Junior University.  All rights reserved.
 
-Permission to use, copy, modify and distribute this software and its
-documentation for any purpose is hereby granted without fee, provided
-that the above copyright notice and this permission notice appear in
-all copies of this software and that you do not sell the software.
+  Permission to use, copy, modify and distribute this software and its
+  documentation for any purpose is hereby granted without fee, provided
+  that the above copyright notice and this permission notice appear in
+  all copies of this software and that you do not sell the software.
 
-THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND,
-EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
-WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+  THE SOFTWARE IS PROVIDED "AS IS" AND WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY
+  WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 
 */
 
@@ -122,14 +122,14 @@ typedef struct PlyElement {     /* description of an element */
   ~PlyElement()
   {
 	  if (nprops > 0)
-	  {
-		  for (int i = 0; i < nprops; i++)
-		  {
-			  delete props[i];
-		  }
-		  delete[] props;
-		  delete[] store_prop;
-	  }
+      {
+        for (int i = 0; i < nprops; i++)
+          {
+            delete props[i];
+          }
+        delete[] props;
+        delete[] store_prop;
+      }
   }
 
 } PlyElement;
@@ -143,13 +143,13 @@ typedef struct PlyOtherProp {   /* describes other properties in an element */
   ~PlyOtherProp()
   {
 	  if (nprops > 0)
-	  {
-		  for (int i = 0; i < nprops; i++)
-		  {
-			  delete props[i];
-		  }
-		  delete[] props;
-	  }
+      {
+        for (int i = 0; i < nprops; i++)
+          {
+            delete props[i];
+          }
+        delete[] props;
+      }
   }
 
 } PlyOtherProp;
@@ -173,9 +173,9 @@ typedef struct OtherElem {     /* data for one "other" element */
   ~OtherElem()
   {
 	  for (int i = 0; i < elem_count; i++)
-	  {
-		  delete other_data[i];
-	  }
+      {
+        delete other_data[i];
+      }
 	  delete[] other_data;
 	  delete[] other_props;
   }
@@ -209,31 +209,31 @@ typedef struct PlyFile {        /* description of PLY file */
   ~PlyFile()
   {
 	  if (nelems > 0)
-	  {
-		  for (int i = 0; i < nelems; i++)
-		  {
-			  delete elems[i];
-		  }
-		  delete[] elems;
-	  }
+      {
+        for (int i = 0; i < nelems; i++)
+          {
+            delete elems[i];
+          }
+        delete[] elems;
+      }
 
 	  if (num_comments > 0)
-	  {
-		  for (int i = 0; i < num_comments; i++)
-		  {
-			  delete comments[i];
-		  }
-		  delete[] comments;
-	  }
+      {
+        for (int i = 0; i < num_comments; i++)
+          {
+            delete comments[i];
+          }
+        delete[] comments;
+      }
 
 	  if (num_obj_info > 0)
-	  {
-		  for (int i = 0; i < num_obj_info; i++)
-		  {
-			  delete obj_info[i];
-		  }
-		  delete[] obj_info;
-	  }
+      {
+        for (int i = 0; i < num_obj_info; i++)
+          {
+            delete obj_info[i];
+          }
+        delete[] obj_info;
+      }
   }
 
 } PlyFile;
@@ -344,11 +344,11 @@ returns a pointer to a PlyFile, used to refer to this file, or NULL if error
 ******************************************************************************/
 
 inline PlyFile *ply_write(
-	FILE *fp,
-	int nelems,
-	const char **elem_names,
-	int file_type
-	)
+                          FILE *fp,
+                          int nelems,
+                          const char **elem_names,
+                          int file_type
+                          )
 {
 	int i;
 	PlyFile *plyfile;
@@ -400,12 +400,12 @@ returns a file identifier, used to refer to this file, or NULL if error
 ******************************************************************************/
 
 inline PlyFile *ply_open_for_writing(
-	const char *filename,
-	int nelems,
-	const char **elem_names,
-	int file_type,
-	float *version
-	)
+                                     const char *filename,
+                                     int nelems,
+                                     const char **elem_names,
+                                     int file_type,
+                                     float *version
+                                     )
 {
 	PlyFile *plyfile;
 	char *name;
@@ -416,19 +416,19 @@ inline PlyFile *ply_open_for_writing(
 	name = (char *)myalloc(sizeof (char)* (strlen(filename) + 5));
 	strcpy(name, filename);
 	if (strlen(name) < 4 ||
-		strcmp(name + strlen(name) - 4, ".ply") != 0)
+      strcmp(name + strlen(name) - 4, ".ply") != 0)
 		strcat(name, ".ply");
 
 	/* open the file for writing */
 
 	if (file_type == PLY_ASCII)
-	{
-		fp = fopen(name, "w");
-	}
+    {
+      fp = fopen(name, "w");
+    }
 	else
-	{
-		fp = fopen(name, "wb");
-	}
+    {
+      fp = fopen(name, "wb");
+    }
 
   delete name;
 
@@ -464,12 +464,12 @@ prop_list - list of properties
 ******************************************************************************/
 
 inline void ply_describe_element(
-	PlyFile *plyfile,
-	char *elem_name,
-	int nelems,
-	int nprops,
-	PlyProperty *prop_list
-	)
+                                 PlyFile *plyfile,
+                                 char *elem_name,
+                                 int nelems,
+                                 int nprops,
+                                 PlyProperty *prop_list
+                                 )
 {
 	int i;
 	PlyElement *elem;
@@ -509,10 +509,10 @@ prop      - the new property
 ******************************************************************************/
 
 inline void ply_describe_property(
-	PlyFile *plyfile,
-	const char *elem_name,
-	PlyProperty *prop
-	)
+                                  PlyFile *plyfile,
+                                  const char *elem_name,
+                                  PlyProperty *prop
+                                  )
 {
 	PlyElement *elem;
 	PlyProperty *elem_prop;
@@ -521,7 +521,7 @@ inline void ply_describe_property(
 	elem = find_element(plyfile, elem_name);
 	if (elem == NULL) {
 		fprintf(stderr, "ply_describe_property: can't find element '%s'\n",
-			elem_name);
+            elem_name);
 		return;
 	}
 
@@ -555,10 +555,10 @@ they are in an element.
 ******************************************************************************/
 
 inline void ply_describe_other_properties(
-	PlyFile *plyfile,
-	PlyOtherProp *other,
-	int offset
-	)
+                                          PlyFile *plyfile,
+                                          PlyOtherProp *other,
+                                          int offset
+                                          )
 {
 	int i;
 	PlyElement *elem;
@@ -568,7 +568,7 @@ inline void ply_describe_other_properties(
 	elem = find_element(plyfile, other->name.c_str());
 	if (elem == NULL) {
 		fprintf(stderr, "ply_describe_other_properties: can't find element '%s'\n",
-			other->name.c_str());
+            other->name.c_str());
 		return;
 	}
 
@@ -615,10 +615,10 @@ nelems    - number of elements of this type to be written
 ******************************************************************************/
 
 inline void ply_element_count(
-	PlyFile *plyfile,
-	const char *elem_name,
-	int nelems
-	)
+                              PlyFile *plyfile,
+                              const char *elem_name,
+                              int nelems
+                              )
 {
 	PlyElement *elem;
 
@@ -662,7 +662,7 @@ inline void ply_header_complete(PlyFile *plyfile)
 		break;
 	default:
 		fprintf(stderr, "ply_header_complete: bad file type = %d\n",
-			plyfile->file_type);
+            plyfile->file_type);
 		exit(-1);
 	}
 
@@ -773,27 +773,27 @@ inline void ply_put_element(PlyFile *plyfile, void *elem_ptr)
 			if (prop->is_list) {
 				item = elem_data + prop->count_offset;
 				get_stored_item((void *)item, prop->count_internal,
-					&int_val, &uint_val, &double_val);
+                        &int_val, &uint_val, &double_val);
 				write_ascii_item(fp, int_val, uint_val, double_val,
-					prop->count_external);
+                         prop->count_external);
 				list_count = uint_val;
 				item_ptr = (char **)(elem_data + prop->offset);
 				item = item_ptr[0];
 				item_size = ply_type_size[prop->internal_type];
 				for (k = 0; k < list_count; k++) {
 					get_stored_item((void *)item, prop->internal_type,
-						&int_val, &uint_val, &double_val);
+                          &int_val, &uint_val, &double_val);
 					write_ascii_item(fp, int_val, uint_val, double_val,
-						prop->external_type);
+                           prop->external_type);
 					item += item_size;
 				}
 			}
 			else {
 				item = elem_data + prop->offset;
 				get_stored_item((void *)item, prop->internal_type,
-					&int_val, &uint_val, &double_val);
+                        &int_val, &uint_val, &double_val);
 				write_ascii_item(fp, int_val, uint_val, double_val,
-					prop->external_type);
+                         prop->external_type);
 			}
 		}
 
@@ -814,18 +814,18 @@ inline void ply_put_element(PlyFile *plyfile, void *elem_ptr)
 				item = elem_data + prop->count_offset;
 				item_size = ply_type_size[prop->count_internal];
 				get_stored_item((void *)item, prop->count_internal,
-					&int_val, &uint_val, &double_val);
+                        &int_val, &uint_val, &double_val);
 				write_binary_item(fp, int_val, uint_val, double_val,
-					prop->count_external);
+                          prop->count_external);
 				list_count = uint_val;
 				item_ptr = (char **)(elem_data + prop->offset);
 				item = item_ptr[0];
 				item_size = ply_type_size[prop->internal_type];
 				for (k = 0; k < list_count; k++) {
 					get_stored_item((void *)item, prop->internal_type,
-						&int_val, &uint_val, &double_val);
+                          &int_val, &uint_val, &double_val);
 					write_binary_item(fp, int_val, uint_val, double_val,
-						prop->external_type);
+                            prop->external_type);
 					item += item_size;
 				}
 			}
@@ -833,9 +833,9 @@ inline void ply_put_element(PlyFile *plyfile, void *elem_ptr)
 				item = elem_data + prop->offset;
 				item_size = ply_type_size[prop->internal_type];
 				get_stored_item((void *)item, prop->internal_type,
-					&int_val, &uint_val, &double_val);
+                        &int_val, &uint_val, &double_val);
 				write_binary_item(fp, int_val, uint_val, double_val,
-					prop->external_type);
+                          prop->external_type);
 			}
 		}
 
@@ -858,7 +858,7 @@ inline void ply_put_comment(PlyFile *plyfile, char *comment)
 		plyfile->comments = (char **)myalloc(sizeof (char *));
 	else
 		plyfile->comments = (char **)realloc(plyfile->comments,
-		sizeof (char *)* (plyfile->num_comments + 1));
+                                         sizeof (char *)* (plyfile->num_comments + 1));
 
 	/* add comment to list */
 	plyfile->comments[plyfile->num_comments] = strdup(comment);
@@ -882,7 +882,7 @@ inline void ply_put_obj_info(PlyFile *plyfile, char *obj_info)
 		plyfile->obj_info = (char **)myalloc(sizeof (char *));
 	else
 		plyfile->obj_info = (char **)realloc(plyfile->obj_info,
-		sizeof (char *)* (plyfile->num_obj_info + 1));
+                                         sizeof (char *)* (plyfile->num_obj_info + 1));
 
 	/* add info to list */
 	plyfile->obj_info[plyfile->num_obj_info] = strdup(obj_info);
@@ -1023,12 +1023,12 @@ returns a file identifier, used to refer to this file, or NULL if error
 ******************************************************************************/
 
 inline PlyFile *ply_open_for_reading(
-	const char *filename,
-	int *nelems,
-	char ***elem_names,
-	int *file_type,
-	float *version
-	)
+                                     const char *filename,
+                                     int *nelems,
+                                     char ***elem_names,
+                                     int *file_type,
+                                     float *version
+                                     )
 {
 	FILE *fp;
 	PlyFile *plyfile;
@@ -1080,11 +1080,11 @@ returns a list of properties, or NULL if the file doesn't contain that elem
 ******************************************************************************/
 
 inline PlyProperty **ply_get_element_description(
-	PlyFile *plyfile,
-	char *elem_name,
-	int *nelems,
-	int *nprops
-	)
+                                                 PlyFile *plyfile,
+                                                 char *elem_name,
+                                                 int *nelems,
+                                                 int *nprops
+                                                 )
 {
 	PlyElement *elem;
 	PlyProperty **prop_list;
@@ -1125,11 +1125,11 @@ prop_list - list of properties
 ******************************************************************************/
 
 inline void ply_get_element_setup(
-	PlyFile *plyfile,
-	const char *elem_name,
-	int nprops,
-	PlyProperty *prop_list
-	)
+                                  PlyFile *plyfile,
+                                  const char *elem_name,
+                                  int nprops,
+                                  PlyProperty *prop_list
+                                  )
 {
 	int i;
 	PlyElement *elem;
@@ -1176,10 +1176,10 @@ prop      - property to add to those that will be returned
 ******************************************************************************/
 
 inline void ply_get_property(
-	PlyFile *plyfile,
-	const char *elem_name,
-	PlyProperty *prop
-	)
+                             PlyFile *plyfile,
+                             const char *elem_name,
+                             PlyProperty *prop
+                             )
 {
 	PlyElement *elem;
 	PlyProperty *prop_ptr;
@@ -1346,10 +1346,10 @@ returns pointer to structure containing description of other_props
 ******************************************************************************/
 
 inline PlyOtherProp *ply_get_other_properties(
-	PlyFile *plyfile,
-	char *elem_name,
-	int offset
-	)
+                                              PlyFile *plyfile,
+                                              char *elem_name,
+                                              int offset
+                                              )
 {
 	int i;
 	PlyElement *elem;
@@ -1361,7 +1361,7 @@ inline PlyOtherProp *ply_get_other_properties(
 	elem = find_element(plyfile, elem_name);
 	if (elem == NULL) {
 		fprintf(stderr, "ply_get_other_properties: Can't find element '%s'\n",
-			elem_name);
+            elem_name);
 		return (NULL);
 	}
 
@@ -1435,10 +1435,10 @@ returns pointer to ALL the "other" element data for this PLY file
 ******************************************************************************/
 
 inline PlyOtherElems *ply_get_other_element(
-	PlyFile *plyfile,
-	char *elem_name,
-	int elem_count
-	)
+                                            PlyFile *plyfile,
+                                            char *elem_name,
+                                            int elem_count
+                                            )
 {
 	int i;
 	PlyElement *elem;
@@ -1449,7 +1449,7 @@ inline PlyOtherElems *ply_get_other_element(
 	elem = find_element(plyfile, elem_name);
 	if (elem == NULL) {
 		fprintf(stderr,
-			"ply_get_other_element: can't find element '%s'\n", elem_name);
+            "ply_get_other_element: can't find element '%s'\n", elem_name);
 		exit(-1);
 	}
 
@@ -1466,7 +1466,7 @@ inline PlyOtherElems *ply_get_other_element(
 	else {
 		other_elems = plyfile->other_elems;
 		other_elems->other_list = (OtherElem *)realloc(other_elems->other_list,
-			sizeof (OtherElem)* other_elems->num_elems + 1);
+                                                   sizeof (OtherElem)* other_elems->num_elems + 1);
 		other = &(other_elems->other_list[other_elems->num_elems]);
 		new (other)OtherElem();
 		other_elems->num_elems++;
@@ -1484,7 +1484,7 @@ inline PlyOtherElems *ply_get_other_element(
 
 	/* set up for getting elements */
 	other->other_props = ply_get_other_properties(plyfile, elem_name,
-		offsetof(OtherData, other_props));
+                                                offsetof(OtherData, other_props));
 
 	/* grab all these elements */
 	for (i = 0; i < other->elem_count; i++) {
@@ -1508,9 +1508,9 @@ other_elems - info about other elements that we want to store
 ******************************************************************************/
 
 inline void ply_describe_other_elements(
-	PlyFile *plyfile,
-	PlyOtherElems *other_elems
-	)
+                                        PlyFile *plyfile,
+                                        PlyOtherElems *other_elems
+                                        )
 {
 	int i;
 	OtherElem *other;
@@ -1528,7 +1528,7 @@ inline void ply_describe_other_elements(
 		other = &(other_elems->other_list[i]);
 		ply_element_count(plyfile, other->elem_name.c_str(), other->elem_count);
 		ply_describe_other_properties(plyfile, other->other_props,
-			offsetof(OtherData, other_props));
+                                  offsetof(OtherData, other_props));
 	}
 }
 
@@ -1627,8 +1627,8 @@ Compare two strings.  Returns 1 if they are the same, 0 if not.
 inline int equal_strings(const char *s1, const char *s2)
 {
 	while (*s1 && *s2)
-	if (*s1++ != *s2++)
-		return (0);
+    if (*s1++ != *s2++)
+      return (0);
 
 	if (*s1 != *s2)
 		return (0);
@@ -1669,8 +1669,8 @@ inline PlyElement *find_element(PlyFile *plyfile, const char *element)
 	int i;
 
 	for (i = 0; i < plyfile->nelems; i++)
-	if (equal_strings(element, plyfile->elems[i]->name.c_str()))
-		return (plyfile->elems[i]);
+    if (equal_strings(element, plyfile->elems[i]->name.c_str()))
+      return (plyfile->elems[i]);
 
 	return (NULL);
 }
@@ -1693,10 +1693,10 @@ inline PlyProperty *find_property(PlyElement *elem, const char *prop_name, int *
 	int i;
 
 	for (i = 0; i < elem->nprops; i++)
-	if (equal_strings(prop_name, elem->props[i]->name.c_str())) {
-		*index = i;
-		return (elem->props[i]);
-	}
+    if (equal_strings(prop_name, elem->props[i]->name.c_str())) {
+      *index = i;
+      return (elem->props[i]);
+    }
 
 	*index = -1;
 	return (NULL);
@@ -1775,7 +1775,7 @@ inline void ascii_get_element(PlyFile *plyfile, char *elem_ptr)
 
 			/* get and store the number of items in the list */
 			get_ascii_item(words[which_word++], prop->count_external,
-				&int_val, &uint_val, &double_val);
+                     &int_val, &uint_val, &double_val);
 			if (store_it) {
 				item = elem_data + prop->count_offset;
 				store_item(item, prop->count_internal, int_val, uint_val, double_val);
@@ -1800,10 +1800,10 @@ inline void ascii_get_element(PlyFile *plyfile, char *elem_ptr)
 				/* read items and store them into the array */
 				for (k = 0; k < list_count; k++) {
 					get_ascii_item(words[which_word++], prop->external_type,
-						&int_val, &uint_val, &double_val);
+                         &int_val, &uint_val, &double_val);
 					if (store_it) {
 						store_item(item, prop->internal_type,
-							int_val, uint_val, double_val);
+                       int_val, uint_val, double_val);
 						item += item_size;
 					}
 				}
@@ -1812,7 +1812,7 @@ inline void ascii_get_element(PlyFile *plyfile, char *elem_ptr)
 		}
 		else {                     /* not a list */
 			get_ascii_item(words[which_word++], prop->external_type,
-				&int_val, &uint_val, &double_val);
+                     &int_val, &uint_val, &double_val);
 			if (store_it) {
 				item = elem_data + prop->offset;
 				store_item(item, prop->internal_type, int_val, uint_val, double_val);
@@ -1885,7 +1885,7 @@ inline void binary_get_element(PlyFile *plyfile, char *elem_ptr)
 
 			/* get and store the number of items in the list */
 			get_binary_item(fp, prop->count_external,
-				&int_val, &uint_val, &double_val);
+                      &int_val, &uint_val, &double_val);
 			if (store_it) {
 				item = elem_data + prop->count_offset;
 				store_item(item, prop->count_internal, int_val, uint_val, double_val);
@@ -1894,9 +1894,9 @@ inline void binary_get_element(PlyFile *plyfile, char *elem_ptr)
 			/* allocate space for an array of items and store a ptr to the array */
 			list_count = int_val;
 			/* The "if" was added by Afra Zomorodian 8/22/95
-			* so that zipper won't crash reading plies that have additional
-			* properties.
-			*/
+       * so that zipper won't crash reading plies that have additional
+       * properties.
+       */
 			if (store_it) {
 				item_size = ply_type_size[prop->internal_type];
 			}
@@ -1915,10 +1915,10 @@ inline void binary_get_element(PlyFile *plyfile, char *elem_ptr)
 				/* read items and store them into the array */
 				for (k = 0; k < list_count; k++) {
 					get_binary_item(fp, prop->external_type,
-						&int_val, &uint_val, &double_val);
+                          &int_val, &uint_val, &double_val);
 					if (store_it) {
 						store_item(item, prop->internal_type,
-							int_val, uint_val, double_val);
+                       int_val, uint_val, double_val);
 						item += item_size;
 					}
 				}
@@ -1927,7 +1927,7 @@ inline void binary_get_element(PlyFile *plyfile, char *elem_ptr)
 		}
 		else {                     /* not a list */
 			get_binary_item(fp, prop->external_type,
-				&int_val, &uint_val, &double_val);
+                      &int_val, &uint_val, &double_val);
 			if (store_it) {
 				item = elem_data + prop->offset;
 				store_item(item, prop->internal_type, int_val, uint_val, double_val);
@@ -2129,12 +2129,12 @@ type       - data type to write out
 ******************************************************************************/
 
 inline void write_binary_item(
-	FILE *fp,
-	int int_val,
-	unsigned int uint_val,
-	double double_val,
-	int type
-	)
+                              FILE *fp,
+                              int int_val,
+                              unsigned int uint_val,
+                              double double_val,
+                              int type
+                              )
 {
 	unsigned char uchar_val;
 	char char_val;
@@ -2191,12 +2191,12 @@ type       - data type to write out
 ******************************************************************************/
 
 inline void write_ascii_item(
-	FILE *fp,
-	int int_val,
-	unsigned int uint_val,
-	double double_val,
-	int type
-	)
+                             FILE *fp,
+                             int int_val,
+                             unsigned int uint_val,
+                             double double_val,
+                             int type
+                             )
 {
 	switch (type) {
 	case PLY_CHAR:
@@ -2309,12 +2309,12 @@ double_val - double-precision floating point value
 ******************************************************************************/
 
 inline void get_stored_item(
-	void *ptr,
-	int type,
-	int *int_val,
-	unsigned int *uint_val,
-	double *double_val
-	)
+                            void *ptr,
+                            int type,
+                            int *int_val,
+                            unsigned int *uint_val,
+                            double *double_val
+                            )
 {
 	switch (type) {
 	case PLY_CHAR:
@@ -2379,12 +2379,12 @@ double_val - double-precision floating point value
 ******************************************************************************/
 
 inline void get_binary_item(
-	FILE *fp,
-	int type,
-	int *int_val,
-	unsigned int *uint_val,
-	double *double_val
-	)
+                            FILE *fp,
+                            int type,
+                            int *int_val,
+                            unsigned int *uint_val,
+                            double *double_val
+                            )
 {
 	char c[8];
 	void *ptr;
@@ -2462,12 +2462,12 @@ double_val - double-precision floating point value
 ******************************************************************************/
 
 inline void get_ascii_item(
-	char *word,
-	int type,
-	int *int_val,
-	unsigned int *uint_val,
-	double *double_val
-	)
+                           char *word,
+                           int type,
+                           int *int_val,
+                           unsigned int *uint_val,
+                           double *double_val
+                           )
 {
 	switch (type) {
 	case PLY_CHAR:
@@ -2515,12 +2515,12 @@ item - pointer to stored value
 ******************************************************************************/
 
 inline void store_item(
-	char *item,
-	int type,
-	int int_val,
-	unsigned int uint_val,
-	double double_val
-	)
+                       char *item,
+                       int type,
+                       int int_val,
+                       unsigned int uint_val,
+                       double double_val
+                       )
 {
 	unsigned char *puchar;
 	short int *pshort;
@@ -2593,7 +2593,7 @@ inline void add_element(PlyFile *plyfile, char **words, int nwords)
 		plyfile->elems = (PlyElement **)myalloc(sizeof (PlyElement *));
 	else
 		plyfile->elems = (PlyElement **)realloc(plyfile->elems,
-		sizeof (PlyElement *)* (plyfile->nelems + 1));
+                                            sizeof (PlyElement *)* (plyfile->nelems + 1));
 
 	/* add the new element to the object's list */
 	plyfile->elems[plyfile->nelems] = elem;
@@ -2616,8 +2616,8 @@ inline int get_prop_type(const char *type_name)
 	int i;
 
 	for (i = PLY_START_TYPE + 1; i < PLY_END_TYPE; i++)
-	if (equal_strings(type_name, type_names[i]))
-		return (i);
+    if (equal_strings(type_name, type_names[i]))
+      return (i);
 
 	/* if we get here, we didn't find the type */
 	return (0);
@@ -2662,7 +2662,7 @@ inline void add_property(PlyFile *plyfile, char **words, int nwords)
 		elem->props = (PlyProperty **)myalloc(sizeof (PlyProperty *));
 	else
 		elem->props = (PlyProperty **)realloc(elem->props,
-		sizeof (PlyProperty *)* (elem->nprops + 1));
+                                          sizeof (PlyProperty *)* (elem->nprops + 1));
 
 	elem->props[elem->nprops] = prop;
 	elem->nprops++;
@@ -2784,9 +2784,9 @@ namespace ply{
 		~Face()
 		{
 			if (nverts)
-			{
-				delete[] verts;
-			}
+        {
+          delete[] verts;
+        }
 		}
 	};
 
@@ -2853,7 +2853,7 @@ namespace ply{
 
 	static PlyProperty face_props[] = { /* list of property information for a vertex */
 		{ "vertex_indices", PLY_INT, PLY_INT, offsetof(ply::Face, verts),
-		1, PLY_UCHAR, PLY_UCHAR, offsetof(ply::Face, nverts) },
+      1, PLY_UCHAR, PLY_UCHAR, offsetof(ply::Face, nverts) },
 	};
 
 	static int n_fprops = 1;
@@ -2863,78 +2863,78 @@ namespace ply{
 		int vertex_type = 0;
 
 		for (int i = 0; i < _nprops; i++)
-		{
-			PlyProperty* prop = _plist[i];
+      {
+        PlyProperty* prop = _plist[i];
 
-			if (equal_strings(prop->name.c_str(), "x")
-				|| equal_strings(prop->name.c_str(), "y")
-				|| equal_strings(prop->name.c_str(), "z"))
-			{
-				if (prop->external_type != PLY_FLOAT)
-				{
-					std::cout << "ERROR: float type expected for property'"
-						<< prop->name.c_str() << "'." << std::endl;
-					exit(0);
-				}
-			}
-			else
-			{
-				if (equal_strings(prop->name.c_str(), "nx")
-					|| equal_strings(prop->name.c_str(), "ny")
-					|| equal_strings(prop->name.c_str(), "nz"))
-				{
-					if (prop->external_type != PLY_FLOAT)
-					{
-						std::cout << "ERROR: float type expected for property'"
-							<< prop->name.c_str() << "'." << std::endl;
-						exit(0);
-					}
+        if (equal_strings(prop->name.c_str(), "x")
+            || equal_strings(prop->name.c_str(), "y")
+            || equal_strings(prop->name.c_str(), "z"))
+          {
+            if (prop->external_type != PLY_FLOAT)
+              {
+                std::cout << "ERROR: float type expected for property'"
+                          << prop->name.c_str() << "'." << std::endl;
+                exit(0);
+              }
+          }
+        else
+          {
+            if (equal_strings(prop->name.c_str(), "nx")
+                || equal_strings(prop->name.c_str(), "ny")
+                || equal_strings(prop->name.c_str(), "nz"))
+              {
+                if (prop->external_type != PLY_FLOAT)
+                  {
+                    std::cout << "ERROR: float type expected for property'"
+                              << prop->name.c_str() << "'." << std::endl;
+                    exit(0);
+                  }
 
-					vertex_type |= 0x01;
-				}
-				else
-				{
-					if (equal_strings(prop->name.c_str(), "red")
-						|| equal_strings(prop->name.c_str(), "green")
-						|| equal_strings(prop->name.c_str(), "blue"))
-					{
-						if (prop->external_type != PLY_UCHAR)
-						{
-							std::cout << "ERROR: uchar type expected for property'"
-								<< prop->name.c_str() << "'." << std::endl;
-							exit(0);
-						}
-					}
-					else
-					{
-						if (equal_strings(prop->name.c_str(), "alpha"))
-						{
-							vertex_type |= 0x02;
-						}
-						else
-						{
-              // if(contain_strings(prop->name.c_str(), "channel"))
-              //   {
-              //     vertex_type = PLY_VERTEX_RGB_FEATURES;
-              //     if (prop->external_type != PLY_DOUBLE)
-              //       {
-              //         std::cout << "ERROR: double type expected for property'"
-              //                   << prop->name.c_str() << "'." << std::endl;
-              //         exit(0);
-              //       }
-              //   }
-              // else
-                {
-                  std::cout << "ERROR: property'"
-                            << prop->name.c_str() << "' is not supported."
-                            << std::endl;
-                  exit(0);
-                }
-						}
-					}
-				}
-			}
-		}
+                vertex_type |= 0x01;
+              }
+            else
+              {
+                if (equal_strings(prop->name.c_str(), "red")
+                    || equal_strings(prop->name.c_str(), "green")
+                    || equal_strings(prop->name.c_str(), "blue"))
+                  {
+                    if (prop->external_type != PLY_UCHAR)
+                      {
+                        std::cout << "ERROR: uchar type expected for property'"
+                                  << prop->name.c_str() << "'." << std::endl;
+                        exit(0);
+                      }
+                  }
+                else
+                  {
+                    if (equal_strings(prop->name.c_str(), "alpha"))
+                      {
+                        vertex_type |= 0x02;
+                      }
+                    else
+                      {
+                        // if(contain_strings(prop->name.c_str(), "channel"))
+                        //   {
+                        //     vertex_type = PLY_VERTEX_RGB_FEATURES;
+                        //     if (prop->external_type != PLY_DOUBLE)
+                        //       {
+                        //         std::cout << "ERROR: double type expected for property'"
+                        //                   << prop->name.c_str() << "'." << std::endl;
+                        //         exit(0);
+                        //       }
+                        //   }
+                        // else
+                        {
+                          std::cout << "ERROR: property'"
+                                    << prop->name.c_str() << "' is not supported."
+                                    << std::endl;
+                          exit(0);
+                        }
+                      }
+                  }
+              }
+          }
+      }
 
 		return vertex_type;
 	}
@@ -2944,25 +2944,25 @@ namespace ply{
 		PlyProperty* prop;
 
 		switch (_vertex_type)
-		{
-    case PLY_VERTEX:
-      prop = &ply::v_props[_prop_idx];
-      break;
-		case PLY_VERTEX_RGB:
-			prop = &ply::vc_props[_prop_idx];
-			break;
-		case PLY_VERTEX_NORMAL_RGB:
-			prop = &ply::vnc_props[_prop_idx];
-			break;
-		case PLY_VERTEX_RGBA:
-			prop = &ply::vca_props[_prop_idx];
-			break;
-		case PLY_VERTEX_NORMAL_RGBA:
-			prop = &ply::vnca_props[_prop_idx];
-			break;
-		default:
-			break;
-		}
+      {
+      case PLY_VERTEX:
+        prop = &ply::v_props[_prop_idx];
+        break;
+      case PLY_VERTEX_RGB:
+        prop = &ply::vc_props[_prop_idx];
+        break;
+      case PLY_VERTEX_NORMAL_RGB:
+        prop = &ply::vnc_props[_prop_idx];
+        break;
+      case PLY_VERTEX_RGBA:
+        prop = &ply::vca_props[_prop_idx];
+        break;
+      case PLY_VERTEX_NORMAL_RGBA:
+        prop = &ply::vnca_props[_prop_idx];
+        break;
+      default:
+        break;
+      }
 
 		return prop;
 	}

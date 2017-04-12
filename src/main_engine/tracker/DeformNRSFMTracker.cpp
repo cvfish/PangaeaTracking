@@ -95,6 +95,13 @@ DeformNRSFMTracker::DeformNRSFMTracker(TrackerSettings& settings, int width, int
   pImagePyramid = new ImagePyramid;
   pFeaturePyramid = new FeaturePyramid;
 
+  if(trackerSettings.printRigidMotion)
+    {
+      std::stringstream rigidMotionOutputPath;
+      rigidMotionOutputPath << settings.savePath << settings.rigidMotionFile;
+      rigidMtionOutput.open(rigidMotionOutputPath.str().c_str(), std::ofstream::trunc);
+    }
+
   if(trackerSettings.printEnergy)
     {
       std::stringstream energyOutputPath;
@@ -994,6 +1001,15 @@ bool DeformNRSFMTracker::trackFrame(int nFrame, unsigned char* pColorImageRGB,
   ceresOutput << "memory usage " << endl;
   ceresOutput << "VM: " << vm << "; RSS: " << rss << endl;
   ceresOutput << "--------------- " << endl;
+
+
+  // print out optimized rigid motion
+  rigidMtionOutput << camPose[0] << " "
+                   << camPose[1] << " "
+                   << camPose[2] << " "
+                   << camPose[3] << " "
+                   << camPose[4] << " "
+                   << camPose[5] << endl;
 
   return true;
 }

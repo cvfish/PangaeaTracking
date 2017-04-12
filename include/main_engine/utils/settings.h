@@ -179,6 +179,7 @@ public:
   std::string scoresPath;
 
   std::string energyOutputFile;
+  std::string rigidMotionFile;
 
   bool saveMesh;
   std::string meshFormat;
@@ -245,6 +246,9 @@ public:
   bool printEnergy;
   bool printEnergyGT;
   bool computeError;
+
+  // print rigid motion
+  bool printRigidMotion;
 
   // save the mesh as ply files
   // bool savePLY;
