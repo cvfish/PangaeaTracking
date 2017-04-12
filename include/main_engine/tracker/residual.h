@@ -193,6 +193,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
             // value[0] = SampleWithoutDerivative< T, InternalIntensityImageType > (pImageLevel->grayImage,
             //                                                                      transformed_c,
             //                                                                      transformed_r );
+            break;
           }
         case PE_COLOR:
         case PE_COLOR_NCC:
@@ -262,6 +263,7 @@ void getValue(const CameraInfo* pCamera, const Level* pFrame,
                 //                                                         transformed_c,
                 //                                                         transformed_r);
               }
+            break;
           }
         }
     }
