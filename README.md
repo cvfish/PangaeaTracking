@@ -49,6 +49,7 @@ PangaeaTracking has been tested in Ubuntu 14.04 only. Several 3rd party librarie
 # 2. Data
 
 One example sequence is available at [google drive](https://drive.google.com/drive/folders/0B8-9V4y1N7pxZExaMlE3bnc3Mzg).
+Download the data and unzip data/Yiwan/yiwan.tar.
 
 # 3. Examples
 
